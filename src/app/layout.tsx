@@ -1,3 +1,4 @@
+import './globals.css'
 import AuthProvider from "@/components/SessionProvider"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/authOptions"

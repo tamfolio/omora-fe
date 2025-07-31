@@ -1,4 +1,4 @@
-"use client"
+import '@/styles/globals.css'
 import React from 'react'
 import { signIn } from "next-auth/react"
 
