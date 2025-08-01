@@ -4,12 +4,8 @@ import { signIn } from "next-auth/react"
 
 const page = () => {
   return (
-    <div>yo!
-
-<button onClick={() => signIn()}>
-  Login
-</button>
-
+    <div>
+      
     </div>
 
     
