@@ -2,6 +2,14 @@ import './globals.css'
 import AuthProvider from "@/components/SessionProvider"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/authOptions"
+import { Inter } from 'next/font/google'
+import NavBar from '@/components/website/NavBar'
+import Footer from '@/components/website/Footer'
+ 
+const inter = Inter({
+  style: "normal",
+  subsets: ['greek', 'latin']
+})
 
 export default async function RootLayout({
   children,
@@ -12,10 +20,12 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body>
+      <body className={inter.className}>
+        <NavBar />
         <AuthProvider session={session}>
           {children}
         </AuthProvider>
+        <Footer />
       </body>
     </html>
   )
