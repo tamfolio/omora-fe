@@ -37,7 +37,8 @@ export default function Login() {
         const session = await getSession()
         if (session) {
           // Check if first-time login
-          if (session.user.isFirstLogin) {
+          const isFirstLogin = (session.user as any)?.isFirstLogin;
+          if (isFirstLogin) {
             router.push("/firsttimelogin")
           } else {
             router.push("/dashboard")
@@ -53,7 +54,7 @@ export default function Login() {
   // Loading Screen Component
   if (loading) {
     return (
-      <div className="h-screen bg-gray-50 flex flex-col relative overflow-hidden">
+      <div className="h-screen bg-white flex flex-col relative overflow-hidden">
         <div className="h-full overflow-y-auto scrollbar-hide">
           {/* Customer Service Icon - Fixed Position */}
           <div className="fixed bottom-6 right-6 z-10">
