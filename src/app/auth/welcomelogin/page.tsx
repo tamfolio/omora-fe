@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RiCustomerServiceLine } from "react-icons/ri";
-import { 
-  HiOutlineX, 
-  HiOutlineShieldCheck, 
-  HiOutlineMail, 
-  HiOutlineArrowRight, 
-  HiOutlineClipboardCopy 
+import {
+  HiOutlineX,
+  HiOutlineShieldCheck,
+  HiOutlineMail,
+  HiOutlineArrowRight,
+  HiOutlineClipboardCopy,
 } from "react-icons/hi";
 import Logo from "@/components/ui/Logo";
 
@@ -18,7 +18,8 @@ export default function FirstTimeLogin() {
   const [loading, setLoading] = useState(false);
   const [showAuthenticatorModal, setShowAuthenticatorModal] = useState(false);
   const [showManualCodeModal, setShowManualCodeModal] = useState(false);
-  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
+  const [showEmailVerificationModal, setShowEmailVerificationModal] =
+    useState(false);
   const [manualCode, setManualCode] = useState("");
   const [emailCode, setEmailCode] = useState("");
   const [qrCode, setQrCode] = useState("4K3DDKUW748H4CO");
@@ -41,7 +42,7 @@ export default function FirstTimeLogin() {
 
   const handleStepClick = (stepId: number) => {
     if (completedSteps.includes(stepId)) return;
-    
+
     if (stepId === 1) {
       setShowAuthenticatorModal(true);
     } else if (stepId === 2) {
@@ -50,10 +51,10 @@ export default function FirstTimeLogin() {
       setCurrentStep(stepId);
       setLoading(true);
       setTimeout(() => {
-        setCompletedSteps(prev => [...prev, stepId]);
+        setCompletedSteps((prev) => [...prev, stepId]);
         setCurrentStep(null);
         setLoading(false);
-        
+
         if (completedSteps.length + 1 === verificationSteps.length) {
           setTimeout(() => {
             router.push("/dashboard");
@@ -71,9 +72,9 @@ export default function FirstTimeLogin() {
   const handleManualCodeSubmit = () => {
     if (manualCode.length === 6) {
       setShowManualCodeModal(false);
-      setCompletedSteps(prev => [...prev, 1]);
+      setCompletedSteps((prev) => [...prev, 1]);
       setManualCode("");
-      
+
       // Don't auto-redirect, let user complete email verification
       // if (completedSteps.length + 1 === verificationSteps.length) {
       //   setTimeout(() => {
@@ -84,22 +85,25 @@ export default function FirstTimeLogin() {
   };
 
   const handlePasteCode = () => {
-    navigator.clipboard.readText().then(text => {
-      const cleanCode = text.replace(/\s/g, '').slice(0, 6);
-      if (/^\d{1,6}$/.test(cleanCode)) {
-        setManualCode(cleanCode);
-      }
-    }).catch(() => {
-      // Clipboard access failed, ignore
-    });
+    navigator.clipboard
+      .readText()
+      .then((text) => {
+        const cleanCode = text.replace(/\s/g, "").slice(0, 6);
+        if (/^\d{1,6}$/.test(cleanCode)) {
+          setManualCode(cleanCode);
+        }
+      })
+      .catch(() => {
+        // Clipboard access failed, ignore
+      });
   };
 
   const handleEmailVerificationSubmit = () => {
     if (emailCode.length === 6) {
       setShowEmailVerificationModal(false);
-      setCompletedSteps(prev => [...prev, 2]);
+      setCompletedSteps((prev) => [...prev, 2]);
       setEmailCode("");
-      
+
       // Don't auto-redirect immediately, show completion state first
       // setTimeout(() => {
       //   router.push("/dashboard");
@@ -108,14 +112,17 @@ export default function FirstTimeLogin() {
   };
 
   const handlePasteEmailCode = () => {
-    navigator.clipboard.readText().then(text => {
-      const cleanCode = text.replace(/\s/g, '').slice(0, 6);
-      if (/^\d{1,6}$/.test(cleanCode)) {
-        setEmailCode(cleanCode);
-      }
-    }).catch(() => {
-      // Clipboard access failed, ignore
-    });
+    navigator.clipboard
+      .readText()
+      .then((text) => {
+        const cleanCode = text.replace(/\s/g, "").slice(0, 6);
+        if (/^\d{1,6}$/.test(cleanCode)) {
+          setEmailCode(cleanCode);
+        }
+      })
+      .catch(() => {
+        // Clipboard access failed, ignore
+      });
   };
 
   const handleResendEmailCode = () => {
@@ -176,8 +183,8 @@ export default function FirstTimeLogin() {
 
                   {/* Input Section */}
                   <div className="mb-4">
-                    <label 
-                      htmlFor="emailCode" 
+                    <label
+                      htmlFor="emailCode"
                       className="block text-sm font-medium text-gray-700 mb-2"
                     >
                       Email
@@ -190,7 +197,7 @@ export default function FirstTimeLogin() {
                         maxLength={6}
                         value={emailCode}
                         onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, '');
+                          const value = e.target.value.replace(/\D/g, "");
                           setEmailCode(value);
                         }}
                         placeholder="000000"
@@ -250,8 +257,8 @@ export default function FirstTimeLogin() {
 
                   {/* Input Section */}
                   <div className="mb-6">
-                    <label 
-                      htmlFor="manualCode" 
+                    <label
+                      htmlFor="manualCode"
                       className="block text-sm font-medium text-gray-700 mb-2"
                     >
                       Input 6-digit code
@@ -264,7 +271,7 @@ export default function FirstTimeLogin() {
                         maxLength={6}
                         value={manualCode}
                         onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, '');
+                          const value = e.target.value.replace(/\D/g, "");
                           setManualCode(value);
                         }}
                         placeholder="000000"
@@ -333,7 +340,9 @@ export default function FirstTimeLogin() {
                   {/* Manual Code */}
                   <div className="mb-6">
                     <div className="flex items-center justify-center space-x-2 bg-gray-50 rounded-lg p-3">
-                      <span className="font-mono text-sm text-gray-700">{qrCode}</span>
+                      <span className="font-mono text-sm text-gray-700">
+                        {qrCode}
+                      </span>
                       <button
                         onClick={copyToClipboard}
                         className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -346,7 +355,8 @@ export default function FirstTimeLogin() {
 
                   {/* Help Text */}
                   <p className="text-xs text-gray-500 mb-6">
-                    If you are unable to scan the QR Code, please enter this code manually into the app.
+                    If you are unable to scan the QR Code, please enter this
+                    code manually into the app.
                   </p>
 
                   {/* Next Button */}
@@ -377,9 +387,10 @@ export default function FirstTimeLogin() {
                       Security Verification Requirements
                     </h2>
                     <p className="text-sm text-gray-600 mb-4">
-                      You need to complete all of the following verifications to continue.
+                      You need to complete all of the following verifications to
+                      continue.
                     </p>
-                    
+
                     {/* Progress */}
                     <div className="text-2xl font-bold text-teal-600 mb-4">
                       {progress}
@@ -402,8 +413,8 @@ export default function FirstTimeLogin() {
                             isCompleted
                               ? "bg-green-50 border-green-200 cursor-default"
                               : isActive
-                              ? "bg-teal-50 border-teal-200"
-                              : "bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                ? "bg-teal-50 border-teal-200"
+                                : "bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                           } ${loading && !isActive ? "opacity-50" : ""}`}
                         >
                           <div className="flex items-center space-x-3">
@@ -412,8 +423,8 @@ export default function FirstTimeLogin() {
                                 isCompleted
                                   ? "bg-green-100 text-green-600"
                                   : isActive
-                                  ? "bg-teal-100 text-teal-600"
-                                  : "bg-gray-100 text-gray-400"
+                                    ? "bg-teal-100 text-teal-600"
+                                    : "bg-gray-100 text-gray-400"
                               }`}
                             >
                               {isCompleted ? (
@@ -428,17 +439,21 @@ export default function FirstTimeLogin() {
                                   isCompleted
                                     ? "text-green-900"
                                     : isActive
-                                    ? "text-teal-900"
-                                    : "text-gray-900"
+                                      ? "text-teal-900"
+                                      : "text-gray-900"
                                 }`}
                               >
                                 {step.title}
                               </div>
                               {isActive && (
-                                <div className="text-sm text-teal-600">Setting up...</div>
+                                <div className="text-sm text-teal-600">
+                                  Setting up...
+                                </div>
                               )}
                               {isCompleted && (
-                                <div className="text-sm text-green-600">Completed</div>
+                                <div className="text-sm text-green-600">
+                                  Completed
+                                </div>
                               )}
                             </div>
                           </div>
@@ -477,7 +492,6 @@ export default function FirstTimeLogin() {
                     )}
                   </div>
 
-                  {/* Success State - Remove the old success message since we now show Continue button */}
                   {allStepsCompleted && (
                     <div className="text-center">
                       <button

@@ -125,7 +125,7 @@ export default function Signup() {
     }
 
     try {
-      // Call your custom signup API endpoint
+      // Callm signup API endpoint
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: {

@@ -47,7 +47,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Call your backend API
+          // Call  backend API
           const response = await fetch(`${process.env.API_AUTH_ENDPOINT}`, {
             method: 'POST',
             headers: {
