@@ -7,6 +7,7 @@ declare module "next-auth" {
       email: string
       name: string
       role: string
+      isFirstLogin?: boolean
     }
     accessToken: string
     error?: string
@@ -19,6 +20,7 @@ declare module "next-auth" {
     role: string
     accessToken: string
     refreshToken: string
+    isFirstLogin?: boolean
   }
 }
 
@@ -32,6 +34,7 @@ declare module "next-auth/jwt" {
       email: string
       name: string
       role: string
+      isFirstLogin?: boolean
     }
     error?: string
   }
