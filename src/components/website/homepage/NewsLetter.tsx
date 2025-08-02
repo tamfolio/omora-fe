@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Button } from "../../ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function NewsLetter() {
   const [email, setEmail] = useState<string | null>(null);
@@ -16,14 +17,14 @@ export default function NewsLetter() {
       </h3>
 
       <form className="flex items-center gap-4" onSubmit={(e) => subscribeToNewsletter(e)}>
-        <input
+        <Input
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter your email"
-          className="py-[10px] px-[14px]  rounded-[8px] border border-[#D5D7DA] bg-transparent"
+          className="py-[10px] px-[14px]  rounded-[8px] border border-[#D5D7DA] bg-transparent focus-visible:ring-[#008B99]"
           type="email"
         />
         <Button
-          className="bg-[#008B99] px-4 py-[10px] text-white font-semibold rounded-[8px] h-11 "
+          className="bg-[#008B99] px-4 py-[10px] text-white font-semibold rounded-[8px]"
           type="submit"
         >
           Submit
