@@ -17,7 +17,7 @@ export default function EmailVerification() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") || "olivia@gmail.com";
+  const email = searchParams.get("email") ;
 
   // Countdown timer for resend
   useEffect(() => {
