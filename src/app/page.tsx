@@ -1,6 +1,6 @@
 "use client";
-
 import React from "react";
+import './globals.css'
 import { Button } from "@/components/ui/button";
 import AvailableAssets from "@/components/website/homepage/AvalableAssets";
 import Image from "next/image";
