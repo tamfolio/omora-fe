@@ -17,7 +17,7 @@ export default function NavBar() {
     if (isExcluded) return null
 
   return (
-    <div className="flex items-center justify-between px-8 py-[18px]">
+    <div className="flex items-center justify-between px-8 py-[18px] text-[#414651]">
       <div className="flex items-center gap-11">
         <Link href="/">
           <Image
@@ -28,11 +28,11 @@ export default function NavBar() {
           />
         </Link>
 
-        <nav className="flex items-center">
-          <Link className="px-3 py-2 font-semibold" href="#">About</Link>
-          <Link className="px-3 py-2 font-semibold" href="#">Insights</Link>
-          <Link className="px-3 py-2 font-semibold" href="#">NewsRoom</Link>
-          <Link className="px-3 py-2 font-semibold" href="#">FAQs</Link>
+        <nav className="flex items-center font-semibold">
+          <Link className="px-3 py-2 " href="#">About</Link>
+          <Link className="px-3 py-2" href="#">Insights</Link>
+          <Link className="px-3 py-2" href="#">NewsRoom</Link>
+          <Link className="px-3 py-2" href="#">FAQs</Link>
         </nav>
       </div>
 
