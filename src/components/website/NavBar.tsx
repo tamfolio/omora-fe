@@ -29,10 +29,10 @@ export default function NavBar() {
         </Link>
 
         <nav className="flex items-center font-semibold">
-          <Link className="px-3 py-2 " href="#">About</Link>
+          <Link className="px-3 py-2 " href="/about-us">About</Link>
           <Link className="px-3 py-2" href="#">Insights</Link>
           <Link className="px-3 py-2" href="#">NewsRoom</Link>
-          <Link className="px-3 py-2" href="#">FAQs</Link>
+          <Link className="px-3 py-2" href="/frequently-asked-questions">FAQs</Link>
         </nav>
       </div>
 

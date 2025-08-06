@@ -12,6 +12,8 @@ import NotificationsAndEmails from "@/components/website/frequently-asked-questi
 import SupportAndTroubleshooting from "@/components/website/frequently-asked-questions/SupportAndTroubleshooting";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import FeesAndCharges from "@/components/website/frequently-asked-questions/FeesAndCharges";
+import LegalAndCompliance from "@/components/website/frequently-asked-questions/LegalAndCompliance";
 
 export default function FrequentlyAskedQuestions() {
   return (
@@ -30,26 +32,32 @@ export default function FrequentlyAskedQuestions() {
         </div>
       </div>
       <Tabs defaultValue="general-platform" className="justify-center">
-        <TabsList className="mb-24 flex-wrap h-11 !bg-none">
-          <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="general-platform">General Platform</TabsTrigger>
-          <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="kyc">Account & Verification (KYC)</TabsTrigger>
-          <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="getting-started">Getting Started</TabsTrigger>
-          <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="security-2fa">Security & 2FA</TabsTrigger>
-          <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="team-management">Team Management</TabsTrigger>
-          <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="wallet-transactions">
+        <TabsList className="mb-20 flex-wrap h-fit !bg-none">
+          <TabsTrigger className="rounded-l-[8px] border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="general-platform">General Platform</TabsTrigger>
+          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="kyc">Account & Verification (KYC)</TabsTrigger>
+          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="getting-started">Getting Started</TabsTrigger>
+          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="security-2fa">Security & 2FA</TabsTrigger>
+          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="team-management">Team Management</TabsTrigger>
+          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="wallet-transactions">
             Wallet & Transactions
           </TabsTrigger>
-          <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="investment-portfolio-performance">
+          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="investment-portfolio-performance">
             Investment & Portfolio performance
           </TabsTrigger>
-          <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="reporting-insights">
+          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="reporting-insights">
             Reporting & Insights
           </TabsTrigger>
-          <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="notifications-emails">
+          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="notifications-emails">
             Notifications & Emails
+          </TabsTrigger>
+          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="fees-charges">
+            Fees & Charges
           </TabsTrigger>
           <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="support-troubleshooting">
             Support & Troubleshooting
+          </TabsTrigger>
+          <TabsTrigger className="rounded-r-[8px] border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="legal-compliance">
+            Legal & Compliance
           </TabsTrigger>
         </TabsList>
         <TabsContent value="general-platform">
@@ -79,8 +87,14 @@ export default function FrequentlyAskedQuestions() {
         <TabsContent value="notifications-emails">
           <NotificationsAndEmails />
         </TabsContent>
+        <TabsContent value="fees-charges">
+          <FeesAndCharges />
+        </TabsContent>
         <TabsContent value="support-troubleshooting">
           <SupportAndTroubleshooting />
+        </TabsContent>
+        <TabsContent value="legal-compliance">
+          <LegalAndCompliance />
         </TabsContent>
       </Tabs>
 
@@ -117,7 +131,7 @@ export default function FrequentlyAskedQuestions() {
 
         <h2 className="font-semibold text-[20px] mb-2 text-[#181D27]">Still have questions?</h2>
         <p className="text-[#535862] text-[18px] font-normal mb-8">Can&apos;t find the answer you&apos;re looking for? Please chat to our friendly team.</p>
-        <Button className="px-[18px] py-3 rounded-[8px] bg-[#008B99]  hover:bg-[#008B99] font-semibold">
+        <Button className="px-[18px] py-3 rounded-[8px] bg-[#008B99] hover:bg-[#008B99] font-semibold">
             Get in touch
         </Button>
       </div>
