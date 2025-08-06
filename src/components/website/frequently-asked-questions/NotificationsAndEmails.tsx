@@ -36,7 +36,7 @@ export default function NotificationsAndEmails() {
       defaultValue="item-1"
     >
       {notificationsAndEmailsFaqs.map((faq, index) => (
-        <AccordionItem key={index} value={`item-${index + 1}`}>
+        <AccordionItem className={`${faq.question === notificationsAndEmailsFaqs[notificationsAndEmailsFaqs.length - 1].question ? "border-none" : ""}`} key={index} value={`item-${index + 1}`}>
         <AccordionTrigger className="[&>svg]:hidden text-[#181D27] font-semibold text-base">
           {faq.question}
           <span>{openItem === `item-${index + 1}` ? (<Image src="/assets\images\website\minus-circle.svg" alt={faq.question} width={24} height={24} />) : (<Image src="/assets\images\website\plus-circle.svg" alt={faq.question} width={24} height={24} />)}</span>

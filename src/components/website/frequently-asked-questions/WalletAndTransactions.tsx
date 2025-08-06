@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import Image from "next/image";
 
-const teamManagementFaqs = [
+const walletAndTransactionsFaqs = [
     {
         question: "How do I fund my OMORA wallet?",
         answer: "Once your account is verified, you can fund your NGN wallet using bank transfer. Your funds can then be converted to USDT to begin investing."
@@ -51,8 +51,8 @@ export default function WalletAndTransactions() {
       collapsible
       defaultValue="item-1"
     >
-      {teamManagementFaqs.map((faq, index) => (
-        <AccordionItem key={index} value={`item-${index + 1}`}>
+      {walletAndTransactionsFaqs.map((faq, index) => (
+        <AccordionItem className={`${faq.question === walletAndTransactionsFaqs[walletAndTransactionsFaqs.length - 1].question ? "border-none" : ""}`} key={index} value={`item-${index + 1}`}>
         <AccordionTrigger className="[&>svg]:hidden text-[#181D27] font-semibold text-base">
           {faq.question}
           <span>{openItem === `item-${index + 1}` ? (<Image src="/assets\images\website\minus-circle.svg" alt={faq.question} width={24} height={24} />) : (<Image src="/assets\images\website\plus-circle.svg" alt={faq.question} width={24} height={24} />)}</span>
