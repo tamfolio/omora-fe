@@ -279,7 +279,7 @@ export default function AboutUs() {
                 <Image className="grayscale w-fit" src={member.image}  alt={member.name} height={512} width={384}/>
                 <div className="absolute z-10 bottom-0 w-full bg-gradient-to-b from-black/0 to-black/40">
                     <div className="backdrop-blur-[24px] text-white bg-[#FFFFFF4D] p-5 rounded-[12px] border border-[#FFFFFF4D] m-4">
-                    <h4 className="font-semibold text-[20px] mb-2">{member.name}</h4>
+                      <div className="flex items-center justify-between"><h4 className="font-semibold text-[20px] mb-2">{member.name}</h4> <Image src="/assets/images/website/arrow-up-right-white.svg" width={24} height={24} alt="arrow-up-right" /></div>
                     <h5 className="text-base font-semibold">{member.position}</h5>
                     <p>{member.description}</p>
                     

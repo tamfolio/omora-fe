@@ -30,7 +30,7 @@ export default function NavBar() {
 
         <nav className="flex items-center font-semibold">
           <Link className="px-3 py-2 " href="/about-us">About</Link>
-          <Link className="px-3 py-2" href="#">Insights</Link>
+          <Link className="px-3 py-2" href="/insights">Insights</Link>
           <Link className="px-3 py-2" href="#">NewsRoom</Link>
           <Link className="px-3 py-2" href="/frequently-asked-questions">FAQs</Link>
         </nav>
