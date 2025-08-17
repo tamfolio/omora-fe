@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import Image from "next/image";
 
-const supportAndTroubleshootingFaqs = [
+const legalAndComplianceFaqs = [
     {
         question: "Where can I read your terms and policies?",
         answer: "Our Terms of Use, Privacy Policy, Cookies Policy, and Risk Disclosure are available in the footer of our site."
@@ -31,8 +31,8 @@ export default function LegalAndCompliance() {
       collapsible
       defaultValue="item-1"
     >
-      {supportAndTroubleshootingFaqs.map((faq, index) => (
-        <AccordionItem key={index} value={`item-${index + 1}`}>
+      {legalAndComplianceFaqs.map((faq, index) => (
+        <AccordionItem className={`${faq.question === legalAndComplianceFaqs[legalAndComplianceFaqs.length - 1].question ? "border-none" : ""}`} key={index} value={`item-${index + 1}`}>
         <AccordionTrigger className="[&>svg]:hidden text-[#181D27] font-semibold text-base">
           {faq.question}
           <span>{openItem === `item-${index + 1}` ? (<Image src="/assets/images/website/minus-circle.svg" alt={faq.question} width={24} height={24} />) : (<Image src="/assets\images\website\plus-circle.svg" alt={faq.question} width={24} height={24} />)}</span>
