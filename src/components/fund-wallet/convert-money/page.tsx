@@ -17,7 +17,7 @@ const CONVERSION_RATES: Record<string, number> = {
 const CURRENCIES = [
   { code: 'NGN', name: 'Nigerian Naira', symbol: '₦' },
   { code: 'USDT', name: 'Tether USD', symbol: 'USDT' },
-  { code: 'USDC', name: 'USD Coin', symbol: 'USDC' }
+  { code: 'USDC', name: 'USDC Coin', symbol: 'USDC' }
 ];
 
 const CONVERSION_FEE_PERCENTAGE = 0.5; // 0.5% fee

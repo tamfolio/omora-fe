@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DepositModal from './deposit-modal/page';
 import WalletHistory from './wallet-history/page';
+import WithdrawModal from './withdraw-modal/page';
 
 // Types
 interface UserBalances {
-  usd: number;
+  usdc: number;
   naira: number;
   usdt: number;
 }
@@ -14,26 +15,37 @@ interface UserBalances {
 // Custom hook to manage user deposit state
 function useUserDeposits() {
   const [hasDeposits, setHasDeposits] = useState(false);
-  const [userBalances, setUserBalances] = useState({
-    usd: 0,
+  const [userBalances, setUserBalances] = useState<UserBalances>({
+    usdc: 0,
     naira: 0,
     usdt: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    // Set client flag to true on mount
+    setIsClient(true);
+    
     const checkDepositHistory = async () => {
       try {
         // Simulate API call - replace with real API
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Check localStorage or make API call to get user's deposit history
-        const hasDepositsStored = localStorage.getItem('userHasDeposits') === 'true';
-        const storedBalances = localStorage.getItem('userBalances');
-        
-        if (hasDepositsStored && storedBalances) {
-          setHasDeposits(true);
-          setUserBalances(JSON.parse(storedBalances));
+        // Only access localStorage on client side
+        if (typeof window !== 'undefined') {
+          const hasDepositsStored = localStorage.getItem('userHasDeposits') === 'true';
+          const storedBalances = localStorage.getItem('userBalances');
+          
+          if (hasDepositsStored && storedBalances) {
+            try {
+              const balances = JSON.parse(storedBalances);
+              setHasDeposits(true);
+              setUserBalances(balances);
+            } catch (error) {
+              console.error('Error parsing stored balances:', error);
+            }
+          }
         }
         
       } catch (error) {
@@ -49,23 +61,41 @@ function useUserDeposits() {
   const updateUserDeposits = (newBalances: UserBalances) => {
     setHasDeposits(true);
     setUserBalances(newBalances);
-    localStorage.setItem('userHasDeposits', 'true');
-    localStorage.setItem('userBalances', JSON.stringify(newBalances));
+    
+    // Only update localStorage on client side
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('userHasDeposits', 'true');
+      localStorage.setItem('userBalances', JSON.stringify(newBalances));
+    }
   };
 
-  return { hasDeposits, userBalances, isLoading, updateUserDeposits };
+  return { hasDeposits, userBalances, isLoading, updateUserDeposits, isClient };
 }
 
 export default function FundWalletComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { hasDeposits, userBalances, isLoading } = useUserDeposits();
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [withdrawCurrency, setWithdrawCurrency] = useState<'NGN' | 'USDT'>('NGN');
+  const { hasDeposits, userBalances, isLoading, isClient } = useUserDeposits();
   const router = useRouter();
 
   const handleConvert = (currency: string) => {
     router.push(`/dashboard/fund-wallet/convert-money?from=${currency}`);
   };
 
-  if (isLoading) {
+  const handleWithdraw = (currency: 'NGN' | 'USDT') => {
+    setWithdrawCurrency(currency);
+    setIsWithdrawModalOpen(true);
+  };
+
+  const handleWithdrawSubmit = (withdrawData: any) => {
+    console.log('Processing withdrawal:', withdrawData);
+    // Here you would typically make an API call to process the withdrawal
+    // For now, we'll just log the data
+  };
+
+  // Show loading state while checking client-side state
+  if (isLoading || !isClient) {
     return (
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="animate-pulse">
@@ -83,7 +113,7 @@ export default function FundWalletComponent() {
 
   // Use real balances if user has deposits, otherwise show zeros
   const displayBalances = hasDeposits ? userBalances : {
-    usd: 0,
+    usdc: 0,
     naira: 0,
     usdt: 0
   };
@@ -99,23 +129,26 @@ export default function FundWalletComponent() {
 
         {/* Wallet Cards */}
         <div className="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-6 mb-8">
-          {/* USD Account */}
+          {/* USDC Account */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-1">USD Account</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">USDC Account</h3>
               <div className="flex items-end gap-2 mb-4">
                 <span className="text-3xl font-bold text-gray-900">
-                  {displayBalances.usd.toLocaleString()}
+                  {displayBalances.usdc?.toLocaleString() || '0'}
                 </span>
-                <span className="text-lg font-semibold text-gray-600 mb-1">USD</span>
+                <span className="text-lg font-semibold text-gray-600 mb-1">USDC</span>
               </div>
             </div>
             <div className="flex gap-2">
-              <button className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => handleWithdraw('NGN')}
+                className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+              >
                 Withdraw
               </button>
               <button 
-                onClick={() => handleConvert('USD')}
+                onClick={() => handleConvert('USDC')}
                 className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
               >
                 Convert
@@ -130,7 +163,7 @@ export default function FundWalletComponent() {
               <div className="flex items-end gap-2 mb-4">
                 <span className="text-lg font-semibold text-gray-600 mb-1">₦</span>
                 <span className="text-3xl font-bold text-gray-900">
-                  {displayBalances.naira.toLocaleString()}
+                  {displayBalances.naira?.toLocaleString() || '0'}
                 </span>
               </div>
             </div>
@@ -141,7 +174,10 @@ export default function FundWalletComponent() {
               >
                 Fund Wallet
               </button>
-              <button className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => handleWithdraw('NGN')}
+                className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+              >
                 Withdraw
               </button>
               <button 
@@ -159,13 +195,16 @@ export default function FundWalletComponent() {
               <h3 className="text-sm font-medium text-gray-500 mb-1">USDT Account</h3>
               <div className="flex items-end gap-2 mb-4">
                 <span className="text-3xl font-bold text-gray-900">
-                  {displayBalances.usdt.toLocaleString()}
+                  {displayBalances.usdt?.toLocaleString() || '0'}
                 </span>
                 <span className="text-lg font-semibold text-gray-600 mb-1">USDT</span>
               </div>
             </div>
             <div className="flex gap-2">
-              <button className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => handleWithdraw('USDT')}
+                className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+              >
                 Withdraw
               </button>
               <button 
@@ -207,6 +246,14 @@ export default function FundWalletComponent() {
       <DepositModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      {/* Withdraw Modal */}
+      <WithdrawModal 
+        isOpen={isWithdrawModalOpen}
+        onClose={() => setIsWithdrawModalOpen(false)}
+        onWithdraw={handleWithdrawSubmit}
+        initialCurrency={withdrawCurrency}
       />
     </>
   );
