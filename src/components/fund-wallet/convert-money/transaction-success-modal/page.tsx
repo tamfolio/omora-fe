@@ -20,7 +20,7 @@ export default function TransactionSuccessModal({ isOpen, onClose, conversionDat
 
   const handleBackToBalance = () => {
     // Mock: Update localStorage balances (in production this would be handled by API)
-    const currentBalances = JSON.parse(localStorage.getItem('userBalances') || '{"usd": 0, "naira": 0, "usdt": 0}');
+    const currentBalances = JSON.parse(localStorage.getItem('userBalances') || '{"usdc": 0, "naira": 0, "usdt": 0}');
     
     // Update balances based on conversion
     if (conversionData.fromCurrency === 'NGN') {
@@ -28,17 +28,17 @@ export default function TransactionSuccessModal({ isOpen, onClose, conversionDat
       if (conversionData.toCurrency === 'USDT') {
         currentBalances.usdt += parseFloat(conversionData.toAmount);
       } else if (conversionData.toCurrency === 'USDC') {
-        currentBalances.usd += parseFloat(conversionData.toAmount); // Using USD field for USDC
+        currentBalances.usdc += parseFloat(conversionData.toAmount); // Using USDC field for USDC
       }
     } else if (conversionData.fromCurrency === 'USDT') {
       currentBalances.usdt = Math.max(0, currentBalances.usdt - parseFloat(conversionData.fromAmount));
       if (conversionData.toCurrency === 'NGN') {
         currentBalances.naira += parseFloat(conversionData.toAmount);
       } else if (conversionData.toCurrency === 'USDC') {
-        currentBalances.usd += parseFloat(conversionData.toAmount);
+        currentBalances.usdc += parseFloat(conversionData.toAmount);
       }
     } else if (conversionData.fromCurrency === 'USDC') {
-      currentBalances.usd = Math.max(0, currentBalances.usd - parseFloat(conversionData.fromAmount));
+      currentBalances.usdc = Math.max(0, currentBalances.usdc - parseFloat(conversionData.fromAmount));
       if (conversionData.toCurrency === 'USDT') {
         currentBalances.usdt += parseFloat(conversionData.toAmount);
       }

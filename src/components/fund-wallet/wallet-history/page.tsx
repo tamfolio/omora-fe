@@ -1,6 +1,7 @@
 "use client"
 import React, { useState } from 'react';
-import { FiSearch, FiFilter, FiMoreHorizontal } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
+import { FiSearch, FiFilter, FiMoreHorizontal, FiMoreVertical } from 'react-icons/fi';
 import { LuChevronsUpDown } from "react-icons/lu";
 
 // Mock transaction data
@@ -79,8 +80,23 @@ const getStatusColor = (status: string) => {
 export default function WalletHistory() {
   const [activeFilter, setActiveFilter] = useState('View all');
   const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
 
   const filters = ['View all', 'Funding', 'Conversion', 'Withdrawal'];
+
+  const handleViewReceipt = (transaction: any) => {
+    // Determine currency for withdrawal transactions
+    const currency = transaction.source.includes('USDT') ? 'USDT' : 'NGN';
+    
+    // Navigate to transaction receipt with appropriate parameters
+    const params = new URLSearchParams({
+      type: transaction.type.toLowerCase(),
+      id: transaction.id.toString(),
+      ...(transaction.type === 'Withdrawal' && { currency })
+    });
+    
+    router.push(`/dashboard/fund-wallet/transaction-receipt?${params.toString()}`);
+  };
 
   const filteredTransactions = mockTransactions.filter(transaction => {
     const matchesFilter = activeFilter === 'View all' || transaction.type === activeFilter;
@@ -98,7 +114,7 @@ export default function WalletHistory() {
 
       {/* Filters and Search */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex border border-gray-200 rounded-xl overflow-hidden">
+        <div className="flex border border-gray-200 rounded-lg overflow-hidden">
           {filters.map((filter, index) => (
             <React.Fragment key={filter}>
               <button
@@ -202,8 +218,12 @@ export default function WalletHistory() {
                 </td>
                 <td className="py-4">
                   <div className="flex justify-end">
-                    <button className="p-1 text-gray-400 hover:text-gray-600">
-                      <FiMoreHorizontal className="w-4 h-4" />
+                    <button 
+                      onClick={() => handleViewReceipt(transaction)}
+                      className="p-1 text-gray-400 hover:text-gray-600"
+                      title="View Receipt"
+                    >
+                      <FiMoreVertical className="w-4 h-4" />
                     </button>
                   </div>
                 </td>

@@ -131,28 +131,7 @@ export default function ReviewTransaction() {
             </div>
           </div>
 
-          {/* Purpose Section */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              What is this for?
-            </label>
-            <div className="relative">
-              <select
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-                className="appearance-none w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
-              >
-                <option value="General">General</option>
-                <option value="Investment">Investment</option>
-                <option value="Personal">Personal</option>
-                <option value="Business">Business</option>
-                <option value="Education">Education</option>
-                <option value="Travel">Travel</option>
-                <option value="Other">Other</option>
-              </select>
-              <FiChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            </div>
-          </div>
+     
 
           {/* Narration Section */}
           <div className="mb-8">
@@ -164,7 +143,7 @@ export default function ReviewTransaction() {
               onChange={(e) => setNarration(e.target.value)}
               placeholder="Enter a narration"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
-              rows={3}
+              rows={2}
             />
           </div>
 
