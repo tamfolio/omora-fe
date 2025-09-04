@@ -4,8 +4,11 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default function InsightDetail({ params }: { params: { id: string } }) {
-  const insight = insightsData.find((item) => item.id === Number(params.id));
+// Fix: Update the params type to be a Promise
+export default async function InsightDetail({ params }: { params: Promise<{ id: string }> }) {
+  // Fix: Await the params Promise
+  const { id } = await params;
+  const insight = insightsData.find((item) => item.id === Number(id));
 
   if (!insight) {
     redirect("/notfound");
