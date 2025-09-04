@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail } from 'lucide-react';
+import Logo from '../../Logo';
 
 interface ContactInformationProps {
   onNext: () => void;
@@ -81,10 +82,7 @@ function ContactInformation({ onNext, onBack }: ContactInformationProps) {
           </button>
           <span className="text-sm text-gray-600 font-medium">Back</span>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
-            </div>
-            <span className="text-xl font-bold text-gray-800">MORA</span>
+            <Logo width={150} height={40} />
           </div>
         </div>
         <div className="flex items-center space-x-4">

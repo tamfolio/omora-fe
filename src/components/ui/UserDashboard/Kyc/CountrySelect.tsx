@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronDown, Search, X, Check } from 'lucide-react';
+import Logo from '../../Logo';
 
 interface Country {
   code: string;
@@ -70,7 +71,7 @@ function CountrySelect({ onNext, onBack }: CountrySelectProps) {
               <span className="font-medium">Back</span>
             </button>
             
-            <div className="text-2xl font-bold text-cyan-600">OMORA</div>
+            <Logo width={150} height={40} />
           </div>
           
           <div className="flex items-center space-x-4">

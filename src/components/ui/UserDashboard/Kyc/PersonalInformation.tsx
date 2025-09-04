@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ChevronDown, Info } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Info, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import Logo from '../../Logo';
 
 interface PersonalInformationProps {
   onNext: () => void;
@@ -44,6 +45,11 @@ const sourceOfFundsOptions = [
   { value: 'other', label: 'Other' }
 ];
 
+const months = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
@@ -59,8 +65,15 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
   const [dropdownStates, setDropdownStates] = useState({
     gender: false,
     occupation: false,
-    sourceOfFunds: false
+    sourceOfFunds: false,
+    calendar: false,
+    yearDropdown: false,
+    monthDropdown: false
   });
+
+  // Calendar state
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({
@@ -102,21 +115,6 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
     }
   };
 
-  const formatDate = (value: string) => {
-    // Remove any non-digit characters
-    const digits = value.replace(/\D/g, '');
-    
-    // Format as dd/mm/yyyy
-    if (digits.length >= 8) {
-      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
-    } else if (digits.length >= 4) {
-      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-    } else if (digits.length >= 2) {
-      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    }
-    return digits;
-  };
-
   const formatBVN = (value: string) => {
     // Remove any non-digit characters and limit to 11 digits
     return value.replace(/\D/g, '').slice(0, 11);
@@ -125,6 +123,102 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
   const getSelectedLabel = (field: keyof FormData, options: any[]) => {
     const selected = options.find(option => option.value === formData[field]);
     return selected ? selected.label : '';
+  };
+
+  // Calendar functions
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const isDateValid = (date: Date) => {
+    const today = new Date();
+    const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    return date <= eighteenYearsAgo;
+  };
+
+  const handleDateSelect = (day: number) => {
+    const selected = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day);
+    if (isDateValid(selected)) {
+      setSelectedDate(selected);
+      const formattedDate = `${day.toString().padStart(2, '0')}/${(calendarDate.getMonth() + 1).toString().padStart(2, '0')}/${calendarDate.getFullYear()}`;
+      handleInputChange('dateOfBirth', formattedDate);
+      setDropdownStates(prev => ({ ...prev, calendar: false }));
+    }
+  };
+
+  const navigateYear = (year: number) => {
+    setCalendarDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setFullYear(year);
+      return newDate;
+    });
+    setDropdownStates(prev => ({ ...prev, yearDropdown: false }));
+  };
+
+  const navigateMonth = (monthIndex: number) => {
+    setCalendarDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(monthIndex);
+      return newDate;
+    });
+    setDropdownStates(prev => ({ ...prev, monthDropdown: false }));
+  };
+
+  const getYearOptions = () => {
+    const currentYear = new Date().getFullYear();
+    const minYear = 1950; // Reasonable minimum year
+    const maxYear = currentYear - 18; // Must be at least 18 (so 2007 for 2025)
+    const years = [];
+    
+    for (let year = maxYear; year >= minYear; year--) {
+      years.push(year);
+    }
+    return years;
+  };
+
+  const renderCalendar = () => {
+    const daysInMonth = getDaysInMonth(calendarDate);
+    const firstDay = getFirstDayOfMonth(calendarDate);
+    const days = [];
+
+    // Empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="w-8 h-8"></div>);
+    }
+
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day);
+      const isValid = isDateValid(date);
+      const isSelected = selectedDate && 
+        selectedDate.getDate() === day && 
+        selectedDate.getMonth() === calendarDate.getMonth() && 
+        selectedDate.getFullYear() === calendarDate.getFullYear();
+
+      days.push(
+        <button
+          key={day}
+          type="button"
+          onClick={() => handleDateSelect(day)}
+          disabled={!isValid}
+          className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+            isSelected
+              ? 'bg-teal-500 text-white'
+              : isValid
+                ? 'hover:bg-teal-100 text-gray-700'
+                : 'text-gray-300 cursor-not-allowed'
+          }`}
+        >
+          {day}
+        </button>
+      );
+    }
+
+    return days;
   };
 
   return (
@@ -140,19 +234,16 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
           </button>
           <span className="text-sm text-gray-600 font-medium">Back</span>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
-            </div>
-            <span className="text-xl font-bold text-gray-800">MORA</span>
+          <Logo width={150} height={40} />
           </div>
         </div>
         <div className="flex items-center space-x-4">
           <div className="text-right">
-            <div className="text-sm text-gray-500">Step 2/5</div>
+            <div className="text-sm text-gray-500">Step 3/6</div>
             <div className="text-sm font-medium text-gray-700">Personal Information</div>
           </div>
           <div className="w-12 h-12 rounded-full border-4 border-teal-500 flex items-center justify-center relative">
-            <span className="text-sm font-semibold text-teal-500">40%</span>
+            <span className="text-sm font-semibold text-teal-500">50%</span>
           </div>
         </div>
       </div>
@@ -209,23 +300,112 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
             <p className="text-xs text-gray-500 mt-1">Must match ID and BVN</p>
           </div>
 
-          {/* Date of Birth */}
-          <div>
+          {/* Date of Birth with Calendar */}
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Date of Birth <span className="text-red-500">*</span>
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="dd/mm/yyyy"
-                value={formData.dateOfBirth}
-                onChange={(e) => handleInputChange('dateOfBirth', formatDate(e.target.value))}
-                maxLength={10}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
-              />
-              <Info className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            </div>
+            <button
+              type="button"
+              onClick={() => toggleDropdown('calendar')}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between hover:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
+            >
+              <span className={formData.dateOfBirth ? 'text-gray-900' : 'text-gray-500'}>
+                {formData.dateOfBirth || 'dd/mm/yyyy'}
+              </span>
+              <Calendar className="w-5 h-5 text-gray-400" />
+            </button>
             <p className="text-xs text-gray-500 mt-1">Must be above 18 years</p>
+
+            {/* Calendar Dropdown */}
+            {dropdownStates.calendar && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
+                {/* Calendar Header */}
+                <div className="flex items-center justify-between mb-4">
+                  {/* Year Selector */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => toggleDropdown('yearDropdown')}
+                      className="flex items-center space-x-1 px-3 py-1 hover:bg-gray-100 rounded-md transition-colors"
+                    >
+                      <span className="text-sm font-medium">
+                        {calendarDate.getFullYear()}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${dropdownStates.yearDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {/* Year Dropdown */}
+                    {dropdownStates.yearDropdown && (
+                      <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-60 w-20">
+                        <div className="max-h-32 overflow-y-auto">
+                          {getYearOptions().map((year) => (
+                            <button
+                              key={year}
+                              type="button"
+                              onClick={() => navigateYear(year)}
+                              className={`w-full px-3 py-1.5 text-left hover:bg-gray-50 transition-colors text-sm ${
+                                year === calendarDate.getFullYear() ? 'bg-teal-50 text-teal-600 font-medium' : ''
+                              }`}
+                            >
+                              {year}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Month Selector */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => toggleDropdown('monthDropdown')}
+                      className="flex items-center space-x-1 px-3 py-1 hover:bg-gray-100 rounded-md transition-colors"
+                    >
+                      <span className="text-sm font-medium">
+                        {months[calendarDate.getMonth()]}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${dropdownStates.monthDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {/* Month Dropdown */}
+                    {dropdownStates.monthDropdown && (
+                      <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-60 w-32">
+                        <div className="max-h-40 overflow-y-auto">
+                          {months.map((month, index) => (
+                            <button
+                              key={month}
+                              type="button"
+                              onClick={() => navigateMonth(index)}
+                              className={`w-full px-3 py-1.5 text-left hover:bg-gray-50 transition-colors text-sm ${
+                                index === calendarDate.getMonth() ? 'bg-teal-50 text-teal-600 font-medium' : ''
+                              }`}
+                            >
+                              {month}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Days of week header */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                    <div key={day} className="w-8 h-8 flex items-center justify-center text-xs font-medium text-gray-500">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {renderCalendar()}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* BVN */}
@@ -359,15 +539,15 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
       {/* Support Button */}
       <button className="fixed bottom-6 right-6 w-12 h-12 bg-teal-500 hover:bg-teal-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors">
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinecoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </button>
 
       {/* Overlay for dropdowns */}
-      {(dropdownStates.gender || dropdownStates.occupation || dropdownStates.sourceOfFunds) && (
+      {(dropdownStates.gender || dropdownStates.occupation || dropdownStates.sourceOfFunds || dropdownStates.calendar) && (
         <div
           className="fixed inset-0 z-40"
-          onClick={() => setDropdownStates({ gender: false, occupation: false, sourceOfFunds: false })}
+          onClick={() => setDropdownStates({ gender: false, occupation: false, sourceOfFunds: false, calendar: false, yearDropdown: false, monthDropdown: false })}
         />
       )}
     </div>

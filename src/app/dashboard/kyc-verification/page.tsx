@@ -1,26 +1,41 @@
 "use client";
+import BusinessInformation from "@/components/ui/UserDashboard/Kyc/BusinessInformation";
 import ContactInformation from "@/components/ui/UserDashboard/Kyc/ContactInformation";
 import CountrySelect from "@/components/ui/UserDashboard/Kyc/CountrySelect";
 import DocumentUpload from "@/components/ui/UserDashboard/Kyc/DocumentUpload";
 import FacialRecognition from "@/components/ui/UserDashboard/Kyc/FacialRecognistion";
+import KYCInitiation from "@/components/ui/UserDashboard/Kyc/KycInitiationPage";
 import PersonalInformation from "@/components/ui/UserDashboard/Kyc/PersonalInformation";
+import DirectorInformation from "@/components/ui/UserDashboard/Kyc/DirectorateInformation";
+import CompanyRegDetails from "@/components/ui/UserDashboard/Kyc/CompanyRegDetails";
 import KycSuccessModal from "@/components/ui/UserDashboard/Kyc/SuccessModal";
-import VerificationType from "@/components/ui/UserDashboard/Kyc/VerificationType";
 
-import { useRouter } from "next/navigation"; // Add this import
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
-function KycVerification() {
-  const router = useRouter(); // Add router hook
+type VerificationType = 'individual' | 'corporate';
+
+interface KycVerificationProps {
+  userType?: VerificationType;
+}
+
+function KycVerification({ userType = 'corporate' }: KycVerificationProps) {
+  const router = useRouter();
   
-  // Page progress state - tracks which step the user is on
+  // Page progress state - starts at 1 for KYC Initiation
   const [pageProgress, setPageProgress] = useState(1);
-  const [showSuccessModal, setShowSuccessModal] = useState(false); // Add success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Get the total number of steps based on user type
+  const getTotalSteps = () => {
+    return userType === 'individual' ? 6 : 6; // Both have 6 steps, just different components
+  };
 
   // Function to go to next step
   const nextStep = () => {
-    if (pageProgress === 6) {
-      // If we're on the last step (Facial Recognition), show success modal
+    const totalSteps = getTotalSteps();
+    if (pageProgress === totalSteps) {
+      // If we're on the last step, show success modal
       setShowSuccessModal(true);
     } else {
       setPageProgress((prev) => prev + 1);
@@ -29,11 +44,16 @@ function KycVerification() {
 
   // Function to go to previous step
   const prevStep = () => {
-    setPageProgress((prev) => (prev > 1 ? prev - 1 : 1));
+    if (pageProgress === 1) {
+      // If on first step, go back to dashboard
+      router.push('/dashboard');
+    } else {
+      setPageProgress((prev) => prev - 1);
+    }
   };
 
   // Function to go to specific step
-  const goToStep = (step: number) => { // Add TypeScript typing
+  const goToStep = (step: number) => {
     setPageProgress(step);
   };
 
@@ -42,23 +62,52 @@ function KycVerification() {
     router.push('/dashboard');
   };
 
-  // Render different components based on current step
+  // Function to handle back navigation from first step
+  const handleBackFromInitiation = () => {
+    router.push('/dashboard');
+  };
+
+  // Render different components based on current step and user type
   const renderCurrentStep = () => {
     switch (pageProgress) {
       case 1:
-        return <CountrySelect onNext={nextStep} />;
+        return <KYCInitiation onContinue={nextStep} onBack={handleBackFromInitiation} />;
+      
       case 2:
-        return <VerificationType onNext={nextStep} onBack={prevStep} />;
+        return <CountrySelect onNext={nextStep} onBack={prevStep} />;
+      
       case 3:
-        return <PersonalInformation onNext={nextStep} onBack={prevStep} />;
+        if (userType === 'individual') {
+          return <PersonalInformation onNext={nextStep} onBack={prevStep} />;
+        } else {
+          return <BusinessInformation onNext={nextStep} onBack={prevStep} />;
+        }
+      
       case 4:
-        return <ContactInformation onBack={prevStep} onNext={nextStep} />;
+        if (userType === 'individual') {
+          return <ContactInformation onBack={prevStep} onNext={nextStep} />;
+        } else {
+          return <DirectorInformation onNext={nextStep} onBack={prevStep} />;
+        }
+      
       case 5:
-        return <DocumentUpload onBack={prevStep} onNext={nextStep} />;
+        if (userType === 'individual') {
+          return <DocumentUpload onBack={prevStep} onNext={nextStep} userType={userType} />;
+        } else {
+          return <CompanyRegDetails onNext={nextStep} onBack={prevStep} />;
+        }
+      
       case 6:
-        return <FacialRecognition onBack={prevStep} onNext={nextStep} />;
+        if (userType === 'individual') {
+          return <FacialRecognition onBack={prevStep} onNext={nextStep} />;
+        } else {
+          // For corporate, step 6 shows success modal instead of facial recognition
+          setShowSuccessModal(true);
+          return null;
+        }
+      
       default:
-        return <CountrySelect onNext={nextStep} />;
+        return <KYCInitiation onContinue={nextStep} onBack={handleBackFromInitiation} />;
     }
   };
 
@@ -71,8 +120,6 @@ function KycVerification() {
       {showSuccessModal && (
         <KycSuccessModal onGoToDashboard={handleGoToDashboard} />
       )}
-
-      {/* Debug info (remove in production) */}
     </div>
   );
 }

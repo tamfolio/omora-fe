@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Camera, Check } from 'lucide-react';
+import Logo from '../../Logo';
 
 interface FacialRecognitionProps {
   onNext: () => void;
@@ -40,7 +41,7 @@ function FacialRecognition({ onNext, onBack }: FacialRecognitionProps) {
     }
   };
 
-  return (
+  return 
     <div className="min-h-screen bg-gray-50 relative">
       {/* Header */}
       <div className="bg-white px-4 py-4 flex items-center justify-between shadow-sm border-b border-gray-200">
@@ -53,10 +54,7 @@ function FacialRecognition({ onNext, onBack }: FacialRecognitionProps) {
           </button>
           <span className="text-sm text-gray-600 font-medium">Back</span>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
-            </div>
-            <span className="text-xl font-bold text-gray-800">MORA</span>
+            <Logo width={150} height={40} />
           </div>
         </div>
         <div className="flex items-center space-x-4">
@@ -157,7 +155,7 @@ function FacialRecognition({ onNext, onBack }: FacialRecognitionProps) {
         </svg>
       </button>
     </div>
-  );
+  ;
 }
 
 export default FacialRecognition;

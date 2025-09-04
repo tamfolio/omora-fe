@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Link from "next/link";
 import { Search, Settings, Bell, User, Menu, X } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 
@@ -29,13 +30,13 @@ function Navbar() {
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-8">
                 {navItems.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
                     href={item.href}
                     className="text-#414651 hover:text-gray-900 px-3 py-2 text-sm font-semibold transition-colors duration-200"
                   >
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -49,13 +50,13 @@ function Navbar() {
             {/* Right menu items */}
             <div className="flex items-center space-x-6">
               {rightMenuItems.map((item) => (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
                   className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200"
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
             </div>
 
@@ -64,9 +65,9 @@ function Navbar() {
               <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
                 <Search className="h-5 w-5" />
               </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
+              <Link href="/dashboard/settings" className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
                 <Settings className="h-5 w-5" />
-              </button>
+              </Link>
               <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 relative">
                 <Bell className="h-5 w-5" />
                 <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
@@ -99,22 +100,22 @@ function Navbar() {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
               {navItems.map((item) => (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
                   className="text-gray-600 hover:text-gray-900 block px-3 py-2 text-base font-medium"
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
               {rightMenuItems.map((item) => (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
                   className="text-gray-600 hover:text-gray-900 block px-3 py-2 text-base font-medium"
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
             </div>
 
@@ -124,9 +125,9 @@ function Navbar() {
                 <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
                   <Search className="h-5 w-5" />
                 </button>
-                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                <Link href="/settings" className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
                   <Settings className="h-5 w-5" />
-                </button>
+                </Link>
                 <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 relative">
                   <Bell className="h-5 w-5" />
                   <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
