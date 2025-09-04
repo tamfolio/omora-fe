@@ -3,7 +3,10 @@ import { Shield, Key, Mail, Phone, Monitor, MoreVertical } from 'lucide-react';
 import AuthenticatorAppManage from './AuthenticatorAppManage';
 import UpdatePassword from './UpdatePassword';
 
-interface SecurityProps {}
+// Fix 1: Replace empty interface with proper type
+interface SecurityProps {
+  className?: string;
+}
 
 const Security: React.FC<SecurityProps> = () => {
   const [showAuthenticatorManage, setShowAuthenticatorManage] = useState<boolean>(false);
@@ -31,7 +34,7 @@ const Security: React.FC<SecurityProps> = () => {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <span className={`text-sm px-2 py-1 rounded-full text-xs font-medium ${
+              <span className={`text-sm px-2 py-1 rounded-full font-medium ${
                 hasActiveAuthenticator 
                   ? 'bg-green-100 text-green-800' 
                   : 'bg-red-100 text-red-800'
@@ -121,9 +124,9 @@ const Security: React.FC<SecurityProps> = () => {
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Where you're logged in</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Where you&apos;re logged in</h2>
               <p className="text-sm text-gray-600 mt-1">
-                We'll alert you via <span className="font-medium">olivia@untitledui.com</span> if there is any unusual activity on your account.
+                We&apos;ll alert you via <span className="font-medium">olivia@untitledui.com</span> if there is any unusual activity on your account.
               </p>
             </div>
             <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors" type="button">
@@ -207,14 +210,14 @@ const Security: React.FC<SecurityProps> = () => {
               {hasActiveAuthenticator ? (
                 <>
                   <strong>Manage Flow:</strong><br/>
-                  • Shows "Manage" button<br/>
+                  • Shows &ldquo;Manage&rdquo; button<br/>
                   • Opens management screen<br/>
                   • Allows removal of 2FA
                 </>
               ) : (
                 <>
                   <strong>Setup Flow:</strong><br/>
-                  • Shows "Setup" button<br/>
+                  • Shows &ldquo;Setup&rdquo; button<br/>
                   • Opens intro → verification → QR<br/>
                   • Enables 2FA authentication
                 </>

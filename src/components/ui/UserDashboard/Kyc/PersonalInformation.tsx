@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ChevronDown, Info, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Info, Calendar } from 'lucide-react';
 import Logo from '../../Logo';
 
 interface PersonalInformationProps {
   onNext: () => void;
   onBack: () => void;
+}
+
+interface SelectOption {
+  value: string;
+  label: string;
 }
 
 interface FormData {
@@ -89,7 +94,7 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
     }));
   };
 
-  const selectOption = (field: keyof FormData, value: string, label: string) => {
+  const selectOption = (field: keyof FormData, value: string) => {
     handleInputChange(field, value);
     setDropdownStates(prev => ({
       ...prev,
@@ -120,7 +125,7 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
     return value.replace(/\D/g, '').slice(0, 11);
   };
 
-  const getSelectedLabel = (field: keyof FormData, options: any[]) => {
+  const getSelectedLabel = (field: keyof FormData, options: SelectOption[]) => {
     const selected = options.find(option => option.value === formData[field]);
     return selected ? selected.label : '';
   };
@@ -447,7 +452,7 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => selectOption('gender', option.value, option.label)}
+                    onClick={() => selectOption('gender', option.value)}
                     className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg"
                   >
                     {option.label}
@@ -478,7 +483,7 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => selectOption('occupation', option.value, option.label)}
+                    onClick={() => selectOption('occupation', option.value)}
                     className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
                   >
                     {option.label}
@@ -510,7 +515,7 @@ function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => selectOption('sourceOfFunds', option.value, option.label)}
+                    onClick={() => selectOption('sourceOfFunds', option.value)}
                     className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
                   >
                     {option.label}

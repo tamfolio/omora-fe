@@ -7,6 +7,11 @@ interface DirectorInformationProps {
   onBack: () => void;
 }
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
 interface FormData {
   fullName: string;
   email: string;
@@ -95,7 +100,7 @@ function DirectorInformation({ onNext, onBack }: DirectorInformationProps) {
     }
   };
 
-  const getSelectedLabel = (field: keyof FormData, options: any[]) => {
+  const getSelectedLabel = (field: keyof FormData, options: SelectOption[]) => {
     const selected = options.find(option => option.value === formData[field]);
     return selected ? selected.label : '';
   };

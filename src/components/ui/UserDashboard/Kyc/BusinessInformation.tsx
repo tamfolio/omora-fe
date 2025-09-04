@@ -7,6 +7,10 @@ interface BusinessInformationProps {
   onBack: () => void;
 }
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
 interface FormData {
   businessName: string;
   rcType: string;
@@ -100,7 +104,7 @@ function BusinessInformation({ onNext, onBack }: BusinessInformationProps) {
     }
   };
 
-  const getSelectedLabel = (field: keyof FormData, options: any[]) => {
+  const getSelectedLabel = (field: keyof FormData, options: SelectOption[]) => {
     const selected = options.find(option => option.value === formData[field]);
     return selected ? selected.label : '';
   };
