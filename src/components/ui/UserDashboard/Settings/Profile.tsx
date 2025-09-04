@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, Hash, MapPin, Upload } from 'lucide-react';
+import Image from 'next/image'; // Added Next.js Image import
 import Security from './Security';
 import Notifications from './Notifications';
 import Logout from './Logout';
@@ -16,7 +17,8 @@ function Profile() {
     { name: 'Log out' }
   ];
 
-  const handleTabClick = (tabName) => {
+  // Fix 1: Add proper typing for tabName parameter
+  const handleTabClick = (tabName: string) => {
     if (tabName === 'Log out') {
       setShowLogoutModal(true);
     } else {
@@ -49,10 +51,13 @@ function Profile() {
             <div className="flex items-start space-x-6">
               <div className="flex flex-col items-start">
                 <div className="relative mb-4">
-                  <img
+                  {/* Fix 3: Replace img with Next.js Image component */}
+                  <Image
                     src="/api/placeholder/80/80"
                     alt="Profile"
-                    className="w-20 h-20 rounded-full object-cover"
+                    width={80}
+                    height={80}
+                    className="rounded-full object-cover"
                   />
                 </div>
                 <div>
@@ -128,10 +133,13 @@ function Profile() {
             <div className="flex items-start space-x-6">
               <div className="flex flex-col items-start">
                 <div className="relative mb-4">
-                  <img
+                  {/* Fix 3: Replace img with Next.js Image component */}
+                  <Image
                     src="/api/placeholder/80/80"
                     alt="Profile"
-                    className="w-20 h-20 rounded-full object-cover"
+                    width={80}
+                    height={80}
+                    className="rounded-full object-cover"
                   />
                 </div>
                 <div>
@@ -215,8 +223,9 @@ function Profile() {
           </div>
 
           <div className="mt-8">
+            {/* Fix 2: Escape quotes in the string */}
             <p className="text-sm text-teal-600">
-              "To change your account details, please contact your Relationship Manager through the Help option"
+              &ldquo;To change your account details, please contact your Relationship Manager through the Help option&rdquo;
             </p>
           </div>
         </div>

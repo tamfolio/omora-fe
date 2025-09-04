@@ -41,7 +41,8 @@ function FacialRecognition({ onNext, onBack }: FacialRecognitionProps) {
     }
   };
 
-  return 
+  // Fix: Added opening parenthesis after return
+  return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* Header */}
       <div className="bg-white px-4 py-4 flex items-center justify-between shadow-sm border-b border-gray-200">
@@ -155,7 +156,7 @@ function FacialRecognition({ onNext, onBack }: FacialRecognitionProps) {
         </svg>
       </button>
     </div>
-  ;
+  ); // Fix: Added closing parenthesis
 }
 
 export default FacialRecognition;

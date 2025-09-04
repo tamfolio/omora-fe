@@ -52,11 +52,6 @@ function KycVerification({ userType = 'corporate' }: KycVerificationProps) {
     }
   };
 
-  // Function to go to specific step
-  const goToStep = (step: number) => {
-    setPageProgress(step);
-  };
-
   // Function to handle navigation to dashboard
   const handleGoToDashboard = () => {
     router.push('/dashboard');
@@ -92,13 +87,15 @@ function KycVerification({ userType = 'corporate' }: KycVerificationProps) {
       
       case 5:
         if (userType === 'individual') {
-          return <DocumentUpload onBack={prevStep} onNext={nextStep} userType={userType} />;
+          // Fix 1: Remove userType prop since DocumentUpload doesn't accept it
+          return <DocumentUpload onBack={prevStep} onNext={nextStep} />;
         } else {
           return <CompanyRegDetails onNext={nextStep} onBack={prevStep} />;
         }
       
       case 6:
         if (userType === 'individual') {
+          // Fix 2: Add return statement and ensure FacialRecognition returns JSX
           return <FacialRecognition onBack={prevStep} onNext={nextStep} />;
         } else {
           // For corporate, step 6 shows success modal instead of facial recognition
