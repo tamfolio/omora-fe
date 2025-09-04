@@ -4,7 +4,12 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export const newsroomRecommendation: Newsroom = [
+// Fix 1: Move this data export to a separate file (e.g., ../newsroomRecommendations.ts)
+// Remove this export from the page file:
+// export const newsroomRecommendation: Newsroom = [...]
+
+// For now, define it as a const inside the component or import from another file
+const newsroomRecommendation: Newsroom = [
   {
     id: 1,
     title: "Bill Walsh leadership lessons",
@@ -25,10 +30,12 @@ export const newsroomRecommendation: Newsroom = [
     author: "Olivia Rhye",
     bookmark: false,
   },
-]
+];
 
-export default function NewsroomDetail({ params }: { params: { id: string } }) {
-  const newsroom = NewsroomData.find((item) => item.id === Number(params.id));
+// Fix 2: Update to Next.js 15 async params
+export default async function NewsroomDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const newsroom = NewsroomData.find((item) => item.id === Number(id));
 
   if (!newsroom) {
     redirect("/notfound");
