@@ -1,6 +1,12 @@
 import React from 'react';
 
-const Logout = ({ isOpen, onClose, onConfirm }) => {
+interface LogoutProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+const Logout = ({ isOpen, onClose, onConfirm }: LogoutProps) => {
   if (!isOpen) return null;
 
   return (

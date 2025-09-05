@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { X, Shield, Mail, ChevronRight, Check, Copy } from 'lucide-react';
 
-function AuthenticatorAppManage({ onClose, isActive = false }) {
+interface AuthenticatorAppManageProps {
+  onClose?: () => void;
+  isActive?: boolean;
+}
+
+function AuthenticatorAppManage({ onClose, isActive = false }: AuthenticatorAppManageProps) {
   const [currentStep, setCurrentStep] = useState(isActive ? 'manage' : 'setup-intro'); // manage, setup-intro, verification, qr-setup, code-input, success, remove-confirm, remove-verify, remove-success
   const [verificationCode, setVerificationCode] = useState('');
   const [removeConfirmChecks, setRemoveConfirmChecks] = useState({
@@ -253,7 +258,7 @@ function AuthenticatorAppManage({ onClose, isActive = false }) {
               onChange={(e) => setVerificationCode(e.target.value)}
               placeholder="000000"
               className="w-full p-3 border border-gray-300 rounded-lg text-center text-lg tracking-widest"
-              maxLength="6"
+              maxLength={6}
             />
             <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal-600 text-sm font-medium">
               Paste
@@ -263,7 +268,7 @@ function AuthenticatorAppManage({ onClose, isActive = false }) {
 
         <div className="text-center mb-6">
           <p className="text-sm text-gray-600">
-            Didn't receive the 6-digit key?{' '}
+            Didn&apos;t receive the 6-digit key?{' '}
             <button className="text-teal-600 hover:text-teal-700 font-medium">
               Click to resend
             </button>
@@ -370,7 +375,7 @@ function AuthenticatorAppManage({ onClose, isActive = false }) {
               onChange={(e) => setVerificationCode(e.target.value)}
               placeholder="000000"
               className="w-full p-3 border border-gray-300 rounded-lg text-center text-lg tracking-widest"
-              maxLength="6"
+              maxLength={6}
             />
             <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal-600 text-sm font-medium">
               Paste
@@ -380,7 +385,7 @@ function AuthenticatorAppManage({ onClose, isActive = false }) {
 
         <div className="text-center mb-6">
           <p className="text-sm text-gray-600">
-            Didn't receive the 6-digit key?{' '}
+            Didn&apos;t receive the 6-digit key?{' '}
             <button className="text-teal-600 hover:text-teal-700 font-medium">
               Click to resend
             </button>
@@ -407,7 +412,7 @@ function AuthenticatorAppManage({ onClose, isActive = false }) {
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">2FA successfully disabled</h2>
           <p className="text-sm text-gray-600 mb-6">
-            You'll not be required to enter a code at login.
+            You&apos;ll not be required to enter a code at login.
           </p>
           
           <button 

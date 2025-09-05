@@ -15,16 +15,20 @@ import React, { useState } from "react";
 
 type VerificationType = 'individual' | 'corporate';
 
-interface KycVerificationProps {
-  userType?: VerificationType;
-}
-
-function KycVerification({ userType = 'corporate' }: KycVerificationProps) {
+export default function KycVerification() {
   const router = useRouter();
+  
+  // State for user type - starts with 'corporate' for testing
+  const [userType, setUserType] = useState<VerificationType>('corporate');
   
   // Page progress state - starts at 1 for KYC Initiation
   const [pageProgress, setPageProgress] = useState(1);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Toggle function for testing both flows (remove this in production)
+  const toggleUserType = () => {
+    setUserType(prev => prev === 'individual' ? 'corporate' : 'individual');
+  };
 
   // Get the total number of steps based on user type
   const getTotalSteps = () => {
@@ -87,7 +91,6 @@ function KycVerification({ userType = 'corporate' }: KycVerificationProps) {
       
       case 5:
         if (userType === 'individual') {
-          // Fix 1: Remove userType prop since DocumentUpload doesn't accept it
           return <DocumentUpload onBack={prevStep} onNext={nextStep} />;
         } else {
           return <CompanyRegDetails onNext={nextStep} onBack={prevStep} />;
@@ -95,7 +98,6 @@ function KycVerification({ userType = 'corporate' }: KycVerificationProps) {
       
       case 6:
         if (userType === 'individual') {
-          // Fix 2: Add return statement and ensure FacialRecognition returns JSX
           return <FacialRecognition onBack={prevStep} onNext={nextStep} />;
         } else {
           // For corporate, step 6 shows success modal instead of facial recognition
@@ -110,6 +112,18 @@ function KycVerification({ userType = 'corporate' }: KycVerificationProps) {
 
   return (
     <div className="kyc-verification">
+      {/* Temporary toggle for testing - remove in production */}
+      <div className="fixed top-4 right-4 z-50">
+        <button 
+          onClick={toggleUserType}
+          className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600"
+        >
+          Testing: {userType} 
+          <br />
+          <span className="text-xs">Click to switch</span>
+        </button>
+      </div>
+
       {/* Current step component */}
       <div className="step-content">{renderCurrentStep()}</div>
 
@@ -120,5 +134,3 @@ function KycVerification({ userType = 'corporate' }: KycVerificationProps) {
     </div>
   );
 }
-
-export default KycVerification;

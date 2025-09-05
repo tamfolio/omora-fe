@@ -1,10 +1,44 @@
 import React, { useState } from 'react';
 
+// Define types
+type NotificationChannel = 'push' | 'email' | 'sms';
+type NotificationId = 'investmentUpdate' | 'marketSentiment' | 'monthlyReports' | 'platformAnnouncement';
+
+interface NotificationSettings {
+  push: boolean;
+  email: boolean;
+  sms: boolean;
+}
+
+interface NotificationsState {
+  investmentUpdate: NotificationSettings;
+  marketSentiment: NotificationSettings;
+  monthlyReports: NotificationSettings;
+  platformAnnouncement: NotificationSettings;
+}
+
+interface TargetNotification {
+  notificationId: NotificationId;
+  type: NotificationChannel;
+}
+
+interface ToggleSwitchProps {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+}
+
+interface NotificationType {
+  id: NotificationId;
+  title: string;
+  description: string;
+}
+
 const Notifications = () => {
   const [showWarning, setShowWarning] = useState(false);
-  const [targetNotification, setTargetNotification] = useState(null);
+  const [targetNotification, setTargetNotification] = useState<TargetNotification | null>(null);
   
-  const [notifications, setNotifications] = useState({
+  const [notifications, setNotifications] = useState<NotificationsState>({
     investmentUpdate: {
       push: true,
       email: true,
@@ -27,7 +61,7 @@ const Notifications = () => {
     }
   });
 
-  const notificationTypes = [
+  const notificationTypes: NotificationType[] = [
     {
       id: 'investmentUpdate',
       title: 'Investment Update',
@@ -50,7 +84,7 @@ const Notifications = () => {
     }
   ];
 
-  const handleToggle = (notificationId, type, currentValue) => {
+  const handleToggle = (notificationId: NotificationId, type: NotificationChannel, currentValue: boolean) => {
     if (currentValue && (notificationId === 'investmentUpdate' && type === 'push')) {
       setTargetNotification({ notificationId, type });
       setShowWarning(true);
@@ -85,7 +119,7 @@ const Notifications = () => {
     setTargetNotification(null);
   };
 
-  const ToggleSwitch = ({ checked, onChange, disabled = false }) => (
+  const ToggleSwitch = ({ checked, onChange, disabled = false }: ToggleSwitchProps) => (
     <button
       onClick={onChange}
       disabled={disabled}

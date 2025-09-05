@@ -37,6 +37,10 @@ function CompletedDashboard({ recentPosts, onReadPost }: CompletedDashboardProps
     { name: 'XRP', percentage: '45%', value: '$56,631', change: '+6.2%', color: 'bg-green-500' }
   ];
 
+  const toggleDca = () => {
+    setIsDcaActive(!isDcaActive);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="w-full mx-auto px-20">
@@ -87,7 +91,7 @@ function CompletedDashboard({ recentPosts, onReadPost }: CompletedDashboardProps
             </div>
             
             <div className="mb-4">
-              <p className="text-sm text-gray-500 mb-2">Today's Realized PnL: <span className="text-green-600 font-medium">+0.00 (+0.00%)</span></p>
+              <p className="text-sm text-gray-500 mb-2">Today&apos;s Realized PnL: <span className="text-green-600 font-medium">+0.00 (+0.00%)</span></p>
             </div>
 
             <div className="grid grid-cols-2 gap-8">
@@ -156,11 +160,14 @@ function CompletedDashboard({ recentPosts, onReadPost }: CompletedDashboardProps
           <div className="lg:col-span-1 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="relative">
+                <button
+                  onClick={toggleDca}
+                  className="relative"
+                >
                   <div className={`w-12 h-6 ${isDcaActive ? 'bg-green-500' : 'bg-gray-200'} rounded-full p-1 transition-colors`}>
                     <div className={`w-4 h-4 bg-white rounded-full transition-transform ${isDcaActive ? 'translate-x-6' : 'translate-x-0'}`}></div>
                   </div>
-                </div>
+                </button>
                 <span className="text-sm font-medium text-gray-900">Your DCA is Active</span>
               </div>
             </div>
@@ -234,4 +241,3 @@ function CompletedDashboard({ recentPosts, onReadPost }: CompletedDashboardProps
 }
 
 export default CompletedDashboard;
-
