@@ -62,7 +62,7 @@ const page = () => {
       </section>
       <section>
         <div className="flex justify-center mx-[120px]">
-          <video className="h-[557px] bg-[#535862] rounded-t-2xl" src="" height={557} />
+          <div className="h-[557px] w-full bg-[#535862] rounded-t-2xl" height={557}></div>
         </div>
       </section>
       <AvailableAssets />
