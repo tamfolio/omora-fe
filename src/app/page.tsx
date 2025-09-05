@@ -62,7 +62,7 @@ const page = () => {
       </section>
       <section>
         <div className="flex justify-center mx-[120px]">
-          <div className="h-[557px] w-full bg-[#535862] rounded-t-2xl" height={557}></div>
+          <div className="h-[557px] w-full bg-[#535862] rounded-t-2xl"></div>
         </div>
       </section>
       <AvailableAssets />
