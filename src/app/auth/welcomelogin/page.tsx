@@ -215,7 +215,7 @@ export default function FirstTimeLogin() {
                   {/* Resend Link */}
                   <div className="mb-6 text-center">
                     <p className="text-sm text-gray-600">
-                      Didn't receive the 6-digit code?{" "}
+                      Didn&apos;t receive the 6-digit code?{" "}
                       <button
                         onClick={handleResendEmailCode}
                         className="text-teal-600 hover:text-teal-500 font-medium"

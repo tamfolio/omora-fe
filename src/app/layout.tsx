@@ -22,12 +22,12 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} relative`}>
-        <NavBar />
         <AuthProvider session={session}>
+        <NavBar />
           {children}
-        </AuthProvider>
         <CookiesPopUp />
         <Footer />
+        </AuthProvider>
       </body>
     </html>
   )
