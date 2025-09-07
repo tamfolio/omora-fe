@@ -213,7 +213,7 @@ export default function EmailVerification() {
               {/* Resend Section */}
               <div className="text-center space-y-3">
                 <p className="text-sm text-gray-600">
-                  Didn't receive the email?{" "}
+                  Didn&apos;t receive the email?{" "}
                   {canResend ? (
                     <button
                       onClick={handleResend}

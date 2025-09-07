@@ -143,7 +143,7 @@ export default function ForgotPassword() {
               Forgot password?
             </h2>
             <p className="text-sm text-gray-600 mb-8 text-center">
-              No worries, we'll send you reset instructions.
+              No worries, w&apos;ll send you reset instructions.
             </p>
 
             {/* Form */}
@@ -206,7 +206,7 @@ export default function ForgotPassword() {
 
             {/* Resend */}
             <div className="text-center text-sm">
-              <span className="text-gray-600">Didn't receive the email? </span>
+              <span className="text-gray-600">Didn&apos;t receive the email? </span>
               <button
                 onClick={handleResendEmail}
                 disabled={loading}
