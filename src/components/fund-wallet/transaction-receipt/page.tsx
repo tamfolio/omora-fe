@@ -113,7 +113,7 @@ export default function TransactionReceipt() {
         return (
           <>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
-              <span className="text-sm text-gray-600">Sender's Name</span>
+              <span className="text-sm text-gray-600">Sender&apos;s Name</span>
               <span className="text-sm font-medium text-gray-900">{transactionData.senderName}</span>
             </div>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">

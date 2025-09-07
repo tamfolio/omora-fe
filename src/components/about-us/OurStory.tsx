@@ -8,7 +8,7 @@ export default function OurStory() {
             We're just getting started
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            We've already helped over 4,000 companies achieve remarkable results.
+            We&apos;ve already helped over 4,000 companies achieve remarkable results.
           </p>
         </div>
 

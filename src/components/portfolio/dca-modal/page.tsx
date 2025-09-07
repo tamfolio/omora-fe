@@ -53,7 +53,7 @@ export default function DCAModal({ isOpen, isDCAPaused, onConfirm, onCancel }: D
               onClick={onCancel}
               className="w-full py-3 px-4 rounded-lg font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
             >
-              No, I don't
+              No, I don&apos;t
             </button>
           </div>
         </div>

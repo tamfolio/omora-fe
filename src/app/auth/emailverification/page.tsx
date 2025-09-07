@@ -17,7 +17,7 @@ export default function EmailVerification() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") ;
+  const email = searchParams.get("email") || "";
 
   // Countdown timer for resend
   useEffect(() => {
@@ -91,15 +91,15 @@ export default function EmailVerification() {
         }),
       });
 
-      const result = await response.json();
+      const result = await response.json() as { error?: string };
 
       if (!response.ok) {
         setError(result.error || "Invalid verification code");
       } else {
-        // Redirect to login or dashboard
         router.push("/auth/login?message=Email verified successfully");
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Verification error:', error);
       setError("An error occurred during verification");
     } finally {
       setLoading(false);
@@ -119,7 +119,7 @@ export default function EmailVerification() {
         body: JSON.stringify({ email }),
       });
 
-      const result = await response.json();
+      const result = await response.json() as { error?: string };
 
       if (!response.ok) {
         setError(result.error || "Failed to resend code");
@@ -129,7 +129,8 @@ export default function EmailVerification() {
         setCode(["", "", "", ""]);
         inputRefs.current[0]?.focus();
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Resend error:', error);
       setError("Failed to resend verification code");
     } finally {
       setIsResending(false);
@@ -213,7 +214,7 @@ export default function EmailVerification() {
               {/* Resend Section */}
               <div className="text-center space-y-3">
                 <p className="text-sm text-gray-600">
-                  Didn't receive the email?{" "}
+                  Didn&apos;t receive the email?{" "}
                   {canResend ? (
                     <button
                       onClick={handleResend}

@@ -1,8 +1,31 @@
-import NextAuth from "next-auth"
+import NextAuth, { DefaultSession } from "next-auth"
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 
-const authOptions: NextAuthOptions = {
+// Extend the built-in session types
+declare module "next-auth" {
+  interface Session extends DefaultSession {
+    accessToken: string // Changed from optional to required
+    error?: string
+    user: {
+      id: string
+      email: string
+      name: string
+      role: string
+    } & DefaultSession["user"]
+  }
+
+  interface User {
+    id: string
+    email: string
+    name: string
+    role: string
+    accessToken: string // Already required
+    refreshToken: string
+  }
+}
+
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -151,5 +174,6 @@ async function refreshAccessToken(token: any) {
   }
 }
 
+// Export auth handler for Next.js 13+ API routes
 const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }

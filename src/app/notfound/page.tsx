@@ -7,7 +7,7 @@ export default function NotFoundPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-100">
+      {/* <header className="bg-white shadow-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -55,7 +55,7 @@ export default function NotFoundPage() {
             </div>
           </div>
         </div>
-      </header>
+      </header> */}
 
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-6 py-24 sm:py-32 lg:px-8">
@@ -68,7 +68,7 @@ export default function NotFoundPage() {
                 Page not found
               </h1>
               <p className="text-lg leading-7 text-gray-600 mb-10">
-                Sorry, the page you are looking for doesn't exist or has been moved. Try searching our site.
+                Sorry, the page you are looking for doesn&apos;t exist or has been moved. Try searching our site.
               </p>
               <div className="flex items-center gap-x-6">
                 <Link

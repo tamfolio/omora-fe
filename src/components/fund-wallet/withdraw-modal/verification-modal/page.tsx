@@ -239,7 +239,7 @@ export default function VerificationModal({
                 </div>
                 {selectedMethod === 'email' && (
                   <p className="text-xs text-gray-500 mt-1">
-                    Didn't receive the 6-digit code? <button onClick={handleResendCode} className="text-teal-600 hover:text-teal-700">Click to resend</button>
+                    Didn&apos;t receive the 6-digit code? <button onClick={handleResendCode} className="text-teal-600 hover:text-teal-700">Click to resend</button>
                   </p>
                 )}
               </div>

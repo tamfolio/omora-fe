@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { CiCircleQuestion } from 'react-icons/ci';
 import DepositModal from './deposit-modal/page';
 import WalletHistory from './wallet-history/page';
 import WithdrawModal from './withdraw-modal/page';
@@ -24,15 +25,12 @@ function useUserDeposits() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Set client flag to true on mount
     setIsClient(true);
     
     const checkDepositHistory = async () => {
       try {
-        // Simulate API call - replace with real API
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Only access localStorage on client side
         if (typeof window !== 'undefined') {
           const hasDepositsStored = localStorage.getItem('userHasDeposits') === 'true';
           const storedBalances = localStorage.getItem('userBalances');
@@ -62,7 +60,6 @@ function useUserDeposits() {
     setHasDeposits(true);
     setUserBalances(newBalances);
     
-    // Only update localStorage on client side
     if (typeof window !== 'undefined') {
       localStorage.setItem('userHasDeposits', 'true');
       localStorage.setItem('userBalances', JSON.stringify(newBalances));
@@ -72,10 +69,38 @@ function useUserDeposits() {
   return { hasDeposits, userBalances, isLoading, updateUserDeposits, isClient };
 }
 
+// Tooltip Component
+interface TooltipProps {
+  content: string;
+  children: React.ReactNode;
+}
+
+const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div className="relative inline-block">
+      <div
+        onMouseEnter={() => setIsVisible(true)}
+        onMouseLeave={() => setIsVisible(false)}
+      >
+        {children}
+      </div>
+      {isVisible && (
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap z-10">
+          {content}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function FundWalletComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [withdrawCurrency, setWithdrawCurrency] = useState<'NGN' | 'USDT'>('NGN');
+  const [autoConvert, setAutoConvert] = useState(false);
   const { hasDeposits, userBalances, isLoading, isClient } = useUserDeposits();
   const router = useRouter();
 
@@ -90,8 +115,6 @@ export default function FundWalletComponent() {
 
   const handleWithdrawSubmit = (withdrawData: any) => {
     console.log('Processing withdrawal:', withdrawData);
-    // Here you would typically make an API call to process the withdrawal
-    // For now, we'll just log the data
   };
 
   // Show loading state while checking client-side state
@@ -101,9 +124,9 @@ export default function FundWalletComponent() {
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
           <div className="h-4 bg-gray-200 rounded w-96 mb-8"></div>
-          <div className="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-6">
+          <div className="flex gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-gray-200 rounded-2xl h-40"></div>
+              <div key={i} className="flex-1 bg-gray-200 rounded-lg h-32"></div>
             ))}
           </div>
         </div>
@@ -111,7 +134,6 @@ export default function FundWalletComponent() {
     );
   }
 
-  // Use real balances if user has deposits, otherwise show zeros
   const displayBalances = hasDeposits ? userBalances : {
     usdc: 0,
     naira: 0,
@@ -120,111 +142,105 @@ export default function FundWalletComponent() {
 
   return (
     <>
-      {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Omora Wallet</h1>
           <p className="text-gray-600">Secure long-term returns and grow your crypto holdings</p>
         </div>
 
-        {/* Wallet Cards */}
-        <div className="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-6 mb-8">
-          {/* USDC Account */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-1">USDC Account</h3>
-              <div className="flex items-end gap-2 mb-4">
-                <span className="text-3xl font-bold text-gray-900">
-                  {displayBalances.usdc?.toLocaleString() || '0'}
-                </span>
-                <span className="text-lg font-semibold text-gray-600 mb-1">USDC</span>
+        {/* Main Wallet Card */}
+        <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
+          
+          {/* Balance Cards Container - Now Horizontal */}
+          <div className="flex gap-6 mb-2">
+            
+            {/* Naira Balance Card */}
+            <div className="flex-1 bg-white border border-gray-200 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">Naira Balance</span>
+                <Tooltip content="Your Naira balance. Fund this wallet directly in NGN and convert to USDC for investments or payouts.">
+                  <CiCircleQuestion className="w-5 h-5 text-gray-400 cursor-help" />
+                </Tooltip>
+              </div>
+              <div className="text-3xl font-bold text-gray-900">
+                NGN {displayBalances.naira?.toLocaleString() || '0'}
               </div>
             </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleWithdraw('NGN')}
-                className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-              >
-                Withdraw
-              </button>
-              <button 
-                onClick={() => handleConvert('USDC')}
-                className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-              >
-                Convert
-              </button>
-            </div>
-          </div>
 
-          {/* Naira Account */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Naira Account</h3>
-              <div className="flex items-end gap-2 mb-4">
-                <span className="text-lg font-semibold text-gray-600 mb-1">₦</span>
-                <span className="text-3xl font-bold text-gray-900">
-                  {displayBalances.naira?.toLocaleString() || '0'}
-                </span>
+            {/* USDT Balance Card */}
+            <div className="flex-1 bg-white border border-gray-200 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">USDT Balance</span>
+                <Tooltip content="Your earnings wallet. After a recurring investment is completed, both your capital and returns move here. From this wallet, you can withdraw to an external wallet address or convert back to NGN. ">
+                  <CiCircleQuestion className="w-5 h-5 text-gray-400 cursor-help" />
+                </Tooltip>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setIsModalOpen(true)}
-                className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                Fund Wallet
-              </button>
-              <button 
-                onClick={() => handleWithdraw('NGN')}
-                className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-              >
-                Withdraw
-              </button>
-              <button 
-                onClick={() => handleConvert('NGN')}
-                className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-              >
-                Convert
-              </button>
-            </div>
-          </div>
-
-          {/* USDT Account */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-1">USDT Account</h3>
-              <div className="flex items-end gap-2 mb-4">
-                <span className="text-3xl font-bold text-gray-900">
+              <div>
+                <div className="text-3xl font-bold text-gray-900">
                   {displayBalances.usdt?.toLocaleString() || '0'}
-                </span>
-                <span className="text-lg font-semibold text-gray-600 mb-1">USDT</span>
+                </div>
+                <div className="text-sm text-gray-500 mt-1">USDT</div>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleWithdraw('USDT')}
-                className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-              >
-                Withdraw
-              </button>
-              <button 
-                onClick={() => handleConvert('USDT')}
-                className="flex-1 px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-              >
-                Convert
-              </button>
+
+            {/* USDC Balance Card */}
+            <div className="flex-1 bg-white border border-gray-200 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">USDC Balance</span>
+                <Tooltip content="This is your investment wallet. Naira deposits convert to USDC here. ">
+                  <CiCircleQuestion className="w-5 h-5 text-gray-400 cursor-help" />
+                </Tooltip>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-gray-900">
+                  {displayBalances.usdc?.toLocaleString() || '0'}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">USDC</div>
+              </div>
             </div>
+          </div>
+
+          {/* Action Buttons - Slightly offset centered */}
+          <div className="flex justify-center gap-6 mb-8 mx-16">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-teal-600 hover:bg-teal-700 text-white py-3 px-24 rounded-xl text-sm font-medium transition-colors"
+            >
+              Fund Wallet
+            </button>
+            
+            <button 
+              onClick={() => handleWithdraw('USDT')}
+              className="px-24 py-3 text-gray-600 border border-gray-300 rounded-xl text-sm hover:bg-gray-50 transition-colors"
+            >
+              Withdraw
+            </button>
+            
+            <button 
+              onClick={() => handleConvert('USDC')}
+              className="px-24 py-3 text-gray-600 border border-gray-300 rounded-xl text-sm hover:bg-gray-50 transition-colors"
+            >
+              Convert
+            </button>
+          </div>
+
+          {/* Auto Convert Option */}
+          <div className="pt-4 border-t border-gray-100">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={autoConvert}
+                onChange={(e) => setAutoConvert(e.target.checked)}
+                className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 focus:ring-2"
+              />
+              <span className="ml-3 text-sm text-gray-700">
+                Automatically Convert my Naira to USDC within 24hours
+              </span>
+            </label>
           </div>
         </div>
 
-        {/* Conversion Rate */}
-        <div className="mb-8">
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Conversion Rate:</span> 1 USDT = ₦1,3800
-          </p>
-        </div>
-
-        {/* Wallet History - Show for all users (for testing) */}
+        {/* Wallet History */}
         <div className="mb-8">
           <WalletHistory />
         </div>
@@ -242,13 +258,12 @@ export default function FundWalletComponent() {
         </button>
       </div>
 
-      {/* Deposit Modal */}
+      {/* Modals */}
       <DepositModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
 
-      {/* Withdraw Modal */}
       <WithdrawModal 
         isOpen={isWithdrawModalOpen}
         onClose={() => setIsWithdrawModalOpen(false)}

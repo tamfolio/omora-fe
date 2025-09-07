@@ -10,7 +10,7 @@ export default function AboutUsHero() {
           </h1>
           <p className="text-lg leading-8 text-gray-600 max-w-3xl mx-auto">
             Untitled is a technology company that builds infrastructure for your startup, so 
-            you don't have to. Businesses of every size—from new startups to public 
+            you don&apos;t have to. Businesses of every size—from new startups to public 
             companies—use our software to manage their businesses.
           </p>
         </div>
@@ -30,7 +30,7 @@ export default function AboutUsHero() {
                   <div className="text-4xl font-bold text-white mb-2">400+</div>
                   <div className="text-white font-semibold mb-2">Projects completed</div>
                   <p className="text-white/80 text-sm">
-                    We've helped build over 400 projects with great companies.
+                    We&apos;ve helped build over 400 projects with great companies.
                   </p>
                 </div>
 
@@ -39,7 +39,7 @@ export default function AboutUsHero() {
                   <div className="text-4xl font-bold text-white mb-2">600%</div>
                   <div className="text-white font-semibold mb-2">Return on investment</div>
                   <p className="text-white/80 text-sm">
-                    We've helped build over 400 projects with great companies.
+                    We&apos;ve helped build over 400 projects with great companies.
                   </p>
                 </div>
 
