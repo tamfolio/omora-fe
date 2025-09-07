@@ -61,11 +61,11 @@ export default function IndividualSignup({
         },
         body: JSON.stringify({ email }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to check email");
       }
-      
+
       const result = await response.json();
       return result.exists;
     } catch (error) {
@@ -103,7 +103,7 @@ export default function IndividualSignup({
 
     if (!validatePassword(formData.password)) {
       onError(
-        "Password must be at least 8 characters and include a symbol, uppercase/lowercase"
+        "Password must be at least 8 characters and include a symbol, uppercase/lowercase",
       );
       setLoading(false);
       return;
@@ -309,17 +309,11 @@ export default function IndividualSignup({
         />
         <span className="text-gray-600">
           I accept the{" "}
-          <Link
-            href="/terms"
-            className="text-teal-600 hover:text-teal-500"
-          >
+          <Link href="/terms" className="text-teal-600 hover:text-teal-500">
             Terms
           </Link>{" "}
           and{" "}
-          <Link
-            href="/privacy"
-            className="text-teal-600 hover:text-teal-500"
-          >
+          <Link href="/privacy" className="text-teal-600 hover:text-teal-500">
             Privacy Policy
           </Link>
         </span>

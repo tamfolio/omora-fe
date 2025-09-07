@@ -5,11 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { RiCustomerServiceLine } from "react-icons/ri";
-import { 
-  HiOutlineKey, 
-  HiOutlineMail, 
+import {
+  HiOutlineKey,
+  HiOutlineMail,
   HiOutlineCheckCircle,
-  HiOutlineLockClosed 
+  HiOutlineLockClosed,
 } from "react-icons/hi";
 import Logo from "@/components/ui/Logo";
 
@@ -61,7 +61,7 @@ export default function ForgotPassword() {
       } else {
         setCurrentStep("check-email");
       }
-    } catch (error) {
+    } catch (_) {
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -80,7 +80,9 @@ export default function ForgotPassword() {
     }
 
     if (!validatePassword(password)) {
-      setError("Password must be at least 8 characters and contain a special character and number");
+      setError(
+        "Password must be at least 8 characters and contain a special character and number",
+      );
       setLoading(false);
       return;
     }
@@ -91,9 +93,9 @@ export default function ForgotPassword() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          token: resetToken, 
-          password 
+        body: JSON.stringify({
+          token: resetToken,
+          password,
         }),
       });
 
@@ -104,7 +106,7 @@ export default function ForgotPassword() {
       } else {
         setCurrentStep("success");
       }
-    } catch (error) {
+    } catch (_) {
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -121,7 +123,7 @@ export default function ForgotPassword() {
         },
         body: JSON.stringify({ email }),
       });
-    } catch (error) {
+    } catch (_) {
       console.error("Failed to resend email");
     } finally {
       setLoading(false);
@@ -153,7 +155,10 @@ export default function ForgotPassword() {
               )}
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Email
                 </label>
                 <input
@@ -206,7 +211,9 @@ export default function ForgotPassword() {
 
             {/* Resend */}
             <div className="text-center text-sm">
-              <span className="text-gray-600">Didn&apos;t receive the email? </span>
+              <span className="text-gray-600">
+                Didn&apos;t receive the email?{" "}
+              </span>
               <button
                 onClick={handleResendEmail}
                 disabled={loading}
@@ -242,7 +249,10 @@ export default function ForgotPassword() {
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Password
                 </label>
                 <div className="relative">
@@ -272,7 +282,10 @@ export default function ForgotPassword() {
 
               {/* Confirm Password Field */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Confirm password
                 </label>
                 <div className="relative">
@@ -302,21 +315,37 @@ export default function ForgotPassword() {
 
               {/* Password Requirements */}
               <div className="space-y-2">
-                <div className={`flex items-center space-x-2 text-sm ${
-                  password.length >= 8 ? "text-green-600" : "text-gray-400"
-                }`}>
-                  <div className={`w-2 h-2 rounded-full ${
-                    password.length >= 8 ? "bg-green-500" : "bg-gray-300"
-                  }`}></div>
+                <div
+                  className={`flex items-center space-x-2 text-sm ${
+                    password.length >= 8 ? "text-green-600" : "text-gray-400"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      password.length >= 8 ? "bg-green-500" : "bg-gray-300"
+                    }`}
+                  ></div>
                   <span>Must be at least 8 characters</span>
                 </div>
-                <div className={`flex items-center space-x-2 text-sm ${
-                  /[!@#$%^&*(),.?":{}|<>]/.test(password) && /\d/.test(password) ? "text-green-600" : "text-gray-400"
-                }`}>
-                  <div className={`w-2 h-2 rounded-full ${
-                    /[!@#$%^&*(),.?":{}|<>]/.test(password) && /\d/.test(password) ? "bg-green-500" : "bg-gray-300"
-                  }`}></div>
-                  <span>Must contain one special character and one number at least</span>
+                <div
+                  className={`flex items-center space-x-2 text-sm ${
+                    /[!@#$%^&*(),.?":{}|<>]/.test(password) &&
+                    /\d/.test(password)
+                      ? "text-green-600"
+                      : "text-gray-400"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      /[!@#$%^&*(),.?":{}|<>]/.test(password) &&
+                      /\d/.test(password)
+                        ? "bg-green-500"
+                        : "bg-gray-300"
+                    }`}
+                  ></div>
+                  <span>
+                    Must contain one special character and one number at least
+                  </span>
                 </div>
               </div>
 
@@ -344,8 +373,8 @@ export default function ForgotPassword() {
               Password reset
             </h2>
             <p className="text-sm text-gray-600 mb-8 text-center">
-              Your password has been successfully reset.{" "}
-              Click below to log in magically.
+              Your password has been successfully reset. Click below to log in
+              magically.
             </p>
 
             {/* Continue Button */}

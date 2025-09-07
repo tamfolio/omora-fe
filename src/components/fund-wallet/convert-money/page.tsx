@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { FiArrowLeft, FiChevronDown } from "react-icons/fi";
 import Logo from "@/components/ui/Logo";
 import AuthenticatorModal from "./authenticator-modal/page";
@@ -15,23 +16,23 @@ const CONVERSION_RATES: Record<string, number> = {
 };
 
 const CURRENCIES = [
-  { 
-    code: "NGN", 
-    name: "Nigerian Naira", 
-    symbol: "₦", 
-    logo: "/images/currencies/ngn.png"
+  {
+    code: "NGN",
+    name: "Nigerian Naira",
+    symbol: "₦",
+    logo: "/images/currencies/ngn.png",
   },
-  { 
-    code: "USDT", 
-    name: "Tether USD", 
-    symbol: "USDT", 
-    logo: "/images/currencies/usdt.png"
+  {
+    code: "USDT",
+    name: "Tether USD",
+    symbol: "USDT",
+    logo: "/images/currencies/usdt.png",
   },
-  { 
-    code: "USDC", 
-    name: "USDC Coin", 
-    symbol: "USDC", 
-    logo: "/images/currencies/usdc.png"
+  {
+    code: "USDC",
+    name: "USDC Coin",
+    symbol: "USDC",
+    logo: "/images/currencies/usdc.png",
   },
 ];
 
@@ -40,18 +41,19 @@ const CONVERSION_FEE_PERCENTAGE = 0.5; // 0.5% fee
 const MOCK_BALANCES = {
   NGN: 21997.42,
   USDT: 13.45,
-  USDC: 8.92
+  USDC: 8.92,
 };
 
 const getCurrencyLogo = (code: string): string => {
-  const currency = CURRENCIES.find(c => c.code === code);
+  const currency = CURRENCIES.find((c) => c.code === code);
   return currency?.logo || "/images/currencies/placeholder.png";
 };
 
 const getFormattedBalance = (currencyCode: string): string => {
-  const balance = MOCK_BALANCES[currencyCode as keyof typeof MOCK_BALANCES] || 0;
-  const currency = CURRENCIES.find(c => c.code === currencyCode);
-  return `${currency?.symbol || ''} ${balance.toLocaleString()}`;
+  const balance =
+    MOCK_BALANCES[currencyCode as keyof typeof MOCK_BALANCES] || 0;
+  const currency = CURRENCIES.find((c) => c.code === currencyCode);
+  return `${currency?.symbol || ""} ${balance.toLocaleString()}`;
 };
 
 export default function ConvertMoney() {
@@ -67,7 +69,7 @@ export default function ConvertMoney() {
       ? "USDT"
       : initialCurrency === "USDT"
         ? "NGN"
-        : "USDT" // Default for USDC → USDT
+        : "USDT", // Default for USDC → USDT
   );
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
@@ -95,12 +97,6 @@ export default function ConvertMoney() {
       setAmountToConvert(amount - (fromCurrency === "NGN" ? fee : 0));
     }
   }, [fromCurrency, toCurrency, fromAmount]);
-
-  const handleCurrencySwap = () => {
-    setFromCurrency(toCurrency);
-    setToCurrency(fromCurrency);
-    setFromAmount(toAmount);
-  };
 
   const getAvailableToCurrencies = (from: string) => {
     switch (from) {
@@ -134,17 +130,13 @@ export default function ConvertMoney() {
     });
 
     router.push(
-      `/dashboard/fund-wallet/convert-money/review-transaction?${params.toString()}`
+      `/dashboard/fund-wallet/convert-money/review-transaction?${params.toString()}`,
     );
   };
 
   const formatAmount = (amount: number, currency: string) => {
     const currencyData = CURRENCIES.find((c) => c.code === currency);
     return `${currencyData?.symbol} ${amount.toLocaleString()}`;
-  };
-
-  const getCurrencyInfo = (code: string) => {
-    return CURRENCIES.find((c) => c.code === code);
   };
 
   return (
@@ -218,7 +210,7 @@ export default function ConvertMoney() {
             </p>
           </div>
 
-        {/* From Currency Section */}
+          {/* From Currency Section */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Amount to convert <span className="text-red-500">*</span>
@@ -229,10 +221,12 @@ export default function ConvertMoney() {
                 <div className="flex flex-col gap-1 px-3 py-2">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                      <img 
+                      <Image
                         src={getCurrencyLogo(fromCurrency)}
                         alt={`${fromCurrency} logo`}
-                        className="w-6 h-6 object-contain"
+                        width={24}
+                        height={24}
+                        className="object-contain"
                       />
                     </div>
                     <div className="relative">
@@ -241,7 +235,7 @@ export default function ConvertMoney() {
                         onChange={(e) => setFromCurrency(e.target.value)}
                         className="appearance-none bg-transparent border-none focus:outline-none text-sm font-medium text-gray-900 pr-6"
                       >
-                        {CURRENCIES.map(currency => (
+                        {CURRENCIES.map((currency) => (
                           <option key={currency.code} value={currency.code}>
                             {currency.code}
                           </option>
@@ -254,7 +248,7 @@ export default function ConvertMoney() {
                     Bal: {getFormattedBalance(fromCurrency)}
                   </p>
                 </div>
-                
+
                 {/* Amount Input */}
                 <div className="flex-1 px-4 py-3">
                   <input
@@ -272,7 +266,9 @@ export default function ConvertMoney() {
             <div className="mt-4 space-y-2 text-sm text-gray-600">
               <div className="flex justify-between">
                 <span>Conversion Fee:</span>
-                <span>{conversionFee.toFixed(0)} {fromCurrency}</span>
+                <span>
+                  {conversionFee.toFixed(0)} {fromCurrency}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Amount we&apos;ll convert:</span>
@@ -296,10 +292,12 @@ export default function ConvertMoney() {
                 <div className="flex flex-col gap-1 px-3 py-2">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                      <img 
+                      <Image
                         src={getCurrencyLogo(toCurrency)}
                         alt={`${toCurrency} logo`}
-                        className="w-6 h-6 object-contain"
+                        width={24}
+                        height={24}
+                        className="object-contain"
                       />
                     </div>
                     <div className="relative">
@@ -308,11 +306,13 @@ export default function ConvertMoney() {
                         onChange={(e) => setToCurrency(e.target.value)}
                         className="appearance-none bg-transparent border-none focus:outline-none text-sm font-medium text-gray-900 pr-6"
                       >
-                        {getAvailableToCurrencies(fromCurrency).map(currency => (
-                          <option key={currency.code} value={currency.code}>
-                            {currency.code}
-                          </option>
-                        ))}
+                        {getAvailableToCurrencies(fromCurrency).map(
+                          (currency) => (
+                            <option key={currency.code} value={currency.code}>
+                              {currency.code}
+                            </option>
+                          ),
+                        )}
                       </select>
                       <FiChevronDown className="absolute right-0 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>
@@ -321,7 +321,7 @@ export default function ConvertMoney() {
                     Bal: {getFormattedBalance(toCurrency)}
                   </p>
                 </div>
-                
+
                 {/* Amount Display */}
                 <div className="flex-1 px-4 py-3">
                   <input
@@ -351,16 +351,16 @@ export default function ConvertMoney() {
 
           {/* Continue Button */}
           <button
-  className={`w-full ${
-    acceptedRate 
-      ? 'bg-teal-600 hover:bg-teal-700' 
-      : 'bg-gray-300 cursor-not-allowed'
-  } text-white py-3 rounded-lg font-medium transition-colors`}
-  onClick={() => setIsAuthModalOpen(true)}
-  disabled={!acceptedRate}
->
-  Continue
-</button>
+            className={`w-full ${
+              acceptedRate
+                ? "bg-teal-600 hover:bg-teal-700"
+                : "bg-gray-300 cursor-not-allowed"
+            } text-white py-3 rounded-lg font-medium transition-colors`}
+            onClick={() => setIsAuthModalOpen(true)}
+            disabled={!acceptedRate}
+          >
+            Continue
+          </button>
         </div>
       </main>
 
@@ -383,12 +383,6 @@ export default function ConvertMoney() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onVerify={handleVerify}
-        conversionData={{
-          fromCurrency,
-          toCurrency,
-          fromAmount,
-          toAmount,
-        }}
       />
     </div>
   );

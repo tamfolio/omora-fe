@@ -194,7 +194,7 @@ export default function InsightsGrid() {
               >
                 {page}
               </Button>
-            )
+            ),
           )}
         </div>
         <Button

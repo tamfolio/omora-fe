@@ -1,5 +1,5 @@
-"use client"
-import React from 'react';
+"use client";
+import React from "react";
 
 interface TransactionData {
   id: string;
@@ -28,34 +28,36 @@ interface PDFHelperProps {
   transactionType: string;
 }
 
-export default function PDFHelper({ transactionData, transactionType }: PDFHelperProps) {
-  
+export default function PDFHelper({
+  transactionData,
+  transactionType,
+}: PDFHelperProps) {
   const generatePDFContent = () => {
     const getTransactionTitle = () => {
       switch (transactionType.toLowerCase()) {
-        case 'funding':
-          return 'Funding Transaction Receipt';
-        case 'withdrawal':
-          return transactionData.type === 'USDT Withdrawal' 
-            ? 'USDT Withdrawal Transaction Receipt'
-            : 'NGN Withdrawal Transaction Receipt';
-        case 'conversion':
-          return 'Conversion Transaction Receipt';
+        case "funding":
+          return "Funding Transaction Receipt";
+        case "withdrawal":
+          return transactionData.type === "USDT Withdrawal"
+            ? "USDT Withdrawal Transaction Receipt"
+            : "NGN Withdrawal Transaction Receipt";
+        case "conversion":
+          return "Conversion Transaction Receipt";
         default:
-          return 'Transaction Receipt';
+          return "Transaction Receipt";
       }
     };
 
     const getSpecificFields = () => {
       switch (transactionType.toLowerCase()) {
-        case 'funding':
+        case "funding":
           return `
             <tr><td>Sender's Name</td><td>${transactionData.senderName}</td></tr>
             <tr><td>Receiving Account</td><td>${transactionData.receivingAccount}</td></tr>
           `;
-        
-        case 'withdrawal':
-          if (transactionData.type === 'USDT Withdrawal') {
+
+        case "withdrawal":
+          if (transactionData.type === "USDT Withdrawal") {
             return `
               <tr><td>Wallet Address</td><td>${transactionData.walletAddress}</td></tr>
               <tr><td>Blockchain used</td><td>${transactionData.blockchain}</td></tr>
@@ -66,8 +68,8 @@ export default function PDFHelper({ transactionData, transactionType }: PDFHelpe
               <tr><td>Account Number</td><td>${transactionData.accountNumber}</td></tr>
             `;
           }
-        
-        case 'conversion':
+
+        case "conversion":
           return `
             <tr><td>Conversion</td><td>${transactionData.conversion}</td></tr>
             <tr><td>Source Wallet</td><td>${transactionData.sourceWallet}</td></tr>
@@ -76,9 +78,9 @@ export default function PDFHelper({ transactionData, transactionType }: PDFHelpe
             <tr><td>FX Rate Used</td><td>${transactionData.fxRateUsed}</td></tr>
             <tr><td>Converted Value</td><td>${transactionData.convertedValue}</td></tr>
           `;
-        
+
         default:
-          return '';
+          return "";
       }
     };
 
@@ -198,9 +200,9 @@ export default function PDFHelper({ transactionData, transactionType }: PDFHelpe
   const downloadPDF = async () => {
     try {
       // Create a new window with the receipt content
-      const printWindow = window.open('', '_blank');
+      const printWindow = window.open("", "_blank");
       if (!printWindow) {
-        alert('Please allow popups to download the receipt');
+        alert("Please allow popups to download the receipt");
         return;
       }
 
@@ -218,10 +220,9 @@ export default function PDFHelper({ transactionData, transactionType }: PDFHelpe
           }, 1000);
         }, 500);
       };
-
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Error generating receipt. Please try again.');
+      console.error("Error generating PDF:", error);
+      alert("Error generating receipt. Please try again.");
     }
   };
 

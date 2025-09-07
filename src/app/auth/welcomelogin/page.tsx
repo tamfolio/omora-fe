@@ -22,7 +22,7 @@ export default function FirstTimeLogin() {
     useState(false);
   const [manualCode, setManualCode] = useState("");
   const [emailCode, setEmailCode] = useState("");
-  const [qrCode, setQrCode] = useState("4K3DDKUW748H4CO");
+  const qrCode = "4K3DDKUW748H4CO";
   const router = useRouter();
 
   const verificationSteps = [

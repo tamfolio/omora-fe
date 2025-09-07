@@ -1,5 +1,5 @@
-"use client"
-import React, { useState } from 'react';
+"use client";
+import React, { useState } from "react";
 
 interface AuthenticatorModalProps {
   isOpen: boolean;
@@ -13,8 +13,13 @@ interface AuthenticatorModalProps {
   };
 }
 
-export default function AuthenticatorModal({ isOpen, onClose, onVerify, conversionData }: AuthenticatorModalProps) {
-  const [code, setCode] = useState('');
+export default function AuthenticatorModal({
+  isOpen,
+  onClose,
+  onVerify,
+  conversionData: _conversionData,
+}: AuthenticatorModalProps) {
+  const [code, setCode] = useState("");
 
   if (!isOpen) return null;
 
@@ -26,7 +31,7 @@ export default function AuthenticatorModal({ isOpen, onClose, onVerify, conversi
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, ''); 
+    const value = e.target.value.replace(/\D/g, "");
     if (value.length <= 6) {
       setCode(value);
     }
@@ -37,7 +42,9 @@ export default function AuthenticatorModal({ isOpen, onClose, onVerify, conversi
       <div className="bg-white rounded-2xl p-8 w-full max-w-md mx-4 shadow-xl">
         {/* Title */}
         <div className="text-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Check your authenticator app</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Check your authenticator app
+          </h2>
         </div>
 
         {/* Input Section */}
@@ -61,8 +68,8 @@ export default function AuthenticatorModal({ isOpen, onClose, onVerify, conversi
           disabled={code.length !== 6}
           className={`w-full py-3 rounded-lg font-medium transition-colors ${
             code.length === 6
-              ? 'bg-teal-600 hover:bg-teal-700 text-white'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              ? "bg-teal-600 hover:bg-teal-700 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
         >
           Verify

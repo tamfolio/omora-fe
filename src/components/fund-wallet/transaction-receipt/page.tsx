@@ -1,9 +1,9 @@
-"use client"
-import React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { FiArrowLeft } from 'react-icons/fi';
+"use client";
+import React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FiArrowLeft } from "react-icons/fi";
 import Logo from "@/components/ui/Logo";
-import PDFHelper from './pdf-helper/page';
+import PDFHelper from "./pdf-helper/page";
 
 interface TransactionData {
   id: string;
@@ -31,62 +31,62 @@ interface TransactionData {
 export default function TransactionReceipt() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Get transaction data from URL params (in production, this would come from API)
-  const transactionType = searchParams.get('type') || 'funding';
-  const transactionId = searchParams.get('id') || '1';
+  const transactionType = searchParams.get("type") || "funding";
+  const transactionId = searchParams.get("id") || "1";
 
   // Mock transaction data - in production, fetch from API based on ID
   const getTransactionData = (): TransactionData => {
     const baseData = {
       id: transactionId,
-      date: '02 Aug 2025, 19:08:07',
-      amount: '₦2000',
-      fee: '₦20',
-      status: 'Successful',
-      referenceId: '#123456'
+      date: "02 Aug 2025, 19:08:07",
+      amount: "₦2000",
+      fee: "₦20",
+      status: "Successful",
+      referenceId: "#123456",
     };
 
     switch (transactionType.toLowerCase()) {
-      case 'funding':
+      case "funding":
         return {
           ...baseData,
-          type: 'Wallet Funding',
-          senderName: 'Anita Odiete',
-          receivingAccount: 'Omora'
+          type: "Wallet Funding",
+          senderName: "Anita Odiete",
+          receivingAccount: "Omora",
         };
-      
-      case 'withdrawal':
-        if (searchParams.get('currency') === 'USDT') {
+
+      case "withdrawal":
+        if (searchParams.get("currency") === "USDT") {
           return {
             ...baseData,
-            type: 'USDT Withdrawal',
-            walletAddress: '123****59',
-            blockchain: 'ERC'
+            type: "USDT Withdrawal",
+            walletAddress: "123****59",
+            blockchain: "ERC",
           };
         } else {
           return {
             ...baseData,
-            type: 'NGN Withdrawal',
-            bankName: 'Stanbic IBTC',
-            accountNumber: '1234567890'
+            type: "NGN Withdrawal",
+            bankName: "Stanbic IBTC",
+            accountNumber: "1234567890",
           };
         }
-      
-      case 'conversion':
+
+      case "conversion":
         return {
           ...baseData,
-          type: 'Conversion',
-          conversion: 'NGN-USDT',
-          sourceWallet: 'NGN',
-          destinationWallet: 'USDT',
-          amountConverted: '₦2000',
-          fxRateUsed: '₦1 = $0.0000000063783',
-          convertedValue: '$1.26'
+          type: "Conversion",
+          conversion: "NGN-USDT",
+          sourceWallet: "NGN",
+          destinationWallet: "USDT",
+          amountConverted: "₦2000",
+          fxRateUsed: "₦1 = $0.0000000063783",
+          convertedValue: "$1.26",
         };
-      
+
       default:
-        return { ...baseData, type: 'Unknown Transaction' };
+        return { ...baseData, type: "Unknown Transaction" };
     }
   };
 
@@ -94,46 +94,54 @@ export default function TransactionReceipt() {
 
   const getPageTitle = () => {
     switch (transactionType.toLowerCase()) {
-      case 'funding':
-        return 'Funding Transaction Receipt';
-      case 'withdrawal':
-        return searchParams.get('currency') === 'USDT' 
-          ? 'USDT Withdrawal Transaction Receipt'
-          : 'NGN Withdrawal Transaction Receipt';
-      case 'conversion':
-        return 'Conversion Transaction Receipt';
+      case "funding":
+        return "Funding Transaction Receipt";
+      case "withdrawal":
+        return searchParams.get("currency") === "USDT"
+          ? "USDT Withdrawal Transaction Receipt"
+          : "NGN Withdrawal Transaction Receipt";
+      case "conversion":
+        return "Conversion Transaction Receipt";
       default:
-        return 'Transaction Receipt';
+        return "Transaction Receipt";
     }
   };
 
   const renderTransactionSpecificFields = () => {
     switch (transactionType.toLowerCase()) {
-      case 'funding':
+      case "funding":
         return (
           <>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Sender&apos;s Name</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.senderName}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.senderName}
+              </span>
             </div>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Receiving Account</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.receivingAccount}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.receivingAccount}
+              </span>
             </div>
           </>
         );
-      
-      case 'withdrawal':
-        if (searchParams.get('currency') === 'USDT') {
+
+      case "withdrawal":
+        if (searchParams.get("currency") === "USDT") {
           return (
             <>
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-sm text-gray-600">Wallet Address</span>
-                <span className="text-sm font-medium text-gray-900">{transactionData.walletAddress}</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {transactionData.walletAddress}
+                </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-sm text-gray-600">Blockchain used</span>
-                <span className="text-sm font-medium text-gray-900">{transactionData.blockchain}</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {transactionData.blockchain}
+                </span>
               </div>
             </>
           );
@@ -142,46 +150,62 @@ export default function TransactionReceipt() {
             <>
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-sm text-gray-600">Bank Name</span>
-                <span className="text-sm font-medium text-gray-900">{transactionData.bankName}</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {transactionData.bankName}
+                </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-sm text-gray-600">Account Number</span>
-                <span className="text-sm font-medium text-gray-900">{transactionData.accountNumber}</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {transactionData.accountNumber}
+                </span>
               </div>
             </>
           );
         }
-      
-      case 'conversion':
+
+      case "conversion":
         return (
           <>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Conversion</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.conversion}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.conversion}
+              </span>
             </div>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Source Wallet</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.sourceWallet}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.sourceWallet}
+              </span>
             </div>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Destination Wallet</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.destinationWallet}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.destinationWallet}
+              </span>
             </div>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Amount Converted</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.amountConverted}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.amountConverted}
+              </span>
             </div>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">FX Rate Used</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.fxRateUsed}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.fxRateUsed}
+              </span>
             </div>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Converted Value</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.convertedValue}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.convertedValue}
+              </span>
             </div>
           </>
         );
-      
+
       default:
         return null;
     }
@@ -193,7 +217,7 @@ export default function TransactionReceipt() {
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => router.back()}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
             >
@@ -202,7 +226,6 @@ export default function TransactionReceipt() {
             </button>
             <Logo width={120} height={32} />
           </div>
-         
         </div>
       </header>
 
@@ -216,51 +239,67 @@ export default function TransactionReceipt() {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           {/* Title */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Transaction Details</h1>
-            <p className="text-gray-600">Enter amount and select currency to convert to</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Transaction Details
+            </h1>
+            <p className="text-gray-600">
+              Enter amount and select currency to convert to
+            </p>
           </div>
 
           {/* Transaction Details */}
           <div className="space-y-0 mb-8">
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Transaction Date</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.date}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.date}
+              </span>
             </div>
-            
+
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Transaction Type</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.type}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.type}
+              </span>
             </div>
-            
+
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Amount</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.amount}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.amount}
+              </span>
             </div>
-            
+
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Transaction Fee</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.fee}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.fee}
+              </span>
             </div>
 
             {/* Render transaction-specific fields */}
             {renderTransactionSpecificFields()}
-            
+
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Reference ID</span>
-              <span className="text-sm font-medium text-gray-900">{transactionData.referenceId}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {transactionData.referenceId}
+              </span>
             </div>
-            
+
             <div className="flex justify-between items-center py-3">
               <span className="text-sm text-gray-600">Status</span>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                <span className="text-sm font-medium text-green-600">{transactionData.status}</span>
+                <span className="text-sm font-medium text-green-600">
+                  {transactionData.status}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Download Button */}
-          <PDFHelper 
+          <PDFHelper
             transactionData={transactionData}
             transactionType={transactionType}
           />
@@ -269,7 +308,9 @@ export default function TransactionReceipt() {
 
       {/* Footer */}
       <div className="text-center py-6 border-t border-gray-200 bg-white">
-        <p className="text-sm text-gray-500">© 2025 OMORA. All rights reserved.</p>
+        <p className="text-sm text-gray-500">
+          © 2025 OMORA. All rights reserved.
+        </p>
       </div>
 
       {/* Floating Chat Button */}

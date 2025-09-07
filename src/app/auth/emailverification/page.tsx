@@ -32,7 +32,7 @@ export default function EmailVerification() {
   const handleInputChange = (index: number, value: string) => {
     // Only allow numbers
     if (!/^\d*$/.test(value)) return;
-    
+
     const newCode = [...code];
     newCode[index] = value.slice(-1); // Only take the last character
     setCode(newCode);
@@ -52,25 +52,28 @@ export default function EmailVerification() {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    const pastedData = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 4);
     const newCode = [...code];
-    
+
     for (let i = 0; i < pastedData.length && i < 4; i++) {
       newCode[i] = pastedData[i];
     }
-    
+
     setCode(newCode);
     setError("");
-    
+
     // Focus the next empty input or the last one
-    const nextEmptyIndex = newCode.findIndex(digit => !digit);
+    const nextEmptyIndex = newCode.findIndex((digit) => !digit);
     const focusIndex = nextEmptyIndex === -1 ? 3 : Math.min(nextEmptyIndex, 3);
     inputRefs.current[focusIndex]?.focus();
   };
 
   const handleVerify = async () => {
     const verificationCode = code.join("");
-    
+
     if (verificationCode.length !== 4) {
       setError("Please enter the complete 4-digit code");
       return;
@@ -91,7 +94,7 @@ export default function EmailVerification() {
         }),
       });
 
-      const result = await response.json() as { error?: string };
+      const result = (await response.json()) as { error?: string };
 
       if (!response.ok) {
         setError(result.error || "Invalid verification code");
@@ -99,7 +102,7 @@ export default function EmailVerification() {
         router.push("/auth/login?message=Email verified successfully");
       }
     } catch (error: unknown) {
-      console.error('Verification error:', error);
+      console.error("Verification error:", error);
       setError("An error occurred during verification");
     } finally {
       setLoading(false);
@@ -119,7 +122,7 @@ export default function EmailVerification() {
         body: JSON.stringify({ email }),
       });
 
-      const result = await response.json() as { error?: string };
+      const result = (await response.json()) as { error?: string };
 
       if (!response.ok) {
         setError(result.error || "Failed to resend code");
@@ -130,7 +133,7 @@ export default function EmailVerification() {
         inputRefs.current[0]?.focus();
       }
     } catch (error: unknown) {
-      console.error('Resend error:', error);
+      console.error("Resend error:", error);
       setError("Failed to resend verification code");
     } finally {
       setIsResending(false);
@@ -180,14 +183,18 @@ export default function EmailVerification() {
               {/* Verification Code Input */}
               <div className="space-y-6">
                 {error && (
-                  <div className="text-red-500 text-sm text-center">{error}</div>
+                  <div className="text-red-500 text-sm text-center">
+                    {error}
+                  </div>
                 )}
 
                 <div className="flex justify-center space-x-3">
                   {code.map((digit, index) => (
                     <input
                       key={index}
-                      ref={(el) => { inputRefs.current[index] = el; }}
+                      ref={(el) => {
+                        inputRefs.current[index] = el;
+                      }}
                       type="text"
                       inputMode="numeric"
                       maxLength={1}
@@ -204,7 +211,7 @@ export default function EmailVerification() {
                 {/* Verify Email Button */}
                 <button
                   onClick={handleVerify}
-                  disabled={loading || code.some(digit => !digit)}
+                  disabled={loading || code.some((digit) => !digit)}
                   className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? "Verifying..." : "Verify email"}

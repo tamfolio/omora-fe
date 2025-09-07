@@ -33,30 +33,76 @@ export default function FrequentlyAskedQuestions() {
       </div>
       <Tabs defaultValue="general-platform" className="justify-center">
         <TabsList className="mb-20 flex-wrap h-fit !bg-none">
-          <TabsTrigger className="rounded-l-[8px] border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="general-platform">General Platform</TabsTrigger>
-          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="kyc">Account & Verification (KYC)</TabsTrigger>
-          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="getting-started">Getting Started</TabsTrigger>
-          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="security-2fa">Security & 2FA</TabsTrigger>
-          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="team-management">Team Management</TabsTrigger>
-          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="wallet-transactions">
+          <TabsTrigger
+            className="rounded-l-[8px] border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="general-platform"
+          >
+            General Platform
+          </TabsTrigger>
+          <TabsTrigger
+            className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="kyc"
+          >
+            Account & Verification (KYC)
+          </TabsTrigger>
+          <TabsTrigger
+            className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="getting-started"
+          >
+            Getting Started
+          </TabsTrigger>
+          <TabsTrigger
+            className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="security-2fa"
+          >
+            Security & 2FA
+          </TabsTrigger>
+          <TabsTrigger
+            className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="team-management"
+          >
+            Team Management
+          </TabsTrigger>
+          <TabsTrigger
+            className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="wallet-transactions"
+          >
             Wallet & Transactions
           </TabsTrigger>
-          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="investment-portfolio-performance">
+          <TabsTrigger
+            className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="investment-portfolio-performance"
+          >
             Investment & Portfolio performance
           </TabsTrigger>
-          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="reporting-insights">
+          <TabsTrigger
+            className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="reporting-insights"
+          >
             Reporting & Insights
           </TabsTrigger>
-          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="notifications-emails">
+          <TabsTrigger
+            className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="notifications-emails"
+          >
             Notifications & Emails
           </TabsTrigger>
-          <TabsTrigger className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="fees-charges">
+          <TabsTrigger
+            className="border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="fees-charges"
+          >
             Fees & Charges
           </TabsTrigger>
-          <TabsTrigger className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="support-troubleshooting">
+          <TabsTrigger
+            className="data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="support-troubleshooting"
+          >
             Support & Troubleshooting
           </TabsTrigger>
-          <TabsTrigger className="rounded-r-[8px] border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]" value="legal-compliance">
+          <TabsTrigger
+            className="rounded-r-[8px] border border-[#E9EAEB] data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-[data-[state=active]:border]  bg-[#FAFAFA] mb-4 data-[state=active]:rounded-[8px] border-t-[#E9EAEB] border-b-[#E9EAEB]"
+            value="legal-compliance"
+          >
             Legal & Compliance
           </TabsTrigger>
         </TabsList>
@@ -100,39 +146,44 @@ export default function FrequentlyAskedQuestions() {
 
       <div className="flex flex-col p-8 mt-16 mb-24 items-center justify-center text-center bg-[#FAFAFA] mx-[112px] rounded-[16px]">
         <div className="flex items-center mb-8">
-      <div className="rounded-full size-[48px] overflow-hidden border-1 border-white -mr-4">
-        <Image
-          src="/assets/images/website/faq/avatar-1.png"
-          alt="Person 1"
-          width={48}
-          height={48}
-          className="object-cover"
-        />
-      </div>
-      <div className="relative z-10 rounded-full size-[52px] overflow-hidden border-1 grow-1 border-white -mr-4">
-        <Image
-          src="/assets/images/website/faq/avatar-2.png"
-          alt="Person 2"
-          width={52}
-          height={52}
-          className="object-cover"
-        />
-      </div>
-      <div className="rounded-full size-[48px] overflow-hidden border-1 border-white">
-        <Image
-          src="/assets/images/website/faq/avatar-3.png"
-          alt="Person 3"
-          width={48}
-          height={48}
-          className="object-cover"
-        />
-      </div>
-    </div>
+          <div className="rounded-full size-[48px] overflow-hidden border-1 border-white -mr-4">
+            <Image
+              src="/assets/images/website/faq/avatar-1.png"
+              alt="Person 1"
+              width={48}
+              height={48}
+              className="object-cover"
+            />
+          </div>
+          <div className="relative z-10 rounded-full size-[52px] overflow-hidden border-1 grow-1 border-white -mr-4">
+            <Image
+              src="/assets/images/website/faq/avatar-2.png"
+              alt="Person 2"
+              width={52}
+              height={52}
+              className="object-cover"
+            />
+          </div>
+          <div className="rounded-full size-[48px] overflow-hidden border-1 border-white">
+            <Image
+              src="/assets/images/website/faq/avatar-3.png"
+              alt="Person 3"
+              width={48}
+              height={48}
+              className="object-cover"
+            />
+          </div>
+        </div>
 
-        <h2 className="font-semibold text-[20px] mb-2 text-[#181D27]">Still have questions?</h2>
-        <p className="text-[#535862] text-[18px] font-normal mb-8">Can&apos;t find the answer you&apos;re looking for? Please chat to our friendly team.</p>
+        <h2 className="font-semibold text-[20px] mb-2 text-[#181D27]">
+          Still have questions?
+        </h2>
+        <p className="text-[#535862] text-[18px] font-normal mb-8">
+          Can&apos;t find the answer you&apos;re looking for? Please chat to our
+          friendly team.
+        </p>
         <Button className="px-[18px] py-3 rounded-[8px] bg-[#008B99] hover:bg-[#008B99] font-semibold">
-            Get in touch
+          Get in touch
         </Button>
       </div>
     </div>

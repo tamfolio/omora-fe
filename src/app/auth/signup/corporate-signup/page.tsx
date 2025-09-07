@@ -33,13 +33,13 @@ export default function CorporateSignup({
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    
+
     // Auto-populate business name from RC number
     if (field === "rcNumber") {
       const businessName = value ? `RC - ${value}` : "";
       setFormData((prev) => ({ ...prev, businessName }));
     }
-    
+
     if (field === "email") {
       setEmailError("");
     }
@@ -67,11 +67,11 @@ export default function CorporateSignup({
         },
         body: JSON.stringify({ email }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to check email");
       }
-      
+
       const result = await response.json();
       return result.exists;
     } catch (error) {
@@ -107,7 +107,9 @@ export default function CorporateSignup({
     }
 
     if (!validatePassword(formData.password)) {
-      onError("Password must be at least 8 characters and include a symbol, uppercase/lowercase");
+      onError(
+        "Password must be at least 8 characters and include a symbol, uppercase/lowercase",
+      );
       setLoading(false);
       return;
     }
@@ -149,7 +151,10 @@ export default function CorporateSignup({
     <form className="space-y-3" onSubmit={handleSubmit}>
       {/* RC Number */}
       <div>
-        <label htmlFor="rcNumber" className="block text-xs font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="rcNumber"
+          className="block text-xs font-medium text-gray-700 mb-1"
+        >
           RC Number *
         </label>
         <input
@@ -166,7 +171,10 @@ export default function CorporateSignup({
 
       {/* Business Name */}
       <div>
-        <label htmlFor="businessName" className="block text-xs font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="businessName"
+          className="block text-xs font-medium text-gray-700 mb-1"
+        >
           Business Name
         </label>
         <input
@@ -178,12 +186,17 @@ export default function CorporateSignup({
           readOnly
           disabled={loading}
         />
-        <p className="text-xs text-gray-500 mt-0.5">Auto-populated based on RC Number</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Auto-populated based on RC Number
+        </p>
       </div>
 
       {/* Email */}
       <div>
-        <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="email"
+          className="block text-xs font-medium text-gray-700 mb-1"
+        >
           Email *
         </label>
         <input
@@ -197,12 +210,17 @@ export default function CorporateSignup({
           onBlur={(e) => handleEmailBlur(e.target.value)}
           disabled={loading}
         />
-        {emailError && <p className="text-xs text-red-500 mt-0.5">{emailError}</p>}
+        {emailError && (
+          <p className="text-xs text-red-500 mt-0.5">{emailError}</p>
+        )}
       </div>
 
       {/* Password */}
       <div>
-        <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="password"
+          className="block text-xs font-medium text-gray-700 mb-1"
+        >
           Password *
         </label>
         <div className="relative">
@@ -229,12 +247,17 @@ export default function CorporateSignup({
             )}
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-0.5">8+ characters, symbol, uppercase/lowercase</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          8+ characters, symbol, uppercase/lowercase
+        </p>
       </div>
 
       {/* Confirm Password */}
       <div>
-        <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="confirmPassword"
+          className="block text-xs font-medium text-gray-700 mb-1"
+        >
           Confirm Password *
         </label>
         <div className="relative">
@@ -274,9 +297,13 @@ export default function CorporateSignup({
         />
         <span className="text-gray-600">
           I accept the{" "}
-          <Link href="/terms" className="text-teal-600 hover:text-teal-500">Terms</Link>
-          {" "}and{" "}
-          <Link href="/privacy" className="text-teal-600 hover:text-teal-500">Privacy Policy</Link>
+          <Link href="/terms" className="text-teal-600 hover:text-teal-500">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-teal-600 hover:text-teal-500">
+            Privacy Policy
+          </Link>
         </span>
       </div>
 
