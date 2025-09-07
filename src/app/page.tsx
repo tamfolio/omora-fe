@@ -45,7 +45,7 @@ const page = () => {
         <div className="absolute inset-0 bg-[url('/assets/images/website/gradient.png')] bg-cover bg-no-repeat z-[5]"></div>
 
         <div className="pt-[180px] relative z-20">
-          <h1 className="text-[81px] font-medium text-center px-3">
+          <h1 className="text-[81px] font-medium text-center max-w-[1084px] mx-auto text-wrap">
             Crypto investing, powered by AI. Fund in Naira, grow in digital
             assets.
           </h1>

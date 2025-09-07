@@ -70,8 +70,7 @@ export default function NotFoundPage() {
                 Page not found
               </h1>
               <p className="text-lg leading-7 text-gray-600 mb-10">
-                Sorry, the page you are looking for doesn&apos;t exist or has
-                been moved. Try searching our site.
+                Sorry, the page you are looking for doesn&lsquo;t exist or has been moved. Try searching our site.
               </p>
               <div className="flex items-center gap-x-6">
                 <Link
