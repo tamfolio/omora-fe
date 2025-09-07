@@ -15,7 +15,8 @@ export const NewsroomData: Newsroom = [
   {
     id: 1,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 2",
     image: "/assets/images/website/default-insight.jpg",
@@ -25,7 +26,8 @@ export const NewsroomData: Newsroom = [
   {
     id: 2,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 1",
     image: "/assets/images/website/default-insight.jpg",
@@ -35,7 +37,8 @@ export const NewsroomData: Newsroom = [
   {
     id: 3,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 1",
     image: "/assets/images/website/default-insight.jpg",
@@ -45,7 +48,8 @@ export const NewsroomData: Newsroom = [
   {
     id: 4,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 2",
     image: "/assets/images/website/default-insight.jpg",
@@ -55,7 +59,8 @@ export const NewsroomData: Newsroom = [
   {
     id: 5,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 2",
     image: "/assets/images/website/default-insight.jpg",
@@ -65,7 +70,8 @@ export const NewsroomData: Newsroom = [
   {
     id: 6,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 1",
     image: "/assets/images/website/default-insight.jpg",
@@ -75,7 +81,8 @@ export const NewsroomData: Newsroom = [
   {
     id: 7,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 2",
     image: "/assets/images/website/default-insight.jpg",
@@ -85,7 +92,8 @@ export const NewsroomData: Newsroom = [
   {
     id: 8,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 2",
     image: "/assets/images/website/default-insight.jpg",
@@ -95,7 +103,8 @@ export const NewsroomData: Newsroom = [
   {
     id: 9,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 2",
     image: "/assets/images/website/default-insight.jpg",
@@ -105,11 +114,12 @@ export const NewsroomData: Newsroom = [
   {
     id: 10,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 1",
     image: "/assets/images/website/default-insight.jpg",
     author: "Olivia Rhye",
     bookmark: false,
   },
-]
+];

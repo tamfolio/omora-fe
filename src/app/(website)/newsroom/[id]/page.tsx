@@ -8,7 +8,8 @@ export const newsroomRecommendation: Newsroom = [
   {
     id: 1,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 2",
     image: "/assets/images/website/default-insight.jpg",
@@ -18,14 +19,15 @@ export const newsroomRecommendation: Newsroom = [
   {
     id: 2,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Section 1",
     image: "/assets/images/website/default-insight.jpg",
     author: "Olivia Rhye",
     bookmark: false,
   },
-]
+];
 
 export default function NewsroomDetail({ params }: { params: { id: string } }) {
   const newsroom = NewsroomData.find((item) => item.id === Number(params.id));
@@ -79,12 +81,12 @@ export default function NewsroomDetail({ params }: { params: { id: string } }) {
       </section>
       <section className="mb-24">
         <p className="mb-[74px] text-[#535862] max-w-[720px] mx-auto">
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
+          Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+          suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis
+          montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere
+          vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien
+          varius id.
+        </p>
         <div className="text-[#535862] mx-auto max-w-[720px] text-[18px]">
           <h2 className="text-[#181D27] text-[30px] font-semibold mb-5">
             introduction
@@ -268,75 +270,76 @@ export default function NewsroomDetail({ params }: { params: { id: string } }) {
       </section>
       <section className="py-24 flex flex-col md:flex-row gap-16">
         <div className="max-w-[400px]">
-            <h3 className="text-[#00717D] text-base font-semibold">Latest</h3>
-            <h4 className="text-[36px] text-[#181D27] font-semibold mb-5">News</h4>
-            <p className="text-[#535862] text-[18px]">The latest industry news, interviews, technologies, and resources.</p>
-            <Button className="bg-[#008B99] px-[18px] py-3 rounded-[8px] mt-8">View all posts</Button>
+          <h3 className="text-[#00717D] text-base font-semibold">Latest</h3>
+          <h4 className="text-[36px] text-[#181D27] font-semibold mb-5">
+            News
+          </h4>
+          <p className="text-[#535862] text-[18px]">
+            The latest industry news, interviews, technologies, and resources.
+          </p>
+          <Button className="bg-[#008B99] px-[18px] py-3 rounded-[8px] mt-8">
+            View all posts
+          </Button>
         </div>
         <div className="grid grid-cols-2 gap-8 w-full">
-            {newsroomRecommendation.map((insights, index) => (
-              <Link
-                href={`/newsroom/${index + 1}`}
-                key={index}
-                className="block"
-              >
-                <div
-                  key={index}
-                  className="w-full"
-                >
-                  <div className="relative mb-[10px]">
+          {newsroomRecommendation.map((insights, index) => (
+            <Link href={`/newsroom/${index + 1}`} key={index} className="block">
+              <div key={index} className="w-full">
+                <div className="relative mb-[10px]">
+                  <Image
+                    className="rounded-t-[10px] w-full"
+                    src={insights.image}
+                    alt={insights.title}
+                    height={256}
+                    width={384}
+                  />
+                  <div className="absolute size-10 rounded-full flex items-center justify-center bg-[#FFFFFF50] right-5 top-4">
                     <Image
-                      className="rounded-t-[10px] w-full"
-                      src={insights.image}
-                      alt={insights.title}
-                      height={256}
-                      width={384}
-                    />
-                    <div className="absolute size-10 rounded-full flex items-center justify-center bg-[#FFFFFF50] right-5 top-4">
-                      <Image
-                        className="mt-3"
-                        src="/assets/images/website/bookmark.svg"
-                        alt="bookmark"
-                        height={24}
-                        width={24}
-                      />
-                    </div>
-                  </div>
-                    <h2 className="text-[#00717D] text-sm font-semibold mb-2">{insights.type}</h2>
-                  <div className="flex items-center justify-between">
-                    <h2 className="font-semibold text-[#181D27] text-[18px] mb-1">
-                      {insights.title}
-                    </h2>{" "}
-                    <Image
-                      src="/assets/images/website/arrow-up-right.svg"
-                      width={24}
+                      className="mt-3"
+                      src="/assets/images/website/bookmark.svg"
+                      alt="bookmark"
                       height={24}
-                      alt="arrow-up-right"
+                      width={24}
                     />
                   </div>
-                  <p className="text-[#535862] text-base mb-5">
-                    {insights.description}
-                  </p>
-                  <div className="flex items-center gap-2">
-                      <Image
-                        src="/assets/images/website/avatar-2.png"
-                        className="size-10 rounded-full border border-[#00000014]"
-                        alt="arrow-up-right-white"
-                        width={24}
-                        height={24}
-                      />
-                      <div>
-                        <p className="text-sm font-semibold text-[#181D27]">
-                        {insights.author}
-                      </p>
-                      <p className="text-[#535862] text-sm flex iteems-center justify-between">
-                        {insights.date}
-                      </p>
-                      </div>
-                    </div>
                 </div>
-              </Link>
-            ))}
+                <h2 className="text-[#00717D] text-sm font-semibold mb-2">
+                  {insights.type}
+                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-[#181D27] text-[18px] mb-1">
+                    {insights.title}
+                  </h2>{" "}
+                  <Image
+                    src="/assets/images/website/arrow-up-right.svg"
+                    width={24}
+                    height={24}
+                    alt="arrow-up-right"
+                  />
+                </div>
+                <p className="text-[#535862] text-base mb-5">
+                  {insights.description}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Image
+                    src="/assets/images/website/avatar-2.png"
+                    className="size-10 rounded-full border border-[#00000014]"
+                    alt="arrow-up-right-white"
+                    width={24}
+                    height={24}
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-[#181D27]">
+                      {insights.author}
+                    </p>
+                    <p className="text-[#535862] text-sm flex iteems-center justify-between">
+                      {insights.date}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
     </main>

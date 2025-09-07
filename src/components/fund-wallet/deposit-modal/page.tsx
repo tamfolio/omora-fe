@@ -1,7 +1,7 @@
-"use client"
-import React from 'react';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+"use client";
+import React from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface DepositModalProps {
   isOpen: boolean;
@@ -9,14 +9,16 @@ interface DepositModalProps {
 }
 
 export default function DepositModal({ isOpen, onClose }: DepositModalProps) {
-  const [amount, setAmount] = useState('1000000');
+  const [amount, setAmount] = useState("1000000");
   const router = useRouter();
 
   if (!isOpen) return null;
 
   const handleDeposit = () => {
     // Navigate to CompleteYourDeposit component with the amount
-    router.push(`/dashboard/fund-wallet/complete-your-deposit?amount=${amount}`);
+    router.push(
+      `/dashboard/fund-wallet/complete-your-deposit?amount=${amount}`,
+    );
     onClose();
   };
 
@@ -25,22 +27,38 @@ export default function DepositModal({ isOpen, onClose }: DepositModalProps) {
       <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Deposit into your Wallet</h2>
-          <button 
+          <h2 className="text-xl font-semibold text-gray-900">
+            Deposit into your Wallet
+          </h2>
+          <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
 
         {/* Amount Input */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Amount
+          </label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₦</span>
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+              ₦
+            </span>
             <input
               type="text"
               value={amount}
@@ -49,7 +67,9 @@ export default function DepositModal({ isOpen, onClose }: DepositModalProps) {
               placeholder="Enter amount"
             />
           </div>
-          <p className="text-xs text-gray-500 mt-2">Minimum deposit amount is ₦10,000</p>
+          <p className="text-xs text-gray-500 mt-2">
+            Minimum deposit amount is ₦10,000
+          </p>
         </div>
 
         {/* Deposit Button */}

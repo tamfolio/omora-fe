@@ -16,7 +16,8 @@ export const insightsData: Insight = [
   {
     id: 1,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Neutral",
     readingTime: "5 min read",
@@ -27,7 +28,8 @@ export const insightsData: Insight = [
   {
     id: 2,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Bullish",
     readingTime: "5 min read",
@@ -38,7 +40,8 @@ export const insightsData: Insight = [
   {
     id: 3,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Bearish",
     readingTime: "5 min read",
@@ -49,7 +52,8 @@ export const insightsData: Insight = [
   {
     id: 4,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Neutral",
     readingTime: "5 min read",
@@ -60,7 +64,8 @@ export const insightsData: Insight = [
   {
     id: 5,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Bearish",
     readingTime: "5 min read",
@@ -71,7 +76,8 @@ export const insightsData: Insight = [
   {
     id: 6,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Bullish",
     readingTime: "5 min read",
@@ -82,7 +88,8 @@ export const insightsData: Insight = [
   {
     id: 7,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Bearish",
     readingTime: "5 min read",
@@ -93,7 +100,8 @@ export const insightsData: Insight = [
   {
     id: 8,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Neutral",
     readingTime: "5 min read",
@@ -104,7 +112,8 @@ export const insightsData: Insight = [
   {
     id: 9,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Bullish",
     readingTime: "5 min read",
@@ -115,7 +124,8 @@ export const insightsData: Insight = [
   {
     id: 10,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Neutral",
     readingTime: "5 min read",
@@ -126,7 +136,8 @@ export const insightsData: Insight = [
   {
     id: 11,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Bullish",
     readingTime: "5 min read",
@@ -137,7 +148,8 @@ export const insightsData: Insight = [
   {
     id: 12,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Bearish",
     readingTime: "5 min read",
@@ -148,7 +160,8 @@ export const insightsData: Insight = [
   {
     id: 13,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Neutral",
     readingTime: "5 min read",
@@ -159,7 +172,8 @@ export const insightsData: Insight = [
   {
     id: 14,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Bearish",
     readingTime: "5 min read",
@@ -170,7 +184,8 @@ export const insightsData: Insight = [
   {
     id: 15,
     title: "Bill Walsh leadership lessons",
-    description: "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
+    description:
+      "Like to know the secrets of transforming a 2-14 team into a 3x Super Bowl winning Dynasty?",
     date: "17 Jan 2025",
     type: "Bullish",
     readingTime: "5 min read",
@@ -178,4 +193,4 @@ export const insightsData: Insight = [
     source: "Derived from X",
     bookmark: false,
   },
-]
+];

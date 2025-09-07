@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import Logo from "@/components/ui/Logo";
+import Link from "next/link";
+import Image from 'next/image'; // Add this import
 
 export default function NotFoundPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-100">
+      {/* <header className="bg-white shadow-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -55,7 +55,7 @@ export default function NotFoundPage() {
             </div>
           </div>
         </div>
-      </header>
+      </header> */}
 
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-6 py-24 sm:py-32 lg:px-8">
@@ -63,7 +63,9 @@ export default function NotFoundPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left Column - Text Content */}
             <div className="text-left">
-              <p className="text-base font-semibold text-teal-600 mb-4">404 error</p>
+              <p className="text-base font-semibold text-teal-600 mb-4">
+                404 error
+              </p>
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl mb-6">
                 Page not found
               </h1>
@@ -88,10 +90,13 @@ export default function NotFoundPage() {
 
             {/* Right Column - 404 Illustration */}
             <div className="flex justify-center lg:justify-end">
-              <div className="w-full max-w-md">
-                <img 
-                  src="/assets/images/logo/404-illustration.png" 
+              <div className="w-full max-w-md relative">
+                <Image
+                  src="/assets/images/logo/404-illustration.png"
                   alt="404 Page Not Found Illustration"
+                  width={500}
+                  height={500}
+                  priority
                   className="w-full h-auto"
                 />
               </div>
@@ -100,5 +105,5 @@ export default function NotFoundPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

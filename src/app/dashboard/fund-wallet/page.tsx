@@ -1,5 +1,5 @@
-import Navbar from '@/components/fund-wallet/Navbar';
-import FundWalletComponent from '@/components/fund-wallet/page';
+import Navbar from "@/components/fund-wallet/Navbar";
+import FundWalletComponent from "@/components/fund-wallet/page";
 
 export default function FundWalletPage() {
   return (

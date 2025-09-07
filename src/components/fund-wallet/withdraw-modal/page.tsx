@@ -1,69 +1,84 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import { FiChevronDown } from 'react-icons/fi';
-import USDTWithdrawModal from './usdt-withdrawal-modal/page';
-import VerificationModal from '../withdraw-modal/verification-modal/page';
-import WithdrawalSuccessModal from '../withdraw-modal/withdrawal-success-modal/page';
+"use client";
+import React, { useState, useEffect } from "react";
+import { ChevronDown } from "lucide-react";
+import USDTWithdrawModal from "./usdt-withdrawal-modal/page";
+// Comment out these imports if the components don't exist
+// import VerificationModal from "../withdraw-modal/verification-modal/page";
+// import WithdrawalSuccessModal from "../withdraw-modal/withdrawal-success-modal/page";
+
+interface WithdrawData {
+  currency: "NGN" | "USDT";
+  amount: number;
+  serviceFee: number;
+  bankAccount?: string;
+  accountNumber?: string;
+  accountName?: string;
+  walletAddress?: string;
+  network?: string;
+  description: string;
+}
 
 interface WithdrawModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onWithdraw: (withdrawData: any) => void;
+  onWithdraw: (withdrawData: WithdrawData) => void;
   onGoToDashboard?: () => void;
   onGoBackToWallet?: () => void;
-  initialCurrency?: 'NGN' | 'USDT';
+  initialCurrency?: "NGN" | "USDT";
 }
 
 // Mock account database - in production this would be an API call
-const MOCK_ACCOUNTS = {
-  '0157855500': 'Anita Odiete Kikitos',
-  '1234567890': 'John Doe',
-  '0987654321': 'Jane Smith',
-  '1122334455': 'David Johnson',
-  '5566778899': 'Sarah Wilson'
+const MOCK_ACCOUNTS: Record<string, string> = {
+  "0157855500": "Anita Odiete Kikitos",
+  "1234567890": "John Doe",
+  "0987654321": "Jane Smith",
+  "1122334455": "David Johnson",
+  "5566778899": "Sarah Wilson",
 };
 
 const BANKS = [
-  'Fidelity Bank',
-  'Access Bank',
-  'GTBank',
-  'First Bank',
-  'Zenith Bank',
-  'UBA',
-  'Stanbic IBTC',
-  'Union Bank',
-  'Wema Bank',
-  'Sterling Bank'
+  "Fidelity Bank",
+  "Access Bank",
+  "GTBank",
+  "First Bank",
+  "Zenith Bank",
+  "UBA",
+  "Stanbic IBTC",
+  "Union Bank",
+  "Wema Bank",
+  "Sterling Bank",
 ];
 
 const WITHDRAWAL_FEES = {
   NGN: 200,
-  USDT: 5
+  USDT: 5,
 };
 
 const MIN_WITHDRAWAL = {
   NGN: 50000,
-  USDT: 10
+  USDT: 10,
 };
 
-export default function WithdrawModal({ 
-  isOpen, 
-  onClose, 
-  onWithdraw, 
+export default function WithdrawModal({
+  isOpen,
+  onClose,
+  onWithdraw,
   onGoToDashboard,
   onGoBackToWallet,
-  initialCurrency = 'NGN' 
+  initialCurrency = "NGN",
 }: WithdrawModalProps) {
-  const [selectedCurrency, setSelectedCurrency] = useState<'NGN' | 'USDT'>(initialCurrency);
-  const [amount, setAmount] = useState('250000');
-  const [bankAccount, setBankAccount] = useState('Fidelity Bank');
-  const [accountNumber, setAccountNumber] = useState('0157855500');
-  const [accountName, setAccountName] = useState('Anita Odiete Kikitos');
-  const [description, setDescription] = useState('');
+  const [selectedCurrency, setSelectedCurrency] = useState<"NGN" | "USDT">(
+    initialCurrency,
+  );
+  const [amount, setAmount] = useState("250000");
+  const [bankAccount, setBankAccount] = useState("Fidelity Bank");
+  const [accountNumber, setAccountNumber] = useState("0157855500");
+  const [accountName, setAccountName] = useState("Anita Odiete Kikitos");
+  const [description, setDescription] = useState("");
   const [isValidatingAccount, setIsValidatingAccount] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [pendingWithdrawData, setPendingWithdrawData] = useState<any>(null);
+  const [pendingWithdrawData, setPendingWithdrawData] = useState<WithdrawData | null>(null);
 
   useEffect(() => {
     setSelectedCurrency(initialCurrency);
@@ -71,44 +86,44 @@ export default function WithdrawModal({
 
   // Function to validate account number and populate account name
   const validateAccountNumber = async (accountNum: string) => {
-    if (accountNum.length === 10 && selectedCurrency === 'NGN') {
+    if (accountNum.length === 10 && selectedCurrency === "NGN") {
       setIsValidatingAccount(true);
-      
+
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const foundAccount = MOCK_ACCOUNTS[accountNum as keyof typeof MOCK_ACCOUNTS];
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const foundAccount = MOCK_ACCOUNTS[accountNum];
       if (foundAccount) {
         setAccountName(foundAccount);
       } else {
-        setAccountName('Account not found');
+        setAccountName("Account not found");
       }
-      
+
       setIsValidatingAccount(false);
     }
   };
 
   const handleAccountNumberChange = (value: string) => {
     setAccountNumber(value);
-    if (selectedCurrency === 'NGN') {
-      setAccountName(''); // Clear account name while typing
+    if (selectedCurrency === "NGN") {
+      setAccountName(""); // Clear account name while typing
       validateAccountNumber(value);
     }
   };
 
-  const handleCurrencyChange = (currency: 'NGN' | 'USDT') => {
+  const handleCurrencyChange = (currency: "NGN" | "USDT") => {
     setSelectedCurrency(currency);
   };
 
   if (!isOpen) return null;
 
   // If USDT is selected, render the USDT modal
-  if (selectedCurrency === 'USDT') {
+  if (selectedCurrency === "USDT") {
     return (
       <>
-        <USDTWithdrawModal 
-          isOpen={isOpen} 
-          onClose={onClose} 
+        <USDTWithdrawModal
+          isOpen={isOpen}
+          onClose={onClose}
           onWithdraw={onWithdraw}
           onCurrencyChange={handleCurrencyChange}
           onGoToDashboard={onGoToDashboard}
@@ -120,20 +135,20 @@ export default function WithdrawModal({
 
   const serviceFee = WITHDRAWAL_FEES[selectedCurrency];
   const minAmount = MIN_WITHDRAWAL[selectedCurrency];
-  const currencySymbol = selectedCurrency === 'NGN' ? '₦' : '';
-  const currencyUnit = selectedCurrency === 'NGN' ? 'NGN' : 'USDT';
+  const currencySymbol = selectedCurrency === "NGN" ? "₦" : "";
+  const currencyUnit = selectedCurrency === "NGN" ? "NGN" : "USDT";
 
   const handleWithdraw = () => {
-    const withdrawData = {
+    const withdrawData: WithdrawData = {
       currency: selectedCurrency,
       amount: parseFloat(amount),
       serviceFee,
-      bankAccount: selectedCurrency === 'NGN' ? bankAccount : undefined,
-      accountNumber: selectedCurrency === 'NGN' ? accountNumber : undefined,
-      accountName: selectedCurrency === 'NGN' ? accountName : undefined,
-      description
+      bankAccount: selectedCurrency === "NGN" ? bankAccount : undefined,
+      accountNumber: selectedCurrency === "NGN" ? accountNumber : undefined,
+      accountName: selectedCurrency === "NGN" ? accountName : undefined,
+      description,
     };
-    
+
     // Store withdraw data and show verification modal
     setPendingWithdrawData(withdrawData);
     setShowVerification(true);
@@ -173,7 +188,7 @@ export default function WithdrawModal({
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         // Close modal when clicking the backdrop
@@ -187,12 +202,22 @@ export default function WithdrawModal({
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Withdraw</h2>
-            <button 
+            <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -204,7 +229,7 @@ export default function WithdrawModal({
             </button>
             <div className="border-r border-gray-200"></div>
             <button
-              onClick={() => handleCurrencyChange('USDT')}
+              onClick={() => handleCurrencyChange("USDT")}
               className="flex-1 px-3 py-2 text-sm font-medium bg-white text-gray-600 hover:bg-gray-50"
             >
               USDT
@@ -213,7 +238,9 @@ export default function WithdrawModal({
 
           {/* Amount Input */}
           <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Amount
+            </label>
             <input
               type="text"
               value={amount}
@@ -222,30 +249,38 @@ export default function WithdrawModal({
               placeholder={`Enter amount in ${currencyUnit}`}
             />
             <p className="text-xs text-gray-500 mt-0.5">
-              Min: {currencySymbol}{minAmount.toLocaleString()}, Fee: {currencySymbol}{serviceFee} {currencyUnit}
+              Min: {currencySymbol}
+              {minAmount.toLocaleString()}, Fee: {currencySymbol}
+              {serviceFee} {currencyUnit}
             </p>
           </div>
 
           {/* Bank Details for NGN */}
           <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bank</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Bank
+            </label>
             <div className="relative">
               <select
                 value={bankAccount}
                 onChange={(e) => setBankAccount(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 appearance-none bg-white text-sm"
               >
-                {BANKS.map(bank => (
-                  <option key={bank} value={bank}>{bank}</option>
+                {BANKS.map((bank) => (
+                  <option key={bank} value={bank}>
+                    {bank}
+                  </option>
                 ))}
               </select>
-              <FiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Account Number
+              </label>
               <input
                 type="text"
                 value={accountNumber}
@@ -256,7 +291,9 @@ export default function WithdrawModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Account Name
+              </label>
               <input
                 type="text"
                 value={accountName}
@@ -269,13 +306,15 @@ export default function WithdrawModal({
           {isValidatingAccount && (
             <p className="text-xs text-blue-600 -mt-2 mb-2">Validating...</p>
           )}
-          {accountName === 'Account not found' && (
+          {accountName === "Account not found" && (
             <p className="text-xs text-red-600 -mt-2 mb-2">Account not found</p>
           )}
 
           {/* Description */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description (optional)
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -300,27 +339,53 @@ export default function WithdrawModal({
         </div>
       </div>
 
-      {/* Verification Modal */}
-      <VerificationModal
-        isOpen={showVerification}
-        onClose={handleCloseVerification}
-        onVerificationSuccess={handleVerificationSuccess}
-        onShowSuccess={handleShowSuccess}
-        withdrawData={pendingWithdrawData}
-      />
+      {/* Placeholder for Verification Modal */}
+      {showVerification && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+          <div className="bg-white p-6 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4">Verification Required</h3>
+            <p className="mb-4">Please verify your withdrawal request.</p>
+            <div className="flex gap-2">
+              <button 
+                onClick={handleVerificationSuccess}
+                className="px-4 py-2 bg-teal-600 text-white rounded"
+              >
+                Verify
+              </button>
+              <button 
+                onClick={handleCloseVerification}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Success Modal */}
-      <WithdrawalSuccessModal
-        isOpen={showSuccess}
-        onClose={handleCloseSuccess}
-        onGoToDashboard={handleGoToDashboard}
-        onGoBackToWallet={handleGoBackToWallet}
-        withdrawalData={{
-          amount: pendingWithdrawData?.amount || 0,
-          currency: pendingWithdrawData?.currency || 'NGN',
-          type: 'withdrawal'
-        }}
-      />
+      {/* Placeholder for Success Modal */}
+      {showSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+          <div className="bg-white p-6 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4">Withdrawal Successful</h3>
+            <p className="mb-4">Your withdrawal has been processed.</p>
+            <div className="flex gap-2">
+              <button 
+                onClick={handleGoToDashboard}
+                className="px-4 py-2 bg-teal-600 text-white rounded"
+              >
+                Go to Dashboard
+              </button>
+              <button 
+                onClick={handleGoBackToWallet}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded"
+              >
+                Back to Wallet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

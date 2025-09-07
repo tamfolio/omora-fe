@@ -12,7 +12,9 @@ export default function TermsOfUse() {
             Terms of Use
           </h1>
           <p className="text-[#535862] font-normal text-[20px]">
-            Welcome to OMORA. By accessing or using our services, you agree to comply with and be bound by these Terms of Use. If you do not agree, please do not use our services.
+            Welcome to OMORA. By accessing or using our services, you agree to
+            comply with and be bound by these Terms of Use. If you do not agree,
+            please do not use our services.
           </p>
         </div>
       </section>

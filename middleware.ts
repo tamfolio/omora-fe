@@ -1,28 +1,28 @@
-import { withAuth } from "next-auth/middleware"
+import { withAuth } from "next-auth/middleware";
 
 export default withAuth(
   function middleware(req) {
     // Add any additional middleware logic here
-    console.log("Auth middleware - token:", req.nextauth.token)
+    console.log("Auth middleware - token:", req.nextauth.token);
   },
   {
     callbacks: {
       authorized: ({ token, req }) => {
         // Define which routes require authentication
-        const protectedPaths = ["/dashboard", "/profile", "/admin"]
-        const pathname = req.nextUrl.pathname
-        
+        const protectedPaths = ["/dashboard", "/profile", "/admin"];
+        const pathname = req.nextUrl.pathname;
+
         // Allow public routes
-        if (!protectedPaths.some(path => pathname.startsWith(path))) {
-          return true
+        if (!protectedPaths.some((path) => pathname.startsWith(path))) {
+          return true;
         }
-        
+
         // Check if user has valid token for protected routes
-        return !!token
+        return !!token;
       },
     },
-  }
-)
+  },
+);
 
 export const config = {
   matcher: [
@@ -35,4 +35,4 @@ export const config = {
      */
     "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
   ],
-}
+};

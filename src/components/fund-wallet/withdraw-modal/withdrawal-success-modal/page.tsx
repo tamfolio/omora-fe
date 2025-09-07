@@ -1,5 +1,5 @@
-import React from 'react';
-import { FiCheck } from 'react-icons/fi';
+import React from "react";
+import { FiCheck } from "react-icons/fi";
 
 interface WithdrawalSuccessModalProps {
   isOpen: boolean;
@@ -9,35 +9,35 @@ interface WithdrawalSuccessModalProps {
   withdrawalData?: {
     amount: number;
     currency: string;
-    type: 'withdrawal' | 'conversion';
+    type: "withdrawal" | "conversion";
   };
 }
 
-export default function WithdrawalSuccessModal({ 
-  isOpen, 
-  onClose, 
+export default function WithdrawalSuccessModal({
+  isOpen,
+  onClose,
   onGoToDashboard,
   onGoBackToWallet,
-  withdrawalData 
+  withdrawalData,
 }: WithdrawalSuccessModalProps) {
   if (!isOpen) return null;
 
   const getTitle = () => {
-    if (withdrawalData?.type === 'conversion') {
-      return 'Conversion Successfully';
+    if (withdrawalData?.type === "conversion") {
+      return "Conversion Successfully";
     }
-    return 'Withdrawal Successfully';
+    return "Withdrawal Successfully";
   };
 
   const getDescription = () => {
-    if (withdrawalData?.type === 'conversion') {
-      return 'You have successfully converted';
+    if (withdrawalData?.type === "conversion") {
+      return "You have successfully converted";
     }
-    return 'You have successfully withdrawn';
+    return "You have successfully withdrawn";
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -58,10 +58,8 @@ export default function WithdrawalSuccessModal({
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             {getTitle()}
           </h2>
-          
-          <p className="text-gray-600 text-sm mb-8">
-            {getDescription()}
-          </p>
+
+          <p className="text-gray-600 text-sm mb-8">{getDescription()}</p>
 
           {/* Action Buttons */}
           <div className="space-y-3">
@@ -71,7 +69,7 @@ export default function WithdrawalSuccessModal({
             >
               OK, Take Me to Dashboard
             </button>
-            
+
             <button
               onClick={onGoBackToWallet}
               className="w-full text-gray-600 hover:text-gray-900 py-3 font-medium transition-colors"

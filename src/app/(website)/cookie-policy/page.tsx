@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 
 export default function CookiePolicy() {
   return (
@@ -17,14 +17,15 @@ export default function CookiePolicy() {
         </div>
       </section>
 
-    <section className="py-24 text-wrap">
+      <section className="py-24 text-wrap">
         <div className="w-[720px] mx-auto">
-            <div className="mb-10">
+          <div className="mb-10">
             <h2 className="font-semibold text-[30px] mb-5 text-[#181D27]">
               What Are Cookies?
             </h2>
             <p className="text-[18px] text-[#535862] mt-5">
-              Cookies are small data files stored on your browser that help us understand user behavior and improve our service.
+              Cookies are small data files stored on your browser that help us
+              understand user behavior and improve our service.
             </p>
           </div>
 
@@ -34,13 +35,13 @@ export default function CookiePolicy() {
             </h2>
             <ul className="text-[18px] text-[#535862] list-disc mb-10">
               <li>
-                Essential Cookies: Enable platform functionality (e.g., login sessions)
+                Essential Cookies: Enable platform functionality (e.g., login
+                sessions)
               </li>
+              <li>Analytics Cookies: Help us measure usage and performance</li>
               <li>
-                Analytics Cookies: Help us measure usage and performance
-              </li>
-              <li>
-                Marketing Cookies: Personalize ads and promotional messages (where applicable)
+                Marketing Cookies: Personalize ads and promotional messages
+                (where applicable)
               </li>
             </ul>
           </div>
@@ -50,11 +51,13 @@ export default function CookiePolicy() {
               Your Control
             </h2>
             <p className="text-[18px] text-[#535862] mt-5">
-              You may accept or reject cookies through your browser settings. Essential cookies cannot be disabled as they are necessary for platform operation.
+              You may accept or reject cookies through your browser settings.
+              Essential cookies cannot be disabled as they are necessary for
+              platform operation.
             </p>
           </div>
         </div>
       </section>
     </main>
-  )
+  );
 }

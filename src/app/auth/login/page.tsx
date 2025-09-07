@@ -1,55 +1,63 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { signIn, getSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { FiEye, FiEyeOff } from "react-icons/fi"
-import { RiCustomerServiceLine } from "react-icons/ri"
-import Logo from "@/components/ui/Logo"
-import Icon from "@/components/ui/Icon"
+import { useState } from "react";
+import { signIn, getSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { RiCustomerServiceLine } from "react-icons/ri";
+import Logo from "@/components/ui/Logo";
+import Icon from "@/components/ui/Icon";
+
+interface ExtendedUser {
+  isFirstLogin: boolean;
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
 
 export default function Login() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [rememberMe, setRememberMe] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
       const result = await signIn("credentials", {
         email,
         password,
         redirect: false,
-      })
+      });
 
       if (result?.error) {
-        setError("Invalid Email or password. Please try again.")
-        setLoading(false)
+        setError("Invalid Email or password. Please try again.");
+        setLoading(false);
       } else {
-        const session = await getSession()
+        const session = await getSession();
         if (session) {
-          // Check if first-time login
-          const isFirstLogin = (session.user as any)?.isFirstLogin;
+          // Use the proper type instead of any
+          const isFirstLogin = (session.user as ExtendedUser)?.isFirstLogin;
           if (isFirstLogin) {
-            router.push("/firsttimelogin")
+            router.push("/firsttimelogin");
           } else {
-            router.push("/dashboard")
+            router.push("/dashboard");
           }
         }
       }
-    } catch (error) {
-      setError("An error occurred during sign in")
-      setLoading(false)
+    } catch (_) {
+      setError("An error occurred during sign in");
+      setLoading(false);
     }
-  }
+  };
 
   // Loading Screen Component
   if (loading) {
@@ -97,7 +105,7 @@ export default function Login() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -142,7 +150,10 @@ export default function Login() {
 
                 {/* Email Field */}
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Email *
                   </label>
                   <input
@@ -159,7 +170,10 @@ export default function Login() {
 
                 {/* Password Field */}
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Password *
                   </label>
                   <div className="relative">
@@ -198,9 +212,14 @@ export default function Login() {
                       className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
                       disabled={loading}
                     />
-                    <span className="ml-2 text-gray-600">Remember for 30 days</span>
+                    <span className="ml-2 text-gray-600">
+                      Remember for 30 days
+                    </span>
                   </label>
-                  <Link href="/auth/forgot-password" className="text-teal-600 hover:text-teal-500">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-teal-600 hover:text-teal-500"
+                  >
                     Forgot password
                   </Link>
                 </div>
@@ -227,5 +246,5 @@ export default function Login() {
         </div>
       </div>
     </div>
-  )
+  );
 }

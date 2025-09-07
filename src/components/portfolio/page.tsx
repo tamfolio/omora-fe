@@ -1,58 +1,51 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { FaRegCirclePause, FaRegCirclePlay } from "react-icons/fa6"
-import PortfolioBreakdown from './portfolio-breakdown/page'
-import DCAModal from './dca-modal/page'
+import { useState } from "react";
+import PortfolioBreakdown from "./portfolio-breakdown/page";
+import DCAModal from "./dca-modal/page";
 
 export default function Portfolio() {
-  const [activeTab, setActiveTab] = useState('portfolio-breakdown')
-  const [isDCAPaused, setIsDCAPaused] = useState(true)
-  const [showDCAModal, setShowDCAModal] = useState(false)
+  const [isDCAPaused, setIsDCAPaused] = useState(false);
+  const [showDCAModal, setShowDCAModal] = useState(false);
 
   const handleDCAToggle = () => {
-    setShowDCAModal(true)
-  }
+    setShowDCAModal(true);
+  };
 
   const confirmDCAAction = () => {
-    setIsDCAPaused(!isDCAPaused)
-    setShowDCAModal(false)
-  }
+    setIsDCAPaused(!isDCAPaused);
+    setShowDCAModal(false);
+  };
 
   const cancelDCAAction = () => {
-    setShowDCAModal(false)
-  }
+    setShowDCAModal(false);
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Portfolio Overview</h1>
-        <p className="text-gray-600">Secure long-term returns and grow your crypto holdings.</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Portfolio Overview
+        </h1>
+        <p className="text-gray-600">
+          Secure long-term returns and grow your crypto holdings.
+        </p>
       </div>
 
       {/* Risk Profile Card */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-900 font-semibold">Based on your Risk Profile</span>
+          <span className="text-sm text-gray-900">
+            Based on your Risk Profile
+          </span>
           <div className="flex items-center gap-3">
-            <button 
-              onClick={handleDCAToggle}
-              className={`flex items-center gap-2 border px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                isDCAPaused 
-                  ? 'bg-orange-50 border-orange-200 text-orange-700'
-                  : 'bg-green-50 border-green-200 text-green-700'
-              }`}
-            >
-              {isDCAPaused ? (
-                <FaRegCirclePause className="w-4 h-4 text-orange-500 fill-orange-500" />
-              ) : (
-                <FaRegCirclePlay className="w-4 h-4 text-green-500 fill-green-500" />
-              )}
-              <span>DCA {isDCAPaused ? 'Paused' : 'Active'}</span>
-            </button>
-            <button className="text-sm text-blue-600 hover:text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-full transition-colors">
-              Conservative
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-green-500"></div>
+              <span className="text-sm">Recurring Investment ON</span>
+            </div>
+            <button className="text-sm text-blue-600 hover:text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-full">
+              Conservative ETF
             </button>
           </div>
         </div>
@@ -60,160 +53,193 @@ export default function Portfolio() {
 
       {/* Portfolio Overview Card */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-        <div className="grid grid-cols-2 gap-8 divide-x divide-gray-200">
-          {/* Left Half - Wallet Balances */}
-          <div className="pr-8">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Portfolio Overview</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Today's Realized PnL</span>
-                <span className="text-sm text-green-600 font-medium">+0.00 (+0.00%)</span>
-              </div>
-            </div>
-            
-            {/* Wallet Balances */}
-            <div className="grid grid-cols-2 gap-8 mb-6">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Portfolio Overview
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">
+              Today&apos;s Realized PnL
+            </span>
+            <span className="text-sm text-green-600">+0.00 (+0.00%)</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-12 gap-8">
+          {/* Wallet Balances */}
+          <div className="col-span-8">
+            <div className="grid grid-cols-3 gap-8 mb-6">
               <div>
-                <div className="text-sm text-gray-600 mb-1">Wallet Balance (USDT)</div>
+                <div className="text-sm text-gray-600 mb-1">
+                  Wallet Balance (USDC)
+                </div>
                 <div className="text-2xl font-bold text-gray-900">1000.56</div>
                 <div className="text-sm text-gray-500">≈ $1000</div>
               </div>
-              
+
               <div>
-                <div className="text-sm text-gray-600 mb-1">Wallet Balance (NGN)</div>
+                <div className="text-sm text-gray-600 mb-1">
+                  Wallet Balance (NGN)
+                </div>
+                <div className="text-2xl font-bold text-gray-900">200,000</div>
+                <div className="text-sm text-gray-500">≈ $105.22</div>
+              </div>
+
+              <div>
+                <div className="text-sm text-gray-600 mb-1">
+                  Wallet Balance (USDT)
+                </div>
                 <div className="text-2xl font-bold text-gray-900">200,000</div>
                 <div className="text-sm text-gray-500">≈ $105.22</div>
               </div>
             </div>
-            
-            {/* Conversion Rate and Charges */}
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                <div className="text-sm text-gray-600">Conversion Rate: 1 USDT = ₦1,3800</div>
-              </div>
-              
-              <div>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Charges</button>
-              </div>
-            </div>
-          </div>
 
-          {/* Right Half - Asset Allocation */}
-          <div className="pl-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Asset Allocation</h3>
-            
-            <div className="space-y-3">
-              {/* BTC */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">BTC (42%)</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">$56,631</div>
-                  <div className="text-xs text-green-600">+8.2%</div>
-                </div>
-              </div>
-
-              {/* ETH */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">ETH (45%)</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">$56,631</div>
-                  <div className="text-xs text-green-600">+8.2%</div>
-                </div>
-              </div>
-
-              {/* LTC */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">LTC (49%)</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">$56,631</div>
-                  <div className="text-xs text-green-600">+8.2%</div>
-                </div>
-              </div>
-
-              {/* XRP */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">XRP (45%)</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">$56,631</div>
-                  <div className="text-xs text-red-600">-8.2%</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Portfolio Breakdown Section */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="border-b border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <button 
-                onClick={() => setActiveTab('portfolio-breakdown')}
-                className={`pb-2 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'portfolio-breakdown' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Portfolio Breakdown
-              </button>
-              <button 
-                onClick={() => setActiveTab('investment-activity')}
-                className={`pb-2 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'investment-activity' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Investment Activity
-              </button>
-            </div>
-            
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                Next DCA <span className="font-medium">18h:23m</span>
+                Conversion Rate: 1 USD = ₦1,3800
               </div>
-              <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
-                <span>Export</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                </svg>
+              <button className="text-sm text-blue-600 hover:text-blue-700">
+                Charges
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Tab Content */}
-        <div className="p-6">
-          {activeTab === 'portfolio-breakdown' && <PortfolioBreakdown />}
-          {activeTab === 'investment-activity' && (
-            <div className="text-center py-8 text-gray-500">
-              Investment Activity content goes here
+          {/* Asset Allocation */}
+          <div className="col-span-4 border-l border-gray-200 pl-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Asset Allocation
+            </h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* First Column */}
+              <div className="space-y-4">
+                {[
+                  {
+                    symbol: "BTC",
+                    percent: "45%",
+                    value: "$56,631",
+                    change: "+8.2%",
+                    color: "bg-blue-500",
+                  },
+                  {
+                    symbol: "ETH",
+                    percent: "45%",
+                    value: "$56,631",
+                    change: "+8.2%",
+                    color: "bg-orange-500",
+                  },
+                  {
+                    symbol: "LTC",
+                    percent: "45%",
+                    value: "$56,631",
+                    change: "-8.2%",
+                    color: "bg-green-500",
+                  },
+                  {
+                    symbol: "XRP",
+                    percent: "45%",
+                    value: "$56,631",
+                    change: "+8.2%",
+                    color: "bg-red-500",
+                  },
+                ].map((asset, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-2 h-2 ${asset.color} rounded-full`}
+                      ></div>
+                      <span className="text-sm text-gray-600">
+                        {asset.symbol} ({asset.percent})
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-gray-900">
+                        {asset.value}
+                      </div>
+                      <div
+                        className={`text-xs ${asset.change.startsWith("+") ? "text-green-600" : "text-red-600"}`}
+                      >
+                        {asset.change}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Second Column */}
+              <div className="space-y-4">
+                {[
+                  {
+                    symbol: "SOL",
+                    percent: "45%",
+                    value: "$56,631",
+                    change: "-8.2%",
+                    color: "bg-purple-500",
+                  },
+                  {
+                    symbol: "SUI",
+                    percent: "45%",
+                    value: "$56,631",
+                    change: "-8.2%",
+                    color: "bg-indigo-500",
+                  },
+                  {
+                    symbol: "CRO",
+                    percent: "45%",
+                    value: "$56,631",
+                    change: "-8.2%",
+                    color: "bg-blue-400",
+                  },
+                  {
+                    symbol: "AVAX",
+                    percent: "45%",
+                    value: "$56,631",
+                    change: "-8.2%",
+                    color: "bg-red-400",
+                  },
+                ].map((asset, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-2 h-2 ${asset.color} rounded-full`}
+                      ></div>
+                      <span className="text-sm text-gray-600">
+                        {asset.symbol} ({asset.percent})
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-gray-900">
+                        {asset.value}
+                      </div>
+                      <div
+                        className={`text-xs ${asset.change.startsWith("+") ? "text-green-600" : "text-red-600"}`}
+                      >
+                        {asset.change}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
+
+      <PortfolioBreakdown />
 
       {/* DCA Modal */}
-      <DCAModal 
+      <DCAModal
         isOpen={showDCAModal}
         isDCAPaused={isDCAPaused}
         onConfirm={confirmDCAAction}
         onCancel={cancelDCAAction}
       />
     </div>
-  )
+  );
 }

@@ -55,28 +55,33 @@ export default function Pagination({ table }: PaginationProps) {
         disabled={!table.getCanPreviousPage() || isChanging}
         className="border border-[#D5D7DA] rounded-[8px] px-3 py-2 text-[#414651]"
       >
-        <Image src="/assets/images/website/arrow-left.svg" alt="arrow-right" width={20} height={20} />
+        <Image
+          src="/assets/images/website/arrow-left.svg"
+          alt="arrow-right"
+          width={20}
+          height={20}
+        />
         Previous
       </Button>
 
       <div>
         {getPageNumbers.map((page, index) =>
-        page === "..." ? (
-          <span key={`ellipsis-${index}`} className="px-2">
-            ...
-          </span>
-        ) : (
-          <Button
-            key={`page-${page}`}
-            variant={page === currentPage ? "default" : "outline"}
-            onClick={() => handlePageChange(page as number)}
-            disabled={isChanging}
-            className={`rounded-[8px] size-10 ${page === currentPage ? "bg-[#008B99] hover:bg-[#008B99]" : "border-none"}`}
-          >
-            {(page as number) + 1}
-          </Button>
-        )
-      )}
+          page === "..." ? (
+            <span key={`ellipsis-${index}`} className="px-2">
+              ...
+            </span>
+          ) : (
+            <Button
+              key={`page-${page}`}
+              variant={page === currentPage ? "default" : "outline"}
+              onClick={() => handlePageChange(page as number)}
+              disabled={isChanging}
+              className={`rounded-[8px] size-10 ${page === currentPage ? "bg-[#008B99] hover:bg-[#008B99]" : "border-none"}`}
+            >
+              {(page as number) + 1}
+            </Button>
+          ),
+        )}
       </div>
 
       <Button
@@ -86,7 +91,12 @@ export default function Pagination({ table }: PaginationProps) {
         className="border border-[#D5D7DA] rounded-[8px] px-3 py-2 text-[#414651]"
       >
         Next
-        <Image src="/assets/images/website/arrow-right.svg" alt="arrow-right" width={20} height={20} />
+        <Image
+          src="/assets/images/website/arrow-right.svg"
+          alt="arrow-right"
+          width={20}
+          height={20}
+        />
       </Button>
     </div>
   );
