@@ -7,6 +7,7 @@ import Image from "next/image";
 import Performance from "@/components/website/homepage/Performance";
 import Testimonials from "@/components/website/homepage/Testimonials";
 import Insights from "@/components/website/homepage/Insights";
+import NavBar from "@/components/website/NavBar";
 
 const whyOmora = [
   {
@@ -66,11 +67,7 @@ const page = () => {
       </section>
       <section>
         <div className="flex justify-center mx-[120px]">
-          <video
-            className="h-[557px] bg-[#535862] rounded-t-2xl"
-            src=""
-            height={557}
-          />
+          <div className="h-[557px] w-full bg-[#535862] rounded-t-2xl"></div>
         </div>
       </section>
       <AvailableAssets />

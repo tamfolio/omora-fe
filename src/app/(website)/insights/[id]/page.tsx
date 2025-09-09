@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
+// Fix: Update the params type to be a Promise
 export default async function InsightDetail({ params }: { params: Promise<{ id: string }> }) {
+  // Fix: Await the params Promise
   const { id } = await params;
   const insight = insightsData.find((item) => item.id === Number(id));
 

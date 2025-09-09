@@ -92,6 +92,9 @@ export default function InvestmentHistory() {
         </div>
       </div>
 
+      {/* Full Divider */}
+      <div className="border-b border-gray-200 mb-6"></div>
+
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">

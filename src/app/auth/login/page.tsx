@@ -9,12 +9,12 @@ import { RiCustomerServiceLine } from "react-icons/ri";
 import Logo from "@/components/ui/Logo";
 import Icon from "@/components/ui/Icon";
 
-interface ExtendedUser {
-  isFirstLogin: boolean;
+interface SessionUser {
   id: string;
   email: string;
   name: string;
   role: string;
+  isFirstLogin?: boolean;
 }
 
 export default function Login() {
@@ -44,8 +44,8 @@ export default function Login() {
       } else {
         const session = await getSession();
         if (session) {
-          // Use the proper type instead of any
-          const isFirstLogin = (session.user as ExtendedUser)?.isFirstLogin;
+          // Check if first-time login
+          const isFirstLogin = (session.user as SessionUser)?.isFirstLogin;
           if (isFirstLogin) {
             router.push("/firsttimelogin");
           } else {
@@ -53,7 +53,7 @@ export default function Login() {
           }
         }
       }
-    } catch (_) {
+    } catch {
       setError("An error occurred during sign in");
       setLoading(false);
     }
@@ -235,8 +235,11 @@ export default function Login() {
 
                 {/* Sign up link */}
                 <div className="text-center text-sm">
-                  <span className="text-gray-600">Don&apos;t have an account? </span>
-                  <Link href="/auth/signup" className="text-teal-600 hover:text-teal-500 font-medium">
+                <span className="text-gray-600">Don&apos;t have an account? </span>
+                  <Link
+                    href="/auth/signup"
+                    className="text-teal-600 hover:text-teal-500 font-medium"
+                  >
                     Sign up
                   </Link>
                 </div>
