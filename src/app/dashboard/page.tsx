@@ -1,10 +1,18 @@
-import NavBar from "@/components/website/NavBar";
-import React from "react";
+"use client"
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/ui/Footer'
+import MainPage from '@/components/ui/UserDashboard/MainPage'
+import React from 'react'
 
-export default function Dashboard() {
+function page() {
   return (
     <div>
-      <NavBar />
+      <Navbar/>
+      <MainPage/>
+      <Footer/>
     </div>
   );
 }
+
+export default page
+
