@@ -23,7 +23,7 @@ export default function Navbar() {
                 Dashboard
               </Link>
               <Link
-                href="dashboard/investment"
+                href="dashboard/create-investment"
                 className="text-gray-700 hover:text-teal-600 font-medium transition-colors duration-200"
               >
                 Investment

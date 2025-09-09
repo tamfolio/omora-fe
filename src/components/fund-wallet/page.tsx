@@ -5,6 +5,7 @@ import { CiCircleQuestion } from "react-icons/ci";
 import DepositModal from "./deposit-modal/page";
 import WalletHistory from "./wallet-history/page";
 import WithdrawModal from "./withdraw-modal/page";
+import { IoToggle, IoToggleOutline } from "react-icons/io5";
 
 // Types
 interface UserBalances {
@@ -259,19 +260,35 @@ export default function FundWalletComponent() {
           </div>
 
           {/* Auto Convert Option */}
-          <div className="pt-4 border-t border-gray-100">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={autoConvert}
-                onChange={(e) => setAutoConvert(e.target.checked)}
-                className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 focus:ring-2"
-              />
-              <span className="ml-3 text-sm text-gray-700">
-                Automatically Convert my Naira to USDC within 24hours
-              </span>
-            </label>
-          </div>
+<div className="pt-4 border-t border-gray-100">
+ <label className="flex items-center justify-between">
+   <div className="flex items-center">
+     <button
+       type="button"
+       onClick={() => setAutoConvert(!autoConvert)}
+       className="text-2xl"
+     >
+      
+       {autoConvert ? (
+         <IoToggle style={{ color: '#008B99' }} />
+       ) : (
+         <IoToggleOutline className="text-gray-400" />
+       )}
+     </button>
+     <span className="ml-3 text-sm text-gray-700">
+       Automatically Convert my Naira to USDC within 24hours
+     </span>
+   </div>
+   <div className="text-sm text-gray-600">
+     <span>Withdrawal Limit: NGN 2,000,000</span>
+     <button className="ml-2 text-teal-600 hover:text-teal-700 underline">
+       upgrade now
+     </button>
+   </div>
+ </label>
+</div>
+
+
         </div>
 
         {/* Wallet History */}
