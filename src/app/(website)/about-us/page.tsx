@@ -44,73 +44,74 @@ const howWeWorkAtOmora = [
 ];
 
 const team = [
-    {
-        name: "Alisa Hester",
-        position: "Founder & CEO",
-        image: "/assets/images/website/about-us/alisa-hester.jpg",
-        description: "Former frontend dev for Linear, Coinbase, and Postscript.",
-        social: {
-            twitter: "#",
-            linkedin: "#",
-            web: "#"
-        }
+  {
+    name: "Alisa Hester",
+    position: "Founder & CEO",
+    image: "/assets/images/website/about-us/alisa-hester.jpg",
+    description: "Former frontend dev for Linear, Coinbase, and Postscript.",
+    social: {
+      twitter: "#",
+      linkedin: "#",
+      web: "#",
     },
-    {
-        name: "Rich Wilson",
-        position: "Engineering Manager",
-        image: "/assets/images/website/about-us/rich-wilson.jpg",
-        description: "Lead engineering teams at Figma, Pitch, and Protocol Labs.",
-        social: {
-            twitter: "#",
-            linkedin: "#",
-            web: "#"
-        }
+  },
+  {
+    name: "Rich Wilson",
+    position: "Engineering Manager",
+    image: "/assets/images/website/about-us/rich-wilson.jpg",
+    description: "Lead engineering teams at Figma, Pitch, and Protocol Labs.",
+    social: {
+      twitter: "#",
+      linkedin: "#",
+      web: "#",
     },
-    {
-        name: "Annie Stanley",
-        position: "Product Manager",
-        image: "/assets/images/website/about-us/annie-stanley.jpg",
-        description: "Former PM for Airtable, Medium, Ghost, and Lumi.",
-        social: {
-            twitter: "#",
-            linkedin: "#",
-            web: "#"
-        }
+  },
+  {
+    name: "Annie Stanley",
+    position: "Product Manager",
+    image: "/assets/images/website/about-us/annie-stanley.jpg",
+    description: "Former PM for Airtable, Medium, Ghost, and Lumi.",
+    social: {
+      twitter: "#",
+      linkedin: "#",
+      web: "#",
     },
-    {
-        name: "Johnny Bell",
-        position: "Frontend Developer",
-        image: "/assets/images/website/about-us/johnny-bell.jpg",
-        description: "Former frontend dev for Linear, Coinbase, and Postscript.",
-        social: {
-            twitter: "#",
-            linkedin: "#",
-            web: "#"
-        }
+  },
+  {
+    name: "Johnny Bell",
+    position: "Frontend Developer",
+    image: "/assets/images/website/about-us/johnny-bell.jpg",
+    description: "Former frontend dev for Linear, Coinbase, and Postscript.",
+    social: {
+      twitter: "#",
+      linkedin: "#",
+      web: "#",
     },
-    {
-        name: "Mia Ward",
-        position: "Backend Developer",
-        image: "/assets/images/website/about-us/mia-ward.jpg",
-        description: "Lead backend dev at Clearbit. Former Clearbit and Loom.",
-        social: {
-            twitter: "#",
-            linkedin: "#",
-            web: "#"
-        }
+  },
+  {
+    name: "Mia Ward",
+    position: "Backend Developer",
+    image: "/assets/images/website/about-us/mia-ward.jpg",
+    description: "Lead backend dev at Clearbit. Former Clearbit and Loom.",
+    social: {
+      twitter: "#",
+      linkedin: "#",
+      web: "#",
     },
-    {
-        name: "Archie Young",
-        position: "Product Designer",
-        image: "/assets/images/website/about-us/alisa-hester.jpg",
-        description: "Founding design team at Figma. Former Pleo, Stripe, and Tile.",
-        social: {
-            twitter: "#",
-            linkedin: "#",
-            web: "#"
-        }
+  },
+  {
+    name: "Archie Young",
+    position: "Product Designer",
+    image: "/assets/images/website/about-us/alisa-hester.jpg",
+    description:
+      "Founding design team at Figma. Former Pleo, Stripe, and Tile.",
+    social: {
+      twitter: "#",
+      linkedin: "#",
+      web: "#",
     },
-]
+  },
+];
 
 export default function AboutUs() {
   return (
@@ -249,9 +250,12 @@ export default function AboutUs() {
               quis montes, sit sit. Tellus aliquam enim urna, etiam.
             </p>
             <ul className="text-[18px] leading-[28px] list-disc pl-5">
-                <li>Nam elementum urna nisi aliquet erat dolor enim. Ornare</li>
-                <li>eleifend faucibus eget vestibulum felis d quisque ligula ac diam amet. Vel etiam</li>
-                <li>sit sit. Tellus aliquam enim urna</li>
+              <li>Nam elementum urna nisi aliquet erat dolor enim. Ornare</li>
+              <li>
+                eleifend faucibus eget vestibulum felis d quisque ligula ac diam
+                amet. Vel etiam
+              </li>
+              <li>sit sit. Tellus aliquam enim urna</li>
             </ul>
             <p className="text-[18px] leading-[28px]">
               Odio felis sagittis, morbi feugiat tortor vitae feugiat fusce
@@ -269,31 +273,74 @@ export default function AboutUs() {
             Meet our team
           </h3>
           <p className="text-[#535862] font-normal text-[20px] w-[768px] mx-auto">
-            Our philosophy is simple — hire a team of diverse, passionate people and foster a culture that empowers you to do your best work.
+            Our philosophy is simple — hire a team of diverse, passionate people
+            and foster a culture that empowers you to do your best work.
           </p>
         </div>
-          <div className="flex justify-center">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {team.map((member, index) => (
-            <div key={index} className="relative h-[512px] w-[384px] flex flex-col justify-end items-center">
-                <Image className="grayscale w-fit" src={member.image}  alt={member.name} height={512} width={384}/>
+        <div className="flex justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {team.map((member, index) => (
+              <div
+                key={index}
+                className="relative h-[512px] w-[384px] flex flex-col justify-end items-center"
+              >
+                <Image
+                  className="grayscale w-fit"
+                  src={member.image}
+                  alt={member.name}
+                  height={512}
+                  width={384}
+                />
                 <div className="absolute z-10 bottom-0 w-full bg-gradient-to-b from-black/0 to-black/40">
-                    <div className="backdrop-blur-[24px] text-white bg-[#FFFFFF4D] p-5 rounded-[12px] border border-[#FFFFFF4D] m-4">
-                      <div className="flex items-center justify-between"><h4 className="font-semibold text-[20px] mb-2">{member.name}</h4> <Image src="/assets/images/website/arrow-up-right-white.svg" width={24} height={24} alt="arrow-up-right" /></div>
-                    <h5 className="text-base font-semibold">{member.position}</h5>
-                    <p>{member.description}</p>
-                    
-                    <div className="flex gap-5 mt-4">
-                        <Link href={member.social.twitter}><Image src='assets\images\website\x.svg' alt="x" width={20} height={20} /></Link>
-                        <Link href={member.social.linkedin}><Image src='assets\images\website\linkedin.svg' alt="linkedin" width={20} height={20} /></Link>
-                        <Link href={member.social.web}><Image src='assets\images\website\web.svg' alt="web" width={20} height={20} /></Link>
+                  <div className="backdrop-blur-[24px] text-white bg-[#FFFFFF4D] p-5 rounded-[12px] border border-[#FFFFFF4D] m-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-[20px] mb-2">
+                        {member.name}
+                      </h4>{" "}
+                      <Image
+                        src="/assets/images/website/arrow-up-right-white.svg"
+                        width={24}
+                        height={24}
+                        alt="arrow-up-right"
+                      />
                     </div>
+                    <h5 className="text-base font-semibold">
+                      {member.position}
+                    </h5>
+                    <p>{member.description}</p>
+
+                    <div className="flex gap-5 mt-4">
+                      <Link href={member.social.twitter}>
+                        <Image
+                          src="assets\images\website\x.svg"
+                          alt="x"
+                          width={20}
+                          height={20}
+                        />
+                      </Link>
+                      <Link href={member.social.linkedin}>
+                        <Image
+                          src="assets\images\website\linkedin.svg"
+                          alt="linkedin"
+                          width={20}
+                          height={20}
+                        />
+                      </Link>
+                      <Link href={member.social.web}>
+                        <Image
+                          src="assets\images\website\web.svg"
+                          alt="web"
+                          width={20}
+                          height={20}
+                        />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-                </div>
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
           </div>
+        </div>
       </section>
     </main>
   );

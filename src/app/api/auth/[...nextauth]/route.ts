@@ -54,31 +54,24 @@ const authOptions: NextAuthOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
-
+        if (!credentials?.email || !credentials?.password) return null;
+        
         try {
-          // Call your backend API
           const response = await fetch(`${process.env.API_AUTH_ENDPOINT}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,
             }),
-          })
-
-          if (!response.ok) {
-            return null
-          }
-
-          const user = await response.json()
+          });
+          
+          if (!response.ok) return null;
+          
+          const user: AuthUser = await response.json();
           
           // Return user object that will be stored in JWT
           if (user && user.id) {
@@ -94,22 +87,14 @@ const authOptions: NextAuthOptions = {
           
           return null
         } catch (error) {
-          console.error('Auth error:', error)
-          return null
+          console.error("Auth error:", error);
+          return null;
         }
-      }
-    })
+      },
+    }),
   ],
-  
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 60, // 30 minutes
-  },
-  
-  jwt: {
-    maxAge: 30 * 60, // 30 minutes
-  },
-  
+  session: { strategy: "jwt", maxAge: 60 * 60 },
+  jwt: { maxAge: 60 * 60 },
   callbacks: {
     // Fix 2: Return JWT type but cast internally to CustomToken
     async jwt({ token, user, account }): Promise<JWT> {
@@ -137,12 +122,11 @@ const authOptions: NextAuthOptions = {
       if (Date.now() < (customToken.accessTokenExpires || 0)) {
         return customToken as JWT
       }
-
+      
       // Access token has expired, try to update it
       const refreshedToken = await refreshAccessToken(customToken)
       return refreshedToken as JWT
     },
-    
     async session({ session, token }) {
       const customToken = token as CustomToken
       
@@ -154,13 +138,12 @@ const authOptions: NextAuthOptions = {
         session.error = customToken.error
       }
       
-      return session
-    }
+      return session;
+    },
   },
-  
   pages: {
-    signIn: '/auth/login',
-    error: '/auth/error',
+    signIn: "/auth/login",
+    error: "/auth/error",
   },
   
   // Security options

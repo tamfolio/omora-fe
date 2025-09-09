@@ -40,20 +40,16 @@ interface RefreshResponse {
 async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
   try {
     const response = await fetch(`${process.env.API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        refreshToken: token.refreshToken,
+        token: token.refreshToken,
       }),
-    })
+    });
 
     const refreshedTokens: RefreshResponse = await response.json()
 
-    if (!response.ok) {
-      throw refreshedTokens
-    }
+    if (!response.ok) throw refreshedTokens;
 
     return {
       ...token,
@@ -83,35 +79,44 @@ declare module "next-auth" {
   }
 }
 
+// Extend NextAuth types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      email: string
+      name: string
+      role: string
+    }
+    accessToken: string
+    error?: string
+  }
+}
+
+// ---- Auth Options ---- //
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
         try {
           // Call backend API
           const response = await fetch(`${process.env.API_AUTH_ENDPOINT}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,
             }),
-          })
+          });
 
-          if (!response.ok) {
-            return null
-          }
+          if (!response.ok) return null;
 
           const user = await response.json()
           
@@ -132,19 +137,19 @@ export const authOptions: NextAuthOptions = {
           console.error('Auth error:', error)
           return null
         }
-      }
-    })
+      },
+    }),
   ],
-  
+
   session: {
     strategy: "jwt",
     maxAge: 60 * 60, // 1 hour
   },
-  
+
   jwt: {
     maxAge: 60 * 60, // 1 hour
   },
-  
+
   callbacks: {
     // Use unknown type to avoid explicit any
     async jwt({ token, user, account }) {
@@ -178,7 +183,7 @@ export const authOptions: NextAuthOptions = {
       const refreshedToken = await refreshAccessToken(customToken)
       return refreshedToken as unknown as typeof token
     },
-    
+
     async session({ session, token }) {
       const customToken = token as CustomToken
       
@@ -193,22 +198,21 @@ export const authOptions: NextAuthOptions = {
       return session
     }
   },
-  
+
   pages: {
-    signIn: '/auth/login',
-    error: '/auth/error',
+    signIn: "/auth/login",
+    error: "/auth/error",
   },
-  
-  // Security options
+
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    }
-  }
-}
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
+};

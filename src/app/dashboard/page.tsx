@@ -11,7 +11,7 @@ function page() {
       <MainPage/>
       <Footer/>
     </div>
-  )
+  );
 }
 
 export default page

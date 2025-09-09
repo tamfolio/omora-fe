@@ -9,9 +9,9 @@ import CookiesPopUp from '@/components/website/CookiesPopUp'
 export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(authOptions);
 
   return (
     <html lang="en">
@@ -24,11 +24,12 @@ export default async function RootLayout({
       <body className="font-sans relative" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
         <NavBar />
         <AuthProvider session={session}>
+        <NavBar />
           {children}
-        </AuthProvider>
         <CookiesPopUp />
         <Footer />
+        </AuthProvider>
       </body>
     </html>
-  )
+  );
 }
