@@ -2,11 +2,7 @@ import './globals.css'
 import AuthProvider from "@/components/SessionProvider"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/authOptions"
-// import Navbar from '@/components/Navbar'
-import Navbar from '@/components/website/NavBar'
-import Footer from '@/components/website/Footer'
 import CookiesPopUp from '@/components/website/CookiesPopUp'
-import NavBar from '@/components/website/NavBar'
 
 export default async function RootLayout({
   children,
@@ -25,10 +21,8 @@ export default async function RootLayout({
       </head>
       <body className="font-sans relative" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
         <AuthProvider session={session}>
-          <NavBar/>
           {children}
-        <CookiesPopUp />
-        <Footer />
+          <CookiesPopUp />
         </AuthProvider>
       </body>
     </html>

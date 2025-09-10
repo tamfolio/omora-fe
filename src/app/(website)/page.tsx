@@ -1,13 +1,12 @@
 "use client";
 import React from "react";
-import "./globals.css";
+import "../globals.css";
 import { Button } from "@/components/ui/button";
 import AvailableAssets from "@/components/website/homepage/AvalableAssets";
 import Image from "next/image";
 import Performance from "@/components/website/homepage/Performance";
 import Testimonials from "@/components/website/homepage/Testimonials";
 import Insights from "@/components/website/homepage/Insights";
-import NavBar from "@/components/website/NavBar";
 
 const whyOmora = [
   {

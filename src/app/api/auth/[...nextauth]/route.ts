@@ -15,9 +15,9 @@ interface CustomUser {
 
 // Fix 1: Don't extend JWT, just define our own interface for the token shape
 interface CustomToken {
-  accessToken?: string
-  refreshToken?: string
-  accessTokenExpires?: number
+  accessToken: string
+  refreshToken: string
+  accessTokenExpires: number
   user?: {
     id: string
     email: string
@@ -35,18 +35,6 @@ interface CustomToken {
   jti?: string
 }
 
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string
-      email: string
-      name: string
-      role: string
-    }
-    accessToken: string
-    error?: string
-  }
-}
 
 const authOptions: NextAuthOptions = {
   providers: [
@@ -71,7 +59,7 @@ const authOptions: NextAuthOptions = {
           
           if (!response.ok) return null;
           
-          const user: AuthUser = await response.json();
+          const user = await response.json();
           
           // Return user object that will be stored in JWT
           if (user && user.id) {

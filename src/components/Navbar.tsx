@@ -35,10 +35,10 @@ function Navbar() {
   
   // Use mock data instead of real session for testing
   const testSession = mockSession; // Change this back to `session` later
-  const testStatus: "authenticated" | "loading" | "unauthenticated" = "authenticated"; // Change this back to `status` later
+  const testStatus: "authenticated" | "unauthenticated" | "loading" = "authenticated"; // Change this back to `status` later
   
   const isAuthenticated = testStatus === "authenticated";
-  const isLoading = testStatus === "loading";
+  const isLoading = "loading";
   console.log("testing");
   console.log("🔍 NAVBAR DEBUG:");
   console.log("Status:", status);
@@ -256,7 +256,7 @@ function Navbar() {
             </div>
 
             {/* Mobile user section */}
-            {showAuthenticatedNavbar ? (
+            {testStatus === "authenticated" ? (
               <>
                 {/* Mobile icons */}
                 <div className="px-2 pb-3 border-t border-gray-200">

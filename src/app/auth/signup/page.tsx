@@ -6,8 +6,8 @@ import Link from "next/link";
 import { RiCustomerServiceLine } from "react-icons/ri";
 import Logo from "@/components/ui/Logo";
 import Icon from "@/components/ui/Icon";
-import IndividualSignup from "./individual-signup/page";
-import CorporateSignup from "./corporate-signup/page";
+import IndividualSignup from "@/components/auth/IndivisualSignup";
+import CorporateSignup from "@/components/auth/CorporateSignup";
 
 export default function Signup() {
   const [accountType, setAccountType] = useState("individual");
