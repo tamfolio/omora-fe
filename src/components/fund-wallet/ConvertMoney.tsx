@@ -4,7 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { FiArrowLeft, FiChevronDown } from "react-icons/fi";
 import Logo from "@/components/ui/Logo";
-import AuthenticatorModal from "./authenticator-modal/page";
+import AuthenticatorModal from "./AuthenticatorModal";
+import Footer from "../ui/Footer";
 
 // Mock conversion rates - replace with API call later
 const CONVERSION_RATES: Record<string, number> = {
@@ -20,19 +21,19 @@ const CURRENCIES = [
     code: "NGN",
     name: "Nigerian Naira",
     symbol: "₦",
-    logo: "/images/currencies/ngn.png",
+    logo: "assets/images/currencies/naira.png",
   },
   {
     code: "USDT",
     name: "Tether USD",
     symbol: "USDT",
-    logo: "/images/currencies/usdt.png",
+    logo: "/assets/images/currencies/tether.png",
   },
   {
     code: "USDC",
     name: "USDC Coin",
     symbol: "USDC",
-    logo: "/images/currencies/usdc.png",
+    logo: "/assets/images/currencies/usdc.png",
   },
 ];
 
@@ -364,13 +365,7 @@ export default function ConvertMoney() {
         </div>
       </main>
 
-      {/* Footer */}
-      <div className="text-center py-6 border-t border-gray-200 bg-white">
-        <p className="text-sm text-gray-500">
-          © 2025 OMORA. All rights reserved.
-        </p>
-      </div>
-
+   <Footer />
       {/* Floating Chat Button */}
       <div className="fixed bottom-6 right-6">
         <button className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:bg-green-700 transition-colors">

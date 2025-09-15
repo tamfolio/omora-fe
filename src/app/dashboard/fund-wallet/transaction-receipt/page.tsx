@@ -1,4 +1,4 @@
-import TransactionReceipt from "@/components/fund-wallet/transaction-receipt/page";
+import TransactionReceipt from "@/components/fund-wallet/TransactionReceipt";
 
 export default function TransactionReceiptPage() {
   return <TransactionReceipt />;

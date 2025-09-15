@@ -25,6 +25,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useMemo, useState } from "react"
+import Navbar from "@/components/Navbar"
 
 // Types
 type InvestmentType = "recurring" | "one-time"
@@ -237,7 +238,9 @@ export default function Investments() {
   })
 
   return (
+
     <div className="relative pt-24 h-screen bg-gradient-to-b from-[#79B7BC]/5 via-[#AEDCE0]/5 to-[#FFFFFF] px-[112px]">
+      <Navbar />
       <div className="flex items-center justify-between mb-12">
         <div>
           <h1 className="text-[#181D27] font-semibold text-[48px]">

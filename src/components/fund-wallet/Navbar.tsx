@@ -48,23 +48,18 @@ export default function Navbar() {
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
               <Link
-                href="/dashboard/fund-wallet" // Fixed: added /dashboard
+                href="/dashboard/fund-wallet" 
                 className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm"
               >
                 Fund Wallet
               </Link>
               <Link
-                href="/dashboard/wallet" // Fixed: added /dashboard
+                href="/dashboard/wallet" 
                 className="text-gray-600 hover:text-gray-900 px-4 py-2.5 text-sm font-medium transition-colors duration-200"
               >
                 Wallet
               </Link>
-              <Link
-                href="/dashboard/portfolio" // Fixed: added /dashboard
-                className="text-gray-600 hover:text-gray-900 px-4 py-2.5 text-sm font-medium transition-colors duration-200"
-              >
-                Portfolio
-              </Link>
+              
             </div>
 
             {/* Icon Actions */}

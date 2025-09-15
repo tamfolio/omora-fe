@@ -3,7 +3,7 @@ import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
 import Logo from "@/components/ui/Logo";
-import PDFHelper from "./pdf-helper/page";
+import PDFHelper from "./PDFHelper";
 
 interface TransactionData {
   id: string;

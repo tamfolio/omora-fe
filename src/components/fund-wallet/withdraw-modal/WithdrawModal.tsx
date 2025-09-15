@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
-import USDTWithdrawModal from "./usdt-withdrawal-modal/page";
+import USDTWithdrawModal from "./USDTWithdrawal";
 // Comment out these imports if the components don't exist
 // import VerificationModal from "../withdraw-modal/verification-modal/page";
 // import WithdrawalSuccessModal from "../withdraw-modal/withdrawal-success-modal/page";
@@ -106,7 +106,7 @@ export default function WithdrawModal({
   const handleAccountNumberChange = (value: string) => {
     setAccountNumber(value);
     if (selectedCurrency === "NGN") {
-      setAccountName(""); // Clear account name while typing
+      setAccountName(""); 
       validateAccountNumber(value);
     }
   };
