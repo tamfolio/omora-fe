@@ -25,7 +25,8 @@ const balances = [
 
 export default function Balances() {
   return (
-    <div className="p-6 t-16 w-full grid grid-cols-1 md:grid-cols-3 gap-6 rounded-[12px] border border-[#E9EAEB] bg-white">
+    <div className="rounded-[12px] border border-[#E9EAEB] bg-white p-6">
+      <div className="t-16 w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
       {balances.map((balance, index) => (
         <div key={index} className="space-y-2.5">
           <div className="p-4 space-y-4 rounded-[8px] border-[0.65px] border-[#E9EAEB]">
@@ -45,9 +46,10 @@ export default function Balances() {
               <span>{balance.currency}</span>
             </div>
           </div>
-          <ConvertMoney cta={balance.cta} />
         </div>
       ))}
+    </div>
+    <ConvertMoney cta="Convert Money" />
     </div>
   );
 }

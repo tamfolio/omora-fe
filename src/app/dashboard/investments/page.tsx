@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import Balances from "@/components/investment/Balances"
-import Link from "next/link"
+import Balances from "@/components/investment/Balances";
+import Link from "next/link";
 import {
   ColumnDef,
   PaginationState,
@@ -11,9 +11,14 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table"
-import { ChevronsUpDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
+} from "@tanstack/react-table";
+import {
+  ChevronsUpDown,
+  CirclePause,
+  CirclePlay,
+  CloudDownload,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -21,72 +26,71 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useMemo, useState } from "react"
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMemo, useState } from "react";
+import clsx from "clsx";
 
 // Types
-type InvestmentType = "recurring" | "one-time"
-type InvestmentProfile = "conservative" | "bitcoin ETF" | "growth"
+type InvestmentType = "recurring" | "one-time";
+type InvestmentProfile = "Conservative ETF" | "Bitcoin ETF" | "Growth ETF";
+type RecurringStatus = "Active" | "Inactive" | "N/A";
 
 export type Investment = {
-  id: string
-  investmentType: InvestmentType
-  profiles: InvestmentProfile[]
-  recurringInvestmentStatus: boolean
-  usdcValue: number
-  timestamp: Date
-}
+  id: string;
+  investmentType: InvestmentType;
+  profiles: InvestmentProfile[];
+  duration: string;
+  deductedDaily?: number;
+  usdcValue: number;
+  unrealized: number; // percentage
+  recurringInvestmentStatus: RecurringStatus;
+  timestamp: Date;
+};
 
 // Mock Data
 const data: Investment[] = [
   {
     id: "1",
     investmentType: "recurring",
-    profiles: ["conservative"],
-    recurringInvestmentStatus: true,
+    profiles: ["Conservative ETF", "Bitcoin ETF"],
+    duration: "90 days",
+    deductedDaily: 13.33, // 1200 / 90
     usdcValue: 1200,
+    unrealized: 5.2,
+    recurringInvestmentStatus: "Active",
     timestamp: new Date("2025-07-15T12:00:00"),
   },
   {
     id: "2",
     investmentType: "one-time",
-    profiles: ["bitcoin ETF", "growth"],
-    recurringInvestmentStatus: false,
+    profiles: ["Bitcoin ETF", "Growth ETF"],
+    duration: "360 days",
+    deductedDaily: undefined, // no daily deduction
     usdcValue: 500,
+    unrealized: -2.5,
+    recurringInvestmentStatus: "N/A",
     timestamp: new Date("2025-07-14T15:30:00"),
   },
   {
     id: "3",
     investmentType: "recurring",
-    profiles: ["growth"],
-    recurringInvestmentStatus: false,
+    profiles: ["Growth ETF", "Conservative ETF"],
+    duration: "180 days",
+    deductedDaily: 16.67, // 3000 / 180
     usdcValue: 3000,
+    unrealized: 12.4,
+    recurringInvestmentStatus: "Inactive",
     timestamp: new Date("2025-07-13T09:45:00"),
   },
-]
-
-// Separate component to handle Switch state
-function RecurringInvestmentStatusCell({
-  initialStatus,
-}: {
-  initialStatus: boolean
-}) {
-  const [checked, setChecked] = useState(initialStatus)
-
-  return (
-    <div className="flex items-center justify-center space-x-2">
-      <Switch
-        className="data-[state=checked]:bg-[#008B99]"
-        checked={checked}
-        onCheckedChange={(value) => setChecked(value)}
-      />
-      <span>{checked ? "Active" : "Inactive"}</span>
-    </div>
-  )
-}
-
+];
 
 // Columns
 const columns: ColumnDef<Investment>[] = [
@@ -94,15 +98,19 @@ const columns: ColumnDef<Investment>[] = [
     accessorKey: "id",
     header: ({ column }) => (
       <Button
-        className="px-0 gap-1 flex w-full"
+        className="px-0 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Investment ID
-        <ChevronsUpDown className="ml-1 h-4 w-4" />
+        <ChevronsUpDown className="ml-1 h-3 w-3" />
       </Button>
     ),
-    cell: ({ row }) => <div className="!text-sm text-center text-[#181D27] font-medium">#{row.original.id}</div>,
+    cell: ({ row }) => (
+      <div className="!text-sm text-center text-[#181D27] font-medium">
+        #{row.original.id}
+      </div>
+    ),
   },
   {
     accessorKey: "investmentType",
@@ -113,61 +121,121 @@ const columns: ColumnDef<Investment>[] = [
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Investment Type
-        <ChevronsUpDown className="ml-1 h-4 w-4" />
+        <ChevronsUpDown className="ml-1 h-3 w-3" />
       </Button>
     ),
     cell: ({ row }) => {
-      const type = row.original.investmentType
-      const profiles = row.original.profiles.join(", ")
-      const label =
-        type === "recurring"
-          ? `Recurring Investment (${profiles})`
-          : `One-time Investment (${profiles})`
-      return <div className="!text-sm text-[#181D27] font-medium">{label}</div>
+      const type = row.original.investmentType;
+      const profiles = row.original.profiles.join(", ");
+      return (
+        <div className="!text-sm text-[#181D27] font-medium">
+          {type === "recurring"
+            ? `Recurring Investment (${profiles})`
+            : `One-time Investment (${profiles})`}
+        </div>
+      );
     },
   },
   {
-    accessorKey: "usdcValue",
-    header: ({ column }) => (
-      <Button
-        className="px-0 gap-1 w-full flex text-xs text-[#717680] font-semibold"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        USDC Value
-        <ChevronsUpDown className="ml-l h-4 w-4" />
-      </Button>
+    accessorKey: "duration",
+    header: () => (
+      <div className="text-center text-xs text-[#717680] font-semibold">
+        Duration
+      </div>
     ),
-    cell: ({ row }) => {
-      const amount = row.getValue("usdcValue") as number
-      return (
-        <div className="text-sm text-center">
-          {amount.toLocaleString()} USDC
-        </div>
-      )
-    },
+    cell: ({ row }) => (
+      <div className="text-sm text-center text-[#535862]">
+        {row.original.duration}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "dailyDeduction",
+    header: () => (
+      <div className="text-center text-xs text-[#717680] font-semibold">
+        Deducted Daily
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="text-sm text-center text-[#535862]">
+        {row.original.investmentType === "recurring" ? (
+          `${row.original.deductedDaily?.toFixed(2)} USDC`
+        ) : (
+          <span className="px-2 py-[2px] rounded-[16px] font-medium bg-[#F7F7F7] text-[#373A41] border text-xs border-[#ECECED]">
+            N/A
+          </span>
+        )}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "usdcValue",
+    header: () => (
+      <div className="text-center text-xs text-[#717680] font-semibold">
+        Total Investment
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="text-sm text-center text-[#535862]">
+        {row.original.usdcValue.toLocaleString()} USDC
+      </div>
+    ),
+  },
+  {
+    accessorKey: "unrealizedPnL",
+    header: () => (
+      <div className="text-center text-xs text-[#717680] font-semibold">
+        Unrealized gain/loss (%)
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div
+        className={clsx(
+          "text-sm text-center",
+          row.original.unrealized >= 0 ? "text-green-600" : "text-red-600"
+        )}
+      >
+        {row.original.unrealized.toFixed(2)}%
+      </div>
+    ),
   },
   {
     accessorKey: "recurringInvestmentStatus",
     header: ({ column }) => (
       <Button
-        className="px-0 gap-1 flex text-xs text-[#717680] w-full font-semibold"
+        className="px-0 gap-1 flex text-xs w-full font-semibold justify-center"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Recurring Investment Status
+        Recurring Status
         <ChevronsUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <RecurringInvestmentStatusCell
-      initialStatus={row.original.recurringInvestmentStatus}
-    />
-    ),
-    sortingFn: (a, b) => {
+    cell: ({ row }) => {
+      const status = row.original.recurringInvestmentStatus;
+      const colorClass =
+        status === "Active"
+          ? "bg-[#ECFDF3] text-[#067647] border border-[#ABEFC6]"
+          : status === "Inactive"
+            ? "bg-[#FFFAEB] text-[#B54708] border border-[#FEDF89]"
+            : "bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]";
+
       return (
-        Number(a.original.recurringInvestmentStatus) - Number(b.original.recurringInvestmentStatus)
-      )
+        <div className="flex justify-center items-center">
+          <span
+            className={`px-2 py-[2px] rounded-[16px] text-xs font-medium ${colorClass}`}
+          >
+            {status}
+          </span>
+        </div>
+      );
+    },
+    sortingFn: (a, b) => {
+      const order: RecurringStatus[] = ["Active", "Inactive", "N/A"];
+      return (
+        order.indexOf(a.original.recurringInvestmentStatus) -
+        order.indexOf(b.original.recurringInvestmentStatus)
+      );
     },
   },
   {
@@ -179,51 +247,50 @@ const columns: ColumnDef<Investment>[] = [
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Timestamp
-        <ChevronsUpDown className="ml-l h-4 w-4" />
+        <ChevronsUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
     cell: ({ row }) => {
-      const date = row.getValue("timestamp") as Date
+      const date = row.original.timestamp;
       return (
-        <div className="text-right">
+        <div className="text-right text-[#535862]">
           <div>
             {date.toLocaleString("en-US", {
-            hour: "numeric",
-            minute: "numeric",
-            hour12: true,
+              hour: "numeric",
+              minute: "numeric",
+              hour12: true,
             })}
           </div>
-          <div className="w--[100px]">
+          <div>
             {date.toLocaleString("en-US", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
           </div>
         </div>
-      )
+      );
     },
+    sortingFn: (a, b) =>
+      a.original.timestamp.getTime() - b.original.timestamp.getTime(),
   },
-]
+];
 
 export default function Investments() {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [activeTab, setActiveTab] = useState("all")
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [activeTab, setActiveTab] = useState("all");
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
-  })
+  });
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [closeDialoge, setCloseDialoge] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<Investment | null>(null);
 
   const filteredData = useMemo(() => {
-    if (activeTab === "all") return data
-    if (activeTab === "recurring") {
-      return data.filter((d) => d.investmentType === "recurring")
-    }
-    if (activeTab === "one-time") {
-      return data.filter((d) => d.investmentType === "one-time")
-    }
-    return data
-  }, [activeTab])
+    if (activeTab === "all") return data;
+    return data.filter((d) => d.investmentType === activeTab);
+  }, [activeTab]);
 
   const table = useReactTable({
     data: filteredData,
@@ -234,10 +301,10 @@ export default function Investments() {
     getSortedRowModel: getSortedRowModel(),
     onPaginationChange: setPagination,
     state: { sorting, pagination },
-  })
+  });
 
   return (
-    <div className="relative pt-24 h-screen bg-gradient-to-b from-[#79B7BC]/5 via-[#AEDCE0]/5 to-[#FFFFFF] px-[112px]">
+    <div className="relative h-full pt-24 bg-gradient-to-b from-[#79B7BC]/5 via-[#AEDCE0]/5 to-[#FFFFFF] px-[112px]">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h1 className="text-[#181D27] font-semibold text-[48px]">
@@ -254,79 +321,75 @@ export default function Investments() {
       </div>
       <Balances />
 
-      <div>
-        {/* Tabs */}
-        <div className="px-6 py-3 rounded-t-[12px] border border-[#E9EAEB] bg-[#fcfcfc] mt-20">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="flex-wrap p-0 h-fit !bg-none border rounded-[8px] w-full md:flex-nowrap md:w-fit border-[#D5D7DA]">
-              <TabsTrigger
-                className="w-full md:w-fit text-[#414651] border-b-[0.5px] md:border-r-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-t-[8px] md:rounded-tr-none md:rounded-l-[8px]"
-                value="all"
-              >
-                View All
-              </TabsTrigger>
-              <TabsTrigger
-                className="w-full md:w-fit text-[#414651]  rounded-none border-y-[0.5px] md:order-y-none md:border-x-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white"
-                value="recurring"
-              >
-                Recurring Investment
-              </TabsTrigger>
-              <TabsTrigger
-                className="w-full md:w-fit text-[#414651] md:border-l-[0.5px] border-t-[0.5px] md:border-t-0 border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-b-[8px] md:rounded-bl-none md:rounded-r-[8px]"
-                value="one-time"
-              >
-                One-time Investment
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+      {/* Tabs */}
+      <div className="px-6 py-3 rounded-t-[12px] border border-[#E9EAEB] flex gap-1 items-center justify-between bg-[#fcfcfc] mt-20">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="flex-wrap p-0 h-fit !bg-none border rounded-[8px] w-full md:flex-nowrap md:w-fit border-[#D5D7DA]">
+            <TabsTrigger
+              className="w-full md:w-fit text-[#414651] border-b-[0.5px] md:border-r-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-t-[8px] md:rounded-tr-none md:rounded-l-[8px]"
+              value="all"
+            >
+              View All
+            </TabsTrigger>
+            <TabsTrigger
+              className="w-full md:w-fit text-[#414651]  rounded-none border-y-[0.5px] md:order-y-none md:border-x-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white"
+              value="recurring"
+            >
+              Recurring Investment
+            </TabsTrigger>
+            <TabsTrigger
+              className="w-full md:w-fit text-[#414651] md:border-l-[0.5px] border-t-[0.5px] md:border-t-0 border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-b-[8px] md:rounded-bl-none md:rounded-r-[8px]"
+              value="one-time"
+            >
+              One-time Investment
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-        {/* Table */}
-        <div className="overflow-hidden rounded-md border">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead className="px-6" key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+        <div className="text-[#414651] text-sm font-medium flex items-center gap-3 lg:gap-7">
+          <div className="flex items-center gap-[6px]">
+            <span className="text-nowrap">Next Recurring Investment</span>
+            <span>18h:23m</span>
+          </div>
+          <Button className="border border-[#D5D7DA] rounded-[8px] text-[#414651] bg-transparent hover:bg-transparent">
+            <CloudDownload color="#A4A7AE" size={16} /> Export
+          </Button>
         </div>
+      </div>
+
+      {/* Table with Dialog */}
+      <div className="overflow-hidden rounded-md border rounded-b-[12px] mb-10">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead className="px-6" key={header.id}>
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => setSelectedRow(row.original)} // pick row data
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
         {/* Pagination */}
         <div className="flex items-center justify-between px-6 py-3 border border-[#E9EAEB] bg-[#fcfcfc] rounded-b-[12px]">
@@ -336,7 +399,7 @@ export default function Investments() {
           </div>
           <div className="space-x-2">
             <Button
-            className="bg-white border py-2 px-3.5 text-[#414651 text-sm] border-[#D5D7DA] rounded-[8px]"
+              className="bg-white border py-2 px-3.5 text-[#414651 text-sm] border-[#D5D7DA] rounded-[8px]"
               variant="outline"
               size="sm"
               onClick={() => table.previousPage()}
@@ -345,7 +408,7 @@ export default function Investments() {
               Previous
             </Button>
             <Button
-            className="bg-white border py-2 px-3.5 text-[#414651 text-sm] border-[#D5D7DA] rounded-[8px]"
+              className="bg-white border py-2 px-3.5 text-[#414651 text-sm] border-[#D5D7DA] rounded-[8px]"
               variant="outline"
               size="sm"
               onClick={() => table.nextPage()}
@@ -356,6 +419,231 @@ export default function Investments() {
           </div>
         </div>
       </div>
+      <Dialog
+        open={!!selectedRow}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setSelectedRow(null);
+            setShowConfirm(false);
+          }
+        }}
+      >
+        <DialogContent className="p-6 !rounded-[16px] bg-white max-w-[400px] h-fit max-h-full overflow-y-auto overflow-x-hidden">
+          {selectedRow && !showConfirm && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-[#181D27] text-center text-[30px] font-medium mb-6">
+                  Investment Details
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-2 text-sm bg-[#FAFAFA] w-full">
+                {/* Top Info */}
+                <div className="flex items-center justify-between py-2 px-3">
+                  <span className="text-[#717680] font-semibold">
+                    Investment ID
+                  </span>
+                  <span className="text-[#717680] ">{selectedRow.id}</span>
+                </div>
+                <div className="flex items-center justify-between py-2 px-3">
+                  <span className="text-[#717680] font-semibold">
+                    Transaction Date
+                  </span>
+                  <span className="text-[#717680] ">
+                    {selectedRow.timestamp.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="border-t border-[#D5D7DA] mt-[10px]" />
+
+                {/* Categories */}
+                <div className="flex items-center justify-between text-sm py-2 px-3 mb-4">
+                  <span className="text-[#717680] font-medium">
+                    Investment Categories
+                  </span>
+                  <span className="text-[#717680] font-medium">
+                    Amount Invested
+                  </span>
+                </div>
+
+                {selectedRow.profiles?.map((category: string, idx: number) => {
+                  const durationDays = parseInt(selectedRow.duration);
+                  const dailyTotal =
+                    selectedRow.investmentType === "recurring"
+                      ? selectedRow.usdcValue / durationDays
+                      : 0;
+
+                  const dailyPerProfile =
+                    selectedRow.investmentType === "recurring"
+                      ? (dailyTotal / selectedRow.profiles.length).toFixed(2)
+                      : null;
+
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between py-2 px-3"
+                    >
+                      <span className="text-[#717680] font-semibold">
+                        {category}
+                      </span>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[#717680]">
+                          {(
+                            selectedRow.usdcValue / selectedRow.profiles.length
+                          ).toFixed(2)}{" "}
+                          USDC
+                        </span>
+                        {dailyPerProfile && (
+                          <span className="text-[#717680] text-xs">
+                            Daily Debit: {dailyPerProfile} USDC
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="border-t border-[#D5D7DA] mt-[10px]" />
+
+                {/* Duration */}
+                <div className="flex items-center justify-between py-2 px-3">
+                  <span className="text-[#717680] font-semibold">Duration</span>
+                  <span className="text-[#717680] ">
+                    {selectedRow.duration}
+                  </span>
+                </div>
+
+                {/* Daily deduction for recurring */}
+                {selectedRow.investmentType === "recurring" && (
+                  <div className="flex items-center justify-between py-2 px-3">
+                    <span className="text-[#717680] font-semibold">
+                      Daily Debit
+                    </span>
+                    <span className="text-[#717680] ">
+                      {selectedRow.deductedDaily} USDC
+                    </span>
+                  </div>
+                )}
+
+                {/* Total */}
+                <div className="flex items-center justify-between py-2 px-3">
+                  <span className="text-[#717680] font-semibold">
+                    Total Investment
+                  </span>
+                  <span className="text-[#717680] ">
+                    {selectedRow.usdcValue} USDC
+                  </span>
+                </div>
+
+                {selectedRow.investmentType === "recurring" && (
+                  <div className="border-t border-[#D5D7DA] mt-[10px]" />
+                )}
+
+                {/* Unrealized (always shown) */}
+                <div className="flex items-center justify-between py-2 px-3">
+                  <span className="text-[#717680] font-semibold">
+                    Unrealized gain/loss (%)
+                  </span>
+                  <span className="text-[#717680] ">
+                    {selectedRow.unrealized}%
+                  </span>
+                </div>
+
+                {/* Status (only for recurring) */}
+                {selectedRow.investmentType === "recurring" && (
+                  <div className="flex items-center justify-between py-2 px-3">
+                    <span className="text-[#717680] font-semibold">Status</span>
+                    <span className="text-[#717680] ">
+                      <span className="border border-[#D5D7DA] px-[6px] py-[2px] bg-white rounded-[6px] flex items-center gap-1">
+                        <div
+                          className={`size-[6px] inline-block rounded-full ${selectedRow.recurringInvestmentStatus === "Active" ? "bg-[#17B26A]" : "bg-[#F79009]"}`}
+                        ></div>{" "}
+                        {selectedRow.recurringInvestmentStatus}
+                      </span>
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="mt-6 flex flex-col gap-3">
+                {selectedRow.investmentType === "recurring" ? (
+                  <>
+                    <Button
+                      className="h-12 w-full bg-[#008B99] hover:bg-[#008B99] text-white font-semibold rounded-[8px]"
+                      onClick={() => setShowConfirm(true)}
+                    >
+                      {selectedRow.recurringInvestmentStatus === "Active"
+                        ? "Deactivate Recurring Investment"
+                        : "Activate Recurring Investment"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-12 w-full rounded-[8px] border border-gray-300"
+                      onClick={() => setSelectedRow(null)}
+                    >
+                      Go Back
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="h-12 w-full rounded-[8px] border border-gray-300"
+                    onClick={() => setSelectedRow(null)}
+                  >
+                    Go Back
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Confirmation screen */}
+          {selectedRow && showConfirm && (
+            <>
+              <DialogHeader>
+                <div className="flex justify-center mb-4">
+                  {selectedRow.recurringInvestmentStatus === "Active" ? (
+                    <div className="bg-[#F04438] p-4 rounded-full">
+                      <CirclePause size={20} color="white" />
+                    </div>
+                  ) : (
+                    <div className="bg-[#17B26A] p-4 rounded-full">
+                      <CirclePlay size={20} color="white" />
+                    </div>
+                  )}
+                </div>
+                <DialogTitle className="text-lg font-semibold text-[#181D27] text-center mb-[2px]">
+                  {selectedRow.recurringInvestmentStatus === "Active"
+                    ? "Pause Recurring Investment"
+                    : "Activate Recurring Investment"}
+                </DialogTitle>
+              </DialogHeader>
+
+              <p className="text-[#535862] text-center">
+                {selectedRow.recurringInvestmentStatus === "Active"
+                  ? "Are you sure you want to pause your recurring investment?"
+                  : "Are you sure you want to activate recurring investment?"}
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3">
+                <Button className="bg-[#008B99] hover:bg-[#008B99] text-white font-semibold rounded-[8px]">
+                  {selectedRow.recurringInvestmentStatus === "Active"
+                    ? "Yes, I want to Pause"
+                    : "Yes, I want to Activate"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-[8px] border border-gray-300 font-semibold"
+                  onClick={() => setShowConfirm(false)}
+                >
+                  No, I don&apos;t
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
-  )
+  );
 }
