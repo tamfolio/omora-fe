@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { Search, Settings, Bell, User, Menu, X, LogOut } from "lucide-react";
+import { Search, Settings, Bell, User, Menu, X, LogOut, PiggyBank } from "lucide-react";
 import Logo from "@/components/ui/Logo";
 
 // TypeScript interface for mock session
@@ -85,7 +85,7 @@ function Navbar() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-8">
+              <div className="ml-3 flex items-baseline space-x-8">
                 {navItems.map((item) => (
                   <Link
                     key={item.name}
@@ -104,9 +104,13 @@ function Navbar() {
             {isAuthenticated ? (
               <>
                 {/* Fund Wallet Button - Only for authenticated users */}
-                <button className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
-                  Fund Wallet
-                </button>
+                <Link
+                  href="/dashboard/create-investment"
+                  className="bg-[#008B99] !w-fit flex items-center gap-1 text-sm text-nowrap py-2.5 px-3.5 rounded-[8px] text-white"
+                >
+                  <PiggyBank color="#66D7E5" size={20} />
+                  Begin Investment
+                </Link>
 
                 {/* Authenticated Right Menu Items */}
                 <div className="flex items-center space-x-6">
