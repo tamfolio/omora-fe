@@ -52,7 +52,7 @@ function Navbar() {
   const authenticatedNavItems = [
     { name: "Dashboard", href: "/dashboard" },
     { name: "Investment", href: "/dashboard/investments" },
-    { name: "News", href: "/news" },
+    { name: "News", href: "/newsroom" },
     { name: "Community", href: "/community" },
   ];
 
