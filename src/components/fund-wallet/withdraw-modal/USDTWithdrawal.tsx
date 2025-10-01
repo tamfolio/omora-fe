@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
-// Remove these imports since the components don't exist
-// import VerificationModal from "../verification-modal/page";
-// import WithdrawalSuccessModal from "../withdrawal-success-modal/page";
+
 
 interface WithdrawData {
   currency: "NGN" | "USDT";

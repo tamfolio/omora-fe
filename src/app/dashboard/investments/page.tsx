@@ -320,7 +320,7 @@ export default function Investments() {
   });
 
   return (
-    <div className="relative h-full pt-24 bg-gradient-to-b from-[#79B7BC]/5 via-[#AEDCE0]/5 to-[#FFFFFF] px-[112px]">
+    <div className="relative pt-24 h-screen bg-gradient-to-b from-[#79B7BC]/5 via-[#AEDCE0]/5 to-[#FFFFFF] px-[112px] ">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h1 className="text-[#181D27] font-semibold text-[48px]">

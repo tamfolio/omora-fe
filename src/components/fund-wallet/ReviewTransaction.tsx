@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FiArrowLeft, FiChevronDown } from "react-icons/fi";
 import Logo from "@/components/ui/Logo";
-import TransactionSuccessModal from "../transaction-success-modal/page";
+import TransactionSuccessModal from "./TransactionalSuccessModal";
 
 export default function ReviewTransaction() {
   const router = useRouter();
