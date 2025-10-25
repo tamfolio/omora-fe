@@ -32,13 +32,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMemo, useState } from "react";
 import clsx from "clsx";
 
-// Types
 type InvestmentType = "recurring" | "one-time";
 type InvestmentProfile = "Conservative ETF" | "Bitcoin ETF" | "Growth ETF";
 type RecurringStatus = "Active" | "Inactive" | "N/A";
@@ -50,9 +48,13 @@ export type Investment = {
   duration: string;
   deductedDaily?: number;
   usdcValue: number;
-  unrealized: number; // percentage
+  unrealized: number;
   recurringInvestmentStatus: RecurringStatus;
-  timestamp: Date;
+  dateRange: {
+    endDate: Date;
+    startDate: Date;
+  };
+  timesDebited: number;
 };
 
 // Mock Data
@@ -66,7 +68,11 @@ const data: Investment[] = [
     usdcValue: 1200,
     unrealized: 5.2,
     recurringInvestmentStatus: "Active",
-    timestamp: new Date("2025-07-15T12:00:00"),
+    dateRange: {
+      endDate: new Date("2025-07-15T12:00:00"),
+      startDate: new Date("2025-07-15T12:00:00"),
+    },
+    timesDebited: 2,
   },
   {
     id: "2",
@@ -77,7 +83,11 @@ const data: Investment[] = [
     usdcValue: 500,
     unrealized: -2.5,
     recurringInvestmentStatus: "N/A",
-    timestamp: new Date("2025-07-14T15:30:00"),
+    dateRange: {
+      endDate: new Date("2025-07-14T15:30:00"),
+      startDate: new Date("2025-07-14T15:30:00"),
+    },
+    timesDebited: 3,
   },
   {
     id: "3",
@@ -88,191 +98,11 @@ const data: Investment[] = [
     usdcValue: 3000,
     unrealized: 12.4,
     recurringInvestmentStatus: "Inactive",
-    timestamp: new Date("2025-07-13T09:45:00"),
-  },
-];
-
-// Columns
-const columns: ColumnDef<Investment>[] = [
-  {
-    accessorKey: "id",
-    header: ({ column }) => (
-      <Button
-        className="px-0 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Investment ID
-        <ChevronsUpDown className="ml-1 h-3 w-3" />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <div className="!text-sm text-center text-[#181D27] font-medium">
-        #{row.original.id}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "investmentType",
-    header: ({ column }) => (
-      <Button
-        className="px-0 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Investment Type
-        <ChevronsUpDown className="ml-1 h-3 w-3" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const type = row.original.investmentType;
-      const profiles = row.original.profiles.join(", ");
-      return (
-        <div className="!text-sm text-[#181D27] font-medium">
-          {type === "recurring"
-            ? `Recurring Investment (${profiles})`
-            : `One-time Investment (${profiles})`}
-        </div>
-      );
+    dateRange: {
+      endDate: new Date("2025-07-13T09:45:00"),
+      startDate: new Date("2025-07-13T09:45:00"),
     },
-  },
-  {
-    accessorKey: "duration",
-    header: () => (
-      <div className="text-center text-xs text-[#717680] font-semibold">
-        Duration
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-sm text-center text-[#535862]">
-        {row.original.duration}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "dailyDeduction",
-    header: () => (
-      <div className="text-center text-xs text-[#717680] font-semibold">
-        Deducted Daily
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-sm text-center text-[#535862]">
-        {row.original.investmentType === "recurring" ? (
-          `${row.original.deductedDaily?.toFixed(2)} USDC`
-        ) : (
-          <span className="px-2 py-[2px] rounded-[16px] font-medium bg-[#F7F7F7] text-[#373A41] border text-xs border-[#ECECED]">
-            N/A
-          </span>
-        )}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "usdcValue",
-    header: () => (
-      <div className="text-center text-xs text-[#717680] font-semibold">
-        Total Investment
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-sm text-center text-[#535862]">
-        {row.original.usdcValue.toLocaleString()} USDC
-      </div>
-    ),
-  },
-  {
-    accessorKey: "unrealizedPnL",
-    header: () => (
-      <div className="text-center text-xs text-[#717680] font-semibold">
-        Unrealized gain/loss (%)
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div
-        className={clsx(
-          "text-sm text-center",
-          row.original.unrealized >= 0 ? "text-green-600" : "text-red-600"
-        )}
-      >
-        {row.original.unrealized.toFixed(2)}%
-      </div>
-    ),
-  },
-  {
-    accessorKey: "recurringInvestmentStatus",
-    header: ({ column }) => (
-      <Button
-        className="px-0 gap-1 flex text-xs w-full font-semibold justify-center"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Recurring Status
-        <ChevronsUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const status = row.original.recurringInvestmentStatus;
-      const colorClass =
-        status === "Active"
-          ? "bg-[#ECFDF3] text-[#067647] border border-[#ABEFC6]"
-          : status === "Inactive"
-            ? "bg-[#FFFAEB] text-[#B54708] border border-[#FEDF89]"
-            : "bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]";
-
-      return (
-        <div className="flex justify-center items-center">
-          <span
-            className={`px-2 py-[2px] rounded-[16px] text-xs font-medium ${colorClass}`}
-          >
-            {status}
-          </span>
-        </div>
-      );
-    },
-    sortingFn: (a, b) => {
-      const order: RecurringStatus[] = ["Active", "Inactive", "N/A"];
-      return (
-        order.indexOf(a.original.recurringInvestmentStatus) -
-        order.indexOf(b.original.recurringInvestmentStatus)
-      );
-    },
-  },
-  {
-    accessorKey: "timestamp",
-    header: ({ column }) => (
-      <Button
-        className="px-0 gap-1 w-full justify-end flex text-xs text-[#717680] font-semibold"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Timestamp
-        <ChevronsUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const date = row.original.timestamp;
-      return (
-        <div className="text-right text-[#535862]">
-          <div>
-            {date.toLocaleString("en-US", {
-              hour: "numeric",
-              minute: "numeric",
-              hour12: true,
-            })}
-          </div>
-          <div>
-            {date.toLocaleString("en-US", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </div>
-        </div>
-      );
-    },
-    sortingFn: (a, b) =>
-      a.original.timestamp.getTime() - b.original.timestamp.getTime(),
+    timesDebited: 3,
   },
 ];
 
@@ -284,12 +114,198 @@ export default function Investments() {
     pageSize: 10,
   });
   const [showConfirm, setShowConfirm] = useState(false);
-  const [closeDialoge, setCloseDialoge] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Investment | null>(null);
 
   const filteredData = useMemo(() => {
     if (activeTab === "all") return data;
     return data.filter((d) => d.investmentType === activeTab);
+  }, [activeTab]);
+
+  const columns = useMemo<ColumnDef<Investment>[]>(() => {
+    const baseColumns: ColumnDef<Investment>[] = [
+      {
+        accessorKey: "id",
+        header: ({ column }) => (
+          <Button
+            className="px-0 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Investment ID
+            <ChevronsUpDown className="ml-1 h-3 w-3" />
+          </Button>
+        ),
+        cell: ({ row }) => (
+          <div className="!text-sm text-center text-[#181D27] font-medium">
+            #{row.original.id}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "investmentType",
+        header: ({ column }) => (
+          <Button
+            className="px-0 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Investment Type
+            <ChevronsUpDown className="ml-1 h-3 w-3" />
+          </Button>
+        ),
+        cell: ({ row }) => {
+          const type = row.original.investmentType;
+          const profiles = row.original.profiles.join(", ");
+          return (
+            <div className="!text-sm text-[#181D27] font-medium">
+              {type === "recurring"
+                ? `Recurring Investment (${profiles})`
+                : `One-time Investment (${profiles})`}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "duration",
+        header: () => (
+          <div className="text-center text-xs text-[#717680] font-semibold">
+            Duration
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="text-sm text-center text-[#535862]">
+            {row.original.duration}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "usdcValue",
+        header: () => (
+          <div className="text-center text-xs text-[#717680] font-semibold">
+            Total Investment
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="text-sm text-center text-[#535862]">
+            {row.original.usdcValue.toLocaleString()} USDC
+          </div>
+        ),
+      },
+      {
+        accessorKey: "unrealizedPnL",
+        header: () => (
+          <div className="text-center text-xs text-[#717680] font-semibold">
+            Unrealized gain/loss (%)
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div
+            className={clsx(
+              "text-sm text-center",
+              row.original.unrealized >= 0 ? "text-green-600" : "text-red-600"
+            )}
+          >
+            {row.original.unrealized.toFixed(2)}%
+          </div>
+        ),
+      },
+    ];
+
+    const dateRangeColumn: ColumnDef<Investment> = {
+      accessorKey: "dateRange",
+      header: ({ column }) => (
+        <Button
+          className="px-0 gap-1 w-full justify-end flex text-xs text-[#717680] font-semibold"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Start / End Date
+          <ChevronsUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const start = row.original.dateRange.startDate;
+        const end = row.original.dateRange.endDate;
+        return (
+          <div className="text-right text-sm text-[#535862]">
+            <div>
+              {start.toLocaleDateString("en-US", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+            <div className="text-xs text-[#535862]">
+              {end.toLocaleDateString("en-US", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          </div>
+        );
+      },
+      sortingFn: (a, b) =>
+        a.original.dateRange.startDate.getTime() -
+        b.original.dateRange.startDate.getTime(),
+    };
+
+    const recurringColumns: ColumnDef<Investment>[] = [
+      {
+        accessorKey: "timesDebited",
+        header: () => (
+          <div className="text-center text-xs text-[#717680] font-semibold">
+            No of Debit
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="text-sm text-center text-[#535862]">
+            {row.original.timesDebited}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "dailyDeduction",
+        header: () => (
+          <div className="text-center text-xs text-[#717680] font-semibold">
+            Deducted Daily
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="text-sm text-center text-[#535862]">
+            {row.original.deductedDaily?.toFixed(2)} USDC
+          </div>
+        ),
+      },
+      {
+        accessorKey: "recurringInvestmentStatus",
+        header: () => (
+          <div className="text-center text-xs text-[#717680] font-semibold">
+            Recurring Status
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="flex justify-center items-center">
+            <span
+              className={clsx(
+                "px-2 py-[2px] rounded-[16px] text-xs font-medium",
+                row.original.recurringInvestmentStatus === "Active"
+                  ? "bg-[#ECFDF3] text-[#067647] border border-[#ABEFC6]"
+                  : row.original.recurringInvestmentStatus === "Inactive"
+                    ? "bg-[#FFFAEB] text-[#B54708] border border-[#FEDF89]"
+                    : "bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]"
+              )}
+            >
+              {row.original.recurringInvestmentStatus}
+            </span>
+          </div>
+        ),
+      },
+    ];
+
+    return activeTab === "recurring" || activeTab === "all"
+      ? [...baseColumns, ...recurringColumns, dateRangeColumn]
+      : [...baseColumns, dateRangeColumn];
   }, [activeTab]);
 
   const table = useReactTable({
@@ -447,11 +463,30 @@ export default function Investments() {
                 </div>
                 <div className="flex items-center justify-between py-2 px-3">
                   <span className="text-[#717680] font-semibold">
-                    Transaction Date
+                    Start / End Date
                   </span>
-                  <span className="text-[#717680] ">
-                    {selectedRow.timestamp.toLocaleString()}
-                  </span>
+                  <div className="flex flex-col items-end text-[#717680]">
+                    <span>
+                      {selectedRow.dateRange.startDate.toLocaleDateString(
+                        "en-US",
+                        {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        }
+                      )}
+                    </span>
+                    <span className="text-xs">
+                      {selectedRow.dateRange.endDate.toLocaleDateString(
+                        "en-US",
+                        {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        }
+                      )}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="border-t border-[#D5D7DA] mt-[10px]" />

@@ -52,7 +52,8 @@ function Navbar() {
   const authenticatedNavItems = [
     { name: "Dashboard", href: "/dashboard" },
     { name: "Investment", href: "/dashboard/investments" },
-    { name: "News", href: "/news" },
+    { name: "Wallet", href: "/dashboard/fund-wallet" },
+    { name: "News", href: "/newsroom" },
     { name: "Community", href: "/community" },
   ];
 
@@ -64,10 +65,10 @@ function Navbar() {
     { name: "Community", href: "/community" },
   ];
 
-  const rightMenuItems = [
-    { name: "Wallet", href: "dashboard/wallet" },
-    { name: "Portfolio", href: "dashboard/portfolio" },
-  ];
+  // const rightMenuItems = [
+  //   { name: "Wallet", href: "dashboard/wallet" },
+  //   { name: "Portfolio", href: "dashboard/portfolio" },
+  // ];
 
   const navItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
 
@@ -85,7 +86,7 @@ function Navbar() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:block">
-              <div className="ml-3 flex items-baseline space-x-8">
+              <div className="flex items-baseline">
                 {navItems.map((item) => (
                   <Link
                     key={item.name}
@@ -111,19 +112,6 @@ function Navbar() {
                   <PiggyBank color="#66D7E5" size={20} />
                   Begin Investment
                 </Link>
-
-                {/* Authenticated Right Menu Items */}
-                <div className="flex items-center space-x-6">
-                  {rightMenuItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
 
                 {/* Icons for authenticated users */}
                 <div className="flex items-center space-x-3">
@@ -246,7 +234,7 @@ function Navbar() {
                 </Link>
               ))}
 
-              {isAuthenticated &&
+              {/* {isAuthenticated &&
                 rightMenuItems.map((item) => (
                   <Link
                     key={item.name}
@@ -256,7 +244,7 @@ function Navbar() {
                   >
                     {item.name}
                   </Link>
-                ))}
+                ))} */}
             </div>
 
             {/* Mobile user section */}
