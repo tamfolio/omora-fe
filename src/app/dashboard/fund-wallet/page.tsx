@@ -4,7 +4,6 @@ import FundWalletComponent from "@/components/fund-wallet/FundWallet";
 export default function FundWalletPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <FundWalletComponent />
     </div>
   );

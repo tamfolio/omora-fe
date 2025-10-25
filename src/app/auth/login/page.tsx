@@ -1,3 +1,4 @@
+// app/auth/login/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,84 +10,263 @@ import { RiCustomerServiceLine } from "react-icons/ri";
 import Logo from "@/components/ui/Logo";
 import Icon from "@/components/ui/Icon";
 
-interface SessionUser {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  isFirstLogin?: boolean;
-}
-
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleInitialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
+      // Step 1: Call custom API route for initial sign-in
+      const response = await fetch("/api/auth/omora-signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: email,
+          password: password,
+        }),
       });
 
-      if (result?.error) {
-        setError("Invalid Email or password. Please try again.");
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Invalid email or password");
         setLoading(false);
-      } else {
-        const session = await getSession();
-        if (session) {
-          // Check if first-time login
-          const isFirstLogin = (session.user as SessionUser)?.isFirstLogin;
-          if (isFirstLogin) {
-            router.push("/firsttimelogin");
-          } else {
-            router.push("/dashboard");
-          }
-        }
+      } else if (data.requiresOtp) {
+        // Show OTP modal
+        setShowOtpModal(true);
+        setLoading(false);
       }
-    } catch {
+    } catch (error) {
       setError("An error occurred during sign in");
       setLoading(false);
     }
   };
 
-  // Loading Screen Component
-  if (loading) {
+  const handleOtpSubmit = async () => {
+    if (otp.length !== 6) {
+      setError("Please enter a 6-digit code");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      // Step 2: Verify OTP
+      const response = await fetch("/api/auth/omora-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: email,
+          otp: otp,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Invalid verification code");
+        setLoading(false);
+      } else if (data.success && data.user) {
+        // Step 3: Sign in with NextAuth using the verified user data
+        const result = await signIn("credentials", {
+          email: data.user.email,
+          password: "", // Not needed, we're using the token
+          accessToken: data.user.accessToken,
+          refreshToken: data.user.refreshToken || "",
+          userId: data.user.id,
+          userName: data.user.name,
+          userRole: data.user.role,
+          isFirstLogin: data.user.isFirstLogin?.toString() || "false",
+          redirect: false,
+        });
+
+        if (result?.ok) {
+          // Check if first-time login
+          if (data.user.isFirstLogin) {
+            router.push("/firsttimelogin");
+          } else {
+            router.push("/dashboard");
+          }
+        } else {
+          setError("Failed to establish session");
+          setLoading(false);
+        }
+      }
+    } catch (error) {
+      setError("An error occurred during verification");
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      // Resend OTP by calling sign-in again
+      const response = await fetch("/api/auth/omora-signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: email,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Failed to resend code");
+      } else {
+        setOtp("");
+        setError("");
+      }
+    } catch (error) {
+      setError("Failed to resend code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // OTP Verification Modal
+  if (showOtpModal) {
     return (
       <div className="h-screen bg-gray-50 flex flex-col relative overflow-hidden">
         <div className="h-full overflow-y-auto scrollbar-hide">
-          {/* Customer Service Icon - Fixed Position */}
           <div className="fixed bottom-6 right-6 z-10">
             <button className="bg-teal-600 hover:bg-teal-700 text-white p-3 rounded-full shadow-lg transition-colors duration-200">
               <RiCustomerServiceLine className="h-6 w-6" />
             </button>
           </div>
 
-          {/* Content Container */}
           <div className="min-h-full flex flex-col">
-            {/* Top Logo */}
             <div className="p-6">
               <Logo width={150} height={40} />
             </div>
 
-            {/* Centered Loading Content */}
+            <div className="flex-1 flex items-start justify-center pt-8 pb-16 px-8">
+              <div className="w-full max-w-md space-y-8">
+                <div className="text-center">
+                  <div className="mx-auto mb-6 w-16 h-16 flex items-center justify-center">
+                    <Icon width={40} height={40} />
+                  </div>
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                    Two-factor authentication
+                  </h2>
+                  <p className="text-gray-600 text-sm">
+                    Enter the 6-digit code sent to
+                  </p>
+                  <p className="text-gray-900 text-sm font-medium mt-1">
+                    {email}
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  {error && (
+                    <div className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-md">
+                      {error}
+                    </div>
+                  )}
+
+                  <div>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        setOtp(value);
+                        setError("");
+                      }}
+                      placeholder="000000"
+                      className="w-full px-3 py-3 text-center text-2xl font-mono tracking-[0.5em] border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      disabled={loading}
+                      autoFocus
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleOtpSubmit}
+                    disabled={loading || otp.length !== 6}
+                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {loading ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Verifying...
+                      </div>
+                    ) : (
+                      "Verify"
+                    )}
+                  </button>
+
+                  <div className="text-center space-y-3">
+                    <p className="text-sm text-gray-600">
+                      Didn't receive the code?{" "}
+                      <button
+                        onClick={handleResendOtp}
+                        disabled={loading}
+                        className="text-teal-600 hover:text-teal-500 font-medium"
+                      >
+                        {loading ? "Sending..." : "Click to resend"}
+                      </button>
+                    </p>
+                    
+                    <button
+                      onClick={() => {
+                        setShowOtpModal(false);
+                        setOtp("");
+                        setError("");
+                      }}
+                      className="text-sm text-gray-600 hover:text-gray-900"
+                      disabled={loading}
+                    >
+                      ← Back to login
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading Screen
+  if (loading && !showOtpModal) {
+    return (
+      <div className="h-screen bg-gray-50 flex flex-col relative overflow-hidden">
+        <div className="h-full overflow-y-auto scrollbar-hide">
+          <div className="fixed bottom-6 right-6 z-10">
+            <button className="bg-teal-600 hover:bg-teal-700 text-white p-3 rounded-full shadow-lg transition-colors duration-200">
+              <RiCustomerServiceLine className="h-6 w-6" />
+            </button>
+          </div>
+
+          <div className="min-h-full flex flex-col">
+            <div className="p-6">
+              <Logo width={150} height={40} />
+            </div>
+
             <div className="flex-1 flex items-center justify-center px-8">
               <div className="w-full max-w-md text-center space-y-8">
-                {/* Loading Icon */}
                 <div className="mx-auto mb-6 w-16 h-16 flex items-center justify-center">
                   <Icon width={40} height={40} />
                 </div>
 
-                {/* Loading Text */}
                 <div className="space-y-3">
                   <h2 className="text-2xl font-semibold text-gray-900">
                     Signing you in...
@@ -96,7 +276,6 @@ export default function Login() {
                   </p>
                 </div>
 
-                {/* Loading Spinner */}
                 <div className="flex justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
                 </div>
@@ -108,27 +287,23 @@ export default function Login() {
     );
   }
 
+  // Main Login Form
   return (
     <div className="h-screen bg-gray-50 flex flex-col relative overflow-hidden">
       <div className="h-full overflow-y-auto scrollbar-hide">
-        {/* Customer Service Icon - Fixed Position */}
         <div className="fixed bottom-6 right-6 z-10">
           <button className="bg-teal-600 hover:bg-teal-700 text-white p-3 rounded-full shadow-lg transition-colors duration-200">
             <RiCustomerServiceLine className="h-6 w-6" />
           </button>
         </div>
 
-        {/* Content Container */}
         <div className="min-h-full flex flex-col">
-          {/* Top Logo */}
           <div className="p-6">
             <Logo width={150} height={40} />
           </div>
 
-          {/* Centered Login Form */}
           <div className="flex-1 flex items-start justify-center pt-8 pb-16 px-8">
             <div className="w-full max-w-md space-y-8">
-              {/* Center Logo */}
               <div className="text-center">
                 <div className="mx-auto mb-6 w-16 h-16 flex items-center justify-center">
                   <Icon width={40} height={40} />
@@ -141,14 +316,13 @@ export default function Login() {
                 </p>
               </div>
 
-              <form className="space-y-6" onSubmit={handleSubmit}>
+              <form className="space-y-6" onSubmit={handleInitialSubmit}>
                 {error && (
-                  <div className="text-red-500 text-sm text-center">
+                  <div className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-md">
                     {error}
                   </div>
                 )}
 
-                {/* Email Field */}
                 <div>
                   <label
                     htmlFor="email"
@@ -168,7 +342,6 @@ export default function Login() {
                   />
                 </div>
 
-                {/* Password Field */}
                 <div>
                   <label
                     htmlFor="password"
@@ -202,7 +375,6 @@ export default function Login() {
                   </div>
                 </div>
 
-                {/* Remember me and Forgot password */}
                 <div className="flex items-center justify-between text-sm">
                   <label className="flex items-center">
                     <input
@@ -224,18 +396,16 @@ export default function Login() {
                   </Link>
                 </div>
 
-                {/* Sign in button */}
                 <button
                   type="submit"
                   disabled={loading || !email || !password}
-                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Sign in
                 </button>
 
-                {/* Sign up link */}
                 <div className="text-center text-sm">
-                <span className="text-gray-600">Don&apos;t have an account? </span>
+                  <span className="text-gray-600">Don't have an account? </span>
                   <Link
                     href="/auth/signup"
                     className="text-teal-600 hover:text-teal-500 font-medium"
