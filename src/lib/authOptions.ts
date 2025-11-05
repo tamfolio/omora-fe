@@ -74,24 +74,24 @@ declare module "next-auth" {
       name: string
       role: string
     }
-    accessToken: string
+    accessToken?: string
     error?: string
   }
 }
 
 // Extend NextAuth types
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string
-      email: string
-      name: string
-      role: string
-    }
-    accessToken: string
-    error?: string
-  }
-}
+// declare module "next-auth" {
+//   interface Session {
+//     user: {
+//       id: string
+//       email: string
+//       name: string
+//       role: string
+//     }
+//     accessToken: string
+//     error?: string
+//   }
+// }
 
 // ---- Auth Options ---- //
 export const authOptions: NextAuthOptions = {
