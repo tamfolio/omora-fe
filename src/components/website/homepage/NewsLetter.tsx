@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useState } from "react";
 import { Button } from "../../ui/button";
@@ -16,7 +16,10 @@ export default function NewsLetter() {
         Sign up to receive the latest crypto trends, insights, and company news.
       </h3>
 
-      <form className="flex items-center gap-4" onSubmit={(e) => subscribeToNewsletter(e)}>
+      <form
+        className="flex items-center gap-4"
+        onSubmit={(e) => subscribeToNewsletter(e)}
+      >
         <Input
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter your email"

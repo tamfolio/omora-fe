@@ -2,16 +2,14 @@ import './globals.css'
 import AuthProvider from "@/components/SessionProvider"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/authOptions"
-import NavBar from '@/components/website/NavBar'
-import Footer from '@/components/website/Footer'
 import CookiesPopUp from '@/components/website/CookiesPopUp'
 
 export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(authOptions);
 
   return (
     <html lang="en">
@@ -22,13 +20,11 @@ export default async function RootLayout({
         />
       </head>
       <body className="font-sans relative" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-        <NavBar />
         <AuthProvider session={session}>
           {children}
+          <CookiesPopUp />
         </AuthProvider>
-        <CookiesPopUp />
-        <Footer />
       </body>
     </html>
-  )
+  );
 }

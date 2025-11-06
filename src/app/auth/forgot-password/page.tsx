@@ -1,23 +1,25 @@
+// app/auth/forgot-password/page.tsx
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { RiCustomerServiceLine } from "react-icons/ri";
-import { 
-  HiOutlineKey, 
-  HiOutlineMail, 
+import {
+  HiOutlineKey,
+  HiOutlineMail,
   HiOutlineCheckCircle,
-  HiOutlineLockClosed 
+  HiOutlineLockClosed,
 } from "react-icons/hi";
 import Logo from "@/components/ui/Logo";
 
-type FlowStep = "email" | "check-email" | "reset-password" | "success";
+type FlowStep = "email" | "otp-verification" | "reset-password" | "success";
 
 export default function ForgotPassword() {
   const [currentStep, setCurrentStep] = useState<FlowStep>("email");
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -25,13 +27,6 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  // Check if we have a reset token in URL (for step 3)
-  const resetToken = searchParams.get("token");
-  if (resetToken && currentStep === "email") {
-    setCurrentStep("reset-password");
-  }
 
   const validatePassword = (password: string): boolean => {
     const minLength = 8;
@@ -59,13 +54,23 @@ export default function ForgotPassword() {
       if (!response.ok) {
         setError(result.error || "Failed to send reset email");
       } else {
-        setCurrentStep("check-email");
+        // Go directly to OTP verification
+        setCurrentStep("otp-verification");
       }
-    } catch (error) {
+    } catch (_) {
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOtpVerification = () => {
+    if (otp.length !== 6) {
+      setError("Please enter a 6-digit code");
+      return;
+    }
+    setError("");
+    setCurrentStep("reset-password");
   };
 
   const handlePasswordReset = async (e: React.FormEvent) => {
@@ -80,7 +85,9 @@ export default function ForgotPassword() {
     }
 
     if (!validatePassword(password)) {
-      setError("Password must be at least 8 characters and contain a special character and number");
+      setError(
+        "Password must be at least 8 characters and contain a special character and number",
+      );
       setLoading(false);
       return;
     }
@@ -91,9 +98,10 @@ export default function ForgotPassword() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          token: resetToken, 
-          password 
+        body: JSON.stringify({
+          identifier: email,
+          newPassword: password,
+          otp: otp,
         }),
       });
 
@@ -104,7 +112,7 @@ export default function ForgotPassword() {
       } else {
         setCurrentStep("success");
       }
-    } catch (error) {
+    } catch (_) {
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -113,6 +121,7 @@ export default function ForgotPassword() {
 
   const handleResendEmail = async () => {
     setLoading(true);
+    setError("");
     try {
       await fetch("/api/auth/forgot-password", {
         method: "POST",
@@ -121,7 +130,8 @@ export default function ForgotPassword() {
         },
         body: JSON.stringify({ email }),
       });
-    } catch (error) {
+      setOtp(""); // Clear OTP input
+    } catch (_) {
       console.error("Failed to resend email");
     } finally {
       setLoading(false);
@@ -143,7 +153,7 @@ export default function ForgotPassword() {
               Forgot password?
             </h2>
             <p className="text-sm text-gray-600 mb-8 text-center">
-              No worries, we'll send you reset instructions.
+              No worries, we&apos;ll send you reset instructions.
             </p>
 
             {/* Form */}
@@ -153,7 +163,10 @@ export default function ForgotPassword() {
               )}
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Email
                 </label>
                 <input
@@ -179,7 +192,7 @@ export default function ForgotPassword() {
           </>
         );
 
-      case "check-email":
+      case "otp-verification":
         return (
           <>
             {/* Icon */}
@@ -189,30 +202,65 @@ export default function ForgotPassword() {
 
             {/* Header */}
             <h2 className="text-2xl font-semibold text-gray-900 mb-2 text-center">
-              Check your email
+              Enter verification code
             </h2>
             <p className="text-sm text-gray-600 mb-8 text-center">
-              We sent a password reset link to{" "}
+              Enter the 6-digit code sent to{" "}
               <span className="font-medium text-gray-900">{email}</span>
             </p>
 
-            {/* Open Email Button */}
+            {error && (
+              <div className="text-red-500 text-sm text-center mb-4">{error}</div>
+            )}
+
+            <div className="mb-6">
+              <input
+                type="text"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  setOtp(value);
+                  setError("");
+                }}
+                placeholder="000000"
+                className="w-full px-3 py-3 text-center text-2xl font-mono tracking-widest border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                disabled={loading}
+                autoFocus
+              />
+            </div>
+
             <button
-              onClick={() => window.open("mailto:", "_blank")}
-              className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 mb-6"
+              onClick={handleOtpVerification}
+              disabled={loading || otp.length !== 6}
+              className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 mb-6"
             >
-              Open email app
+              Continue
             </button>
 
             {/* Resend */}
-            <div className="text-center text-sm">
-              <span className="text-gray-600">Didn't receive the email? </span>
+            <div className="text-center space-y-3">
+              <p className="text-sm text-gray-600">
+                Didn&apos;t receive the code?{" "}
+                <button
+                  onClick={handleResendEmail}
+                  disabled={loading}
+                  className="text-teal-600 hover:text-teal-500 font-medium"
+                >
+                  {loading ? "Sending..." : "Resend"}
+                </button>
+              </p>
+
               <button
-                onClick={handleResendEmail}
+                onClick={() => {
+                  setCurrentStep("email");
+                  setOtp("");
+                  setError("");
+                }}
+                className="text-sm text-gray-600 hover:text-gray-900"
                 disabled={loading}
-                className="text-teal-600 hover:text-teal-500 font-medium"
               >
-                {loading ? "Sending..." : "Click to resend"}
+                ← Back to email
               </button>
             </div>
           </>
@@ -242,7 +290,10 @@ export default function ForgotPassword() {
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Password
                 </label>
                 <div className="relative">
@@ -272,7 +323,10 @@ export default function ForgotPassword() {
 
               {/* Confirm Password Field */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Confirm password
                 </label>
                 <div className="relative">
@@ -302,21 +356,37 @@ export default function ForgotPassword() {
 
               {/* Password Requirements */}
               <div className="space-y-2">
-                <div className={`flex items-center space-x-2 text-sm ${
-                  password.length >= 8 ? "text-green-600" : "text-gray-400"
-                }`}>
-                  <div className={`w-2 h-2 rounded-full ${
-                    password.length >= 8 ? "bg-green-500" : "bg-gray-300"
-                  }`}></div>
+                <div
+                  className={`flex items-center space-x-2 text-sm ${
+                    password.length >= 8 ? "text-green-600" : "text-gray-400"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      password.length >= 8 ? "bg-green-500" : "bg-gray-300"
+                    }`}
+                  ></div>
                   <span>Must be at least 8 characters</span>
                 </div>
-                <div className={`flex items-center space-x-2 text-sm ${
-                  /[!@#$%^&*(),.?":{}|<>]/.test(password) && /\d/.test(password) ? "text-green-600" : "text-gray-400"
-                }`}>
-                  <div className={`w-2 h-2 rounded-full ${
-                    /[!@#$%^&*(),.?":{}|<>]/.test(password) && /\d/.test(password) ? "bg-green-500" : "bg-gray-300"
-                  }`}></div>
-                  <span>Must contain one special character and one number at least</span>
+                <div
+                  className={`flex items-center space-x-2 text-sm ${
+                    /[!@#$%^&*(),.?":{}|<>]/.test(password) &&
+                    /\d/.test(password)
+                      ? "text-green-600"
+                      : "text-gray-400"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      /[!@#$%^&*(),.?":{}|<>]/.test(password) &&
+                      /\d/.test(password)
+                        ? "bg-green-500"
+                        : "bg-gray-300"
+                    }`}
+                  ></div>
+                  <span>
+                    Must contain one special character and one number at least
+                  </span>
                 </div>
               </div>
 
@@ -344,8 +414,8 @@ export default function ForgotPassword() {
               Password reset
             </h2>
             <p className="text-sm text-gray-600 mb-8 text-center">
-              Your password has been successfully reset.{" "}
-              Click below to log in magically.
+              Your password has been successfully reset. Click below to log in
+              magically.
             </p>
 
             {/* Continue Button */}

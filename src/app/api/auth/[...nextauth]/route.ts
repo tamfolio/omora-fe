@@ -1,169 +1,207 @@
+// app/api/auth/[...nextauth]/route.ts
 import NextAuth from "next-auth"
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { JWT } from "next-auth/jwt"
+import type { User } from "next-auth"
+import type { JWT } from "next-auth/jwt"
 
-// Define custom types
-interface CustomUser {
-  id: string
-  email: string
-  name: string
-  role: string
-  accessToken: string
-  refreshToken: string
-}
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/proxy'
+const API_KEY = '6434754426732'
 
-// Fix 1: Don't extend JWT, just define our own interface for the token shape
-interface CustomToken {
-  accessToken?: string
-  refreshToken?: string
-  accessTokenExpires?: number
-  user?: {
-    id: string
-    email: string
-    name: string
-    role: string
-  }
-  error?: string
-  // Include standard JWT properties we need - match JWT interface exactly
-  sub?: string
-  name?: string | null
-  email?: string | null
-  picture?: string | null
-  iat?: number
-  exp?: number
-  jti?: string
-}
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string
-      email: string
-      name: string
-      role: string
-    }
-    accessToken: string
-    error?: string
-  }
-}
+// Store temporary auth state for OTP verification
+const tempAuthStore = new Map<string, { email: string; timestamp: number }>();
 
 const authOptions: NextAuthOptions = {
   providers: [
+    // Provider 1: Two-step OTP flow (kept for compatibility)
     CredentialsProvider({
-      name: "credentials",
+      id: "credentials-with-otp",
+      name: "credentials-otp",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        otp: { label: "OTP", type: "text" },
+        mode: { label: "Mode", type: "text" }
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
+      async authorize(credentials): Promise<User | null> {
+        if (!credentials) return null;
 
         try {
-          // Call your backend API
-          const response = await fetch(`${process.env.API_AUTH_ENDPOINT}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-            }),
-          })
+          if (credentials.mode === 'signin') {
+            const response = await fetch(`${API_BASE_URL}/user/api/v1/sign-in`, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                "x-api-key": API_KEY
+              },
+              body: JSON.stringify({
+                identifier: credentials.email,
+                password: credentials.password,
+              }),
+            });
+            
+            if (!response.ok) return null;
 
-          if (!response.ok) {
-            return null
+            tempAuthStore.set(credentials.email, {
+              email: credentials.email,
+              timestamp: Date.now()
+            });
+
+            return {
+              id: 'temp',
+              email: credentials.email,
+              name: 'pending_otp',
+              role: 'pending',
+              accessToken: '',
+              refreshToken: '',
+            }
           }
 
-          const user = await response.json()
-          
-          // Return user object that will be stored in JWT
-          if (user && user.id) {
+          if (credentials.mode === 'verify' && credentials.otp) {
+            const tempAuth = tempAuthStore.get(credentials.email);
+            
+            if (!tempAuth || Date.now() - tempAuth.timestamp > 5 * 60 * 1000) {
+              return null;
+            }
+
+            const response = await fetch(`${API_BASE_URL}/user/api/v1/sign-in/complete`, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                "x-api-key": API_KEY
+              },
+              body: JSON.stringify({
+                identifier: credentials.email,
+                otp: credentials.otp,
+              }),
+            });
+            
+            if (!response.ok) return null;
+            
+            const data = await response.json();
+            tempAuthStore.delete(credentials.email);
+
+            const profileResponse = await fetch(`${API_BASE_URL}/user/api/v1/me`, {
+              method: "GET",
+              headers: { 
+                "x-api-key": API_KEY,
+                "Authorization": `Bearer ${data.token || data.accessToken}`
+              },
+            });
+
+            const profile = profileResponse.ok ? await profileResponse.json() : {};
+            
             return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              role: user.role,
-              accessToken: user.accessToken,
-              refreshToken: user.refreshToken,
-            } as CustomUser
+              id: data.userId || profile.id || credentials.email,
+              email: credentials.email,
+              name: profile.firstName && profile.lastName 
+                ? `${profile.firstName} ${profile.lastName}` 
+                : profile.name || credentials.email,
+              role: data.role || profile.role || 'user',
+              accessToken: data.token || data.accessToken,
+              refreshToken: data.refreshToken,
+              isFirstLogin: profile.isPinSet === false,
+            }
           }
           
           return null
         } catch (error) {
-          console.error('Auth error:', error)
-          return null
+          console.error("Auth error:", error);
+          return null;
         }
-      }
-    })
+      },
+    }),
+    
+    // Provider 2: Direct credentials (used by your login page after OTP verification)
+    CredentialsProvider({
+      id: "credentials",
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        accessToken: { label: "Access Token", type: "text" },
+        refreshToken: { label: "Refresh Token", type: "text" },
+        userId: { label: "User ID", type: "text" },
+        userName: { label: "User Name", type: "text" },
+        userRole: { label: "User Role", type: "text" },
+        isFirstLogin: { label: "First Login", type: "text" },
+      },
+      async authorize(credentials): Promise<User | null> {
+        if (!credentials || !credentials.accessToken) return null;
+
+        console.log('NextAuth direct credentials authorize:', {
+          email: credentials.email,
+          userId: credentials.userId,
+          isFirstLogin: credentials.isFirstLogin,
+        });
+
+        return {
+          id: credentials.userId || credentials.email,
+          email: credentials.email,
+          name: credentials.userName || credentials.email,
+          role: credentials.userRole || 'user',
+          accessToken: credentials.accessToken,
+          refreshToken: credentials.refreshToken,
+          isFirstLogin: credentials.isFirstLogin === 'true',
+        };
+      },
+    }),
   ],
-  
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 60, // 30 minutes
-  },
-  
-  jwt: {
-    maxAge: 30 * 60, // 30 minutes
-  },
-  
+  session: { strategy: "jwt", maxAge: 60 * 60 },
+  jwt: { maxAge: 60 * 60 },
   callbacks: {
-    // Fix 2: Return JWT type but cast internally to CustomToken
     async jwt({ token, user, account }): Promise<JWT> {
-      // Initial sign in
       if (account && user) {
-        const customUser = user as CustomUser
-        const customToken: CustomToken = {
-          ...token,
-          accessToken: customUser.accessToken,
-          refreshToken: customUser.refreshToken,
-          accessTokenExpires: Date.now() + 30 * 60 * 1000, // 30 minutes (fixed from 60 minutes)
-          user: {
-            id: customUser.id,
-            email: customUser.email,
-            name: customUser.name,
-            role: customUser.role,
+        if (user.id === 'temp') {
+          return {
+            ...token,
+            error: 'OTP_REQUIRED'
           }
         }
-        return customToken as JWT
+
+        return {
+          ...token,
+          accessToken: user.accessToken,
+          refreshToken: user.refreshToken,
+          accessTokenExpires: Date.now() + 30 * 60 * 1000,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            isFirstLogin: user.isFirstLogin,
+          }
+        }
       }
 
-      const customToken = token as CustomToken
-
-      // Return previous token if the access token has not expired yet
-      if (Date.now() < (customToken.accessTokenExpires || 0)) {
-        return customToken as JWT
+      if (token.accessTokenExpires && Date.now() < token.accessTokenExpires) {
+        return token
+      }
+      
+      if (token.refreshToken) {
+        return await refreshAccessToken(token)
       }
 
-      // Access token has expired, try to update it
-      const refreshedToken = await refreshAccessToken(customToken)
-      return refreshedToken as JWT
+      return token
     },
-    
     async session({ session, token }) {
-      const customToken = token as CustomToken
-      
-      if (customToken.user) {
-        session.user = customToken.user
+      if (token.user) {
+        session.user = {
+          ...session.user,
+          ...token.user,
+        }
       }
-      session.accessToken = customToken.accessToken || ''
-      if (customToken.error) {
-        session.error = customToken.error
+      session.accessToken = token.accessToken || ''
+      if (token.error) {
+        session.error = token.error
       }
       
-      return session
-    }
+      return session;
+    },
   },
-  
   pages: {
-    signIn: '/auth/login',
-    error: '/auth/error',
+    signIn: "/auth/login",
+    error: "/auth/error",
   },
-  
-  // Security options
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
@@ -177,12 +215,13 @@ const authOptions: NextAuthOptions = {
   }
 }
 
-async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
+async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
-    const response = await fetch(`${process.env.API_BASE_URL}/auth/refresh`, {
+    const response = await fetch(`${API_BASE_URL}/user/api/v1/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
       },
       body: JSON.stringify({
         refreshToken: token.refreshToken,
@@ -198,17 +237,25 @@ async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
     return {
       ...token,
       accessToken: refreshedTokens.accessToken,
-      accessTokenExpires: Date.now() + 30 * 60 * 1000, // 30 minutes
+      accessTokenExpires: Date.now() + 30 * 60 * 1000,
       refreshToken: refreshedTokens.refreshToken ?? token.refreshToken,
     }
   } catch {
-    // Fix 3: Remove unused error parameter
     return {
       ...token,
       error: "RefreshAccessTokenError",
     }
   }
 }
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of tempAuthStore.entries()) {
+    if (now - value.timestamp > 5 * 60 * 1000) {
+      tempAuthStore.delete(key);
+    }
+  }
+}, 60 * 1000);
 
 const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }

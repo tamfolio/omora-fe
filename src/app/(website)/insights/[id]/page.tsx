@@ -31,59 +31,206 @@ export default async function InsightDetail({ params }: { params: Promise<{ id: 
         <h1 className="text-[#181D27] text-[48px] font-semibold">
           {insight.title}
         </h1>
-        <p className="text-[#535862] max-w-[720px] text-wrap text-base mt-6">{insight.description}Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi.</p>
+        <p className="text-[#535862] max-w-[720px] text-wrap text-base mt-6">
+          {insight.description}Mi tincidunt elit, id quisque ligula ac diam,
+          amet. Vel etiam suspendisse morbi.
+        </p>
       </section>
       <section className="mb-24 flex gap-24">
         <div className="text-[#535862] max-w-[720px] text-[18px]">
-          <h2 className="text-[#181D27] text-[30px] font-semibold mb-5">introduction</h2>
-          <p className="mb-7">Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.</p>
-          <p>Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.</p>
+          <h2 className="text-[#181D27] text-[30px] font-semibold mb-5">
+            introduction
+          </h2>
+          <p className="mb-7">
+            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
+            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
+            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
+            feugiat sapien varius id.
+          </p>
+          <p>
+            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
+            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
+            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
+            feugiat sapien varius id.
+          </p>
           <div className="my-12">
-          <Image src='/assets/images/website/default-single-insight.jpg' className="h-[480px] object-cover" alt="default-single-insight" width={720} height={480}/>
-          <span className="flex items-center gap-1 mt-4 text-sm"><Image src='/assets/images/website/image-clip.svg' alt="default-single-insight" width={12} height={12}/> Image courtesy of Moose Photos via Pexels</span>
+            <Image
+              src="/assets/images/website/default-single-insight.jpg"
+              className="h-[480px] object-cover"
+              alt="default-single-insight"
+              width={720}
+              height={480}
+            />
+            <span className="flex items-center gap-1 mt-4 text-sm">
+              <Image
+                src="/assets/images/website/image-clip.svg"
+                alt="default-single-insight"
+                width={12}
+                height={12}
+              />{" "}
+              Image courtesy of Moose Photos via Pexels
+            </span>
           </div>
-          <p className="mb-7">Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.</p>
-          <p className="mb-7">Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.</p>
-          <h3 className="text-[#181D27] text-[24px] font-semibold mb-4">Software and tools</h3>
-          <p className="mb-7">Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.</p>
-          <p className="mb-7">Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.</p>
-          <h3 className="text-[#181D27] text-[24px] font-semibold mb-4">Other resources</h3>
-          <p className="mb-7">Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.</p>
-          <p>Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.</p>
+          <p className="mb-7">
+            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
+            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
+            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
+            feugiat sapien varius id.
+          </p>
+          <p className="mb-7">
+            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
+            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
+            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
+            feugiat sapien varius id.
+          </p>
+          <h3 className="text-[#181D27] text-[24px] font-semibold mb-4">
+            Software and tools
+          </h3>
+          <p className="mb-7">
+            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
+            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
+            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
+            feugiat sapien varius id.
+          </p>
+          <p className="mb-7">
+            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
+            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
+            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
+            feugiat sapien varius id.
+          </p>
+          <h3 className="text-[#181D27] text-[24px] font-semibold mb-4">
+            Other resources
+          </h3>
+          <p className="mb-7">
+            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
+            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
+            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
+            feugiat sapien varius id.
+          </p>
+          <p>
+            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
+            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
+            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
+            feugiat sapien varius id.
+          </p>
           <div className="my-12">
-          <Image src='/assets/images/website/default-single-insight.jpg' className="h-[480px] object-cover" alt="default-single-insight" width={720} height={480}/>
-          <span className="flex items-center gap-1 mt-4 text-sm"><Image src='/assets/images/website/image-clip.svg' alt="default-single-insight" width={12} height={12}/> Image courtesy of Moose Photos via Pexels</span>
+            <Image
+              src="/assets/images/website/default-single-insight.jpg"
+              className="h-[480px] object-cover"
+              alt="default-single-insight"
+              width={720}
+              height={480}
+            />
+            <span className="flex items-center gap-1 mt-4 text-sm">
+              <Image
+                src="/assets/images/website/image-clip.svg"
+                alt="default-single-insight"
+                width={12}
+                height={12}
+              />{" "}
+              Image courtesy of Moose Photos via Pexels
+            </span>
           </div>
-          <p className="mb-7">Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.</p>
-          <p>Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At feugiat sapien varius id.</p>
+          <p className="mb-7">
+            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
+            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
+            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
+            feugiat sapien varius id.
+          </p>
+          <p>
+            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
+            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
+            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
+            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
+            feugiat sapien varius id.
+          </p>
         </div>
         <div className="max-w-[384px]">
           <div className="bg-[#FAFAFA] p-8 rounded-[16px] border border-[#E9EAEB]">
-            <h2 className="text-[#008B99] mb-1 text-base">Grab up to 5,000 USDT in rewards</h2>
-            <p className="text-[#535862] text-sm">Grab additional 50 USDT welcome gift instantly when you sign up today!</p>
-            <Button className="mt-8 rounded-[8px] w-full bg-[#008B99] hover:bg-[#008B99] px-[18px] py-3 text-white text-base font-semibold">Join the bull run</Button>
+            <h2 className="text-[#008B99] mb-1 text-base">
+              Grab up to 5,000 USDT in rewards
+            </h2>
+            <p className="text-[#535862] text-sm">
+              Grab additional 50 USDT welcome gift instantly when you sign up
+              today!
+            </p>
+            <Button className="mt-8 rounded-[8px] w-full bg-[#008B99] hover:bg-[#008B99] px-[18px] py-3 text-white text-base font-semibold">
+              Join the bull run
+            </Button>
           </div>
 
-          <div  className="bg-[#FAFAFA] mt-10 p-8 rounded-[16px] border border-[#E9EAEB]">
+          <div className="bg-[#FAFAFA] mt-10 p-8 rounded-[16px] border border-[#E9EAEB]">
             <h2 className="text-[#008B99] text-base">Related articles</h2>
             <div className="mt-4">
-              <Link href='#' className="text-[#181D27] block font-medium text-sm">Mi tincidunt elit,  id quisque ligula ac diam, amet. Vel etiam.</Link>
+              <Link
+                href="#"
+                className="text-[#181D27] block font-medium text-sm"
+              >
+                Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam.
+              </Link>
               <span className="text-[#535862] text-base">Jul 23, 2025</span>
             </div>
             <div className="mt-4">
-              <Link href='#' className="text-[#181D27] block font-medium text-sm">Mi tincidunt elit,  id quisque ligula ac diam, amet. Vel etiam.</Link>
+              <Link
+                href="#"
+                className="text-[#181D27] block font-medium text-sm"
+              >
+                Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam.
+              </Link>
               <span className="text-[#535862] text-base">Jul 23, 2025</span>
             </div>
             <div className="mt-4">
-              <Link href='#' className="text-[#181D27] block font-medium text-sm">Mi tincidunt elit,  id quisque ligula ac diam, amet. Vel etiam.</Link>
+              <Link
+                href="#"
+                className="text-[#181D27] block font-medium text-sm"
+              >
+                Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam.
+              </Link>
               <span className="text-[#535862] text-base">Jul 23, 2025</span>
             </div>
           </div>
           <div className="flex gap-3 items-center mt-10">
-            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]"><Image src='/assets/images/website/image-clip.svg' alt="image-clip" width={20} height={20} /></span>
-            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]"><Image src='/assets/images/website/x-grey.png' alt="image-clip" width={20} height={20} /></span>
-            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]"><Image src='/assets/images/website/facebook.png' alt="image-clip" width={20} height={20} /></span>
-            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]"><Image src='/assets/images/website/linkedin.png' alt="image-clip" width={20} height={20} /></span>
+            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]">
+              <Image
+                src="/assets/images/website/image-clip.svg"
+                alt="image-clip"
+                width={20}
+                height={20}
+              />
+            </span>
+            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]">
+              <Image
+                src="/assets/images/website/x-grey.png"
+                alt="image-clip"
+                width={20}
+                height={20}
+              />
+            </span>
+            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]">
+              <Image
+                src="/assets/images/website/facebook.png"
+                alt="image-clip"
+                width={20}
+                height={20}
+              />
+            </span>
+            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]">
+              <Image
+                src="/assets/images/website/linkedin.png"
+                alt="image-clip"
+                width={20}
+                height={20}
+              />
+            </span>
           </div>
         </div>
       </section>

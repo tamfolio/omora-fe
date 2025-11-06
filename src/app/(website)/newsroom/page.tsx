@@ -86,7 +86,7 @@ export default function NewsRoom() {
         </div>
       </section>
 
-    <NewsoomGrid />
+      <NewsoomGrid />
     </main>
   );
 }

@@ -22,18 +22,24 @@ export default function CryptoAssetMarketData() {
           className="flex items-center gap-4"
           onSubmit={(e) => searchForToken(e)}
         >
-            <div className="relative flex items-center w-[320px]">
-                <Input
-                    onChange={(e) => setTokenSearchValue(e.target.value)}
-                    placeholder="Search"
-                    className="py-[10px] pl-[14px] pr-[30px] rounded-[8px] w-full border border-[#D5D7DA] bg-transparent focus-visible:ring-[#008B99]"
-                    type="text"
-                />
-                <Image className="absolute right-3" src="/assets/images/website/search.svg" alt="search" width={16} height={16}/>
-            </div>
+          <div className="relative flex items-center w-[320px]">
+            <Input
+              onChange={(e) => setTokenSearchValue(e.target.value)}
+              placeholder="Search"
+              className="py-[10px] pl-[14px] pr-[30px] rounded-[8px] w-full border border-[#D5D7DA] bg-transparent focus-visible:ring-[#008B99]"
+              type="text"
+            />
+            <Image
+              className="absolute right-3"
+              src="/assets/images/website/search.svg"
+              alt="search"
+              width={16}
+              height={16}
+            />
+          </div>
         </form>
       </div>
-      
+
       <CryptoAssetMarketTable searchValue={tokenSearchValue} />
     </div>
   );
