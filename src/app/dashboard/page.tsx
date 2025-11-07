@@ -8,7 +8,6 @@ function page() {
   return (
     <div>
       <MainPage/>
-      {/* <Footer/> */}
     </div>
   );
 }

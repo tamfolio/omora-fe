@@ -54,7 +54,7 @@ export type Investment = {
     endDate: Date;
     startDate: Date;
   };
-  timesDebited: number;
+  timesDebited?: number;
 };
 
 // Mock Data
@@ -79,7 +79,6 @@ const data: Investment[] = [
     investmentType: "one-time",
     profiles: ["Bitcoin ETF", "Growth ETF"],
     duration: "360 days",
-    deductedDaily: undefined, // no daily deduction
     usdcValue: 500,
     unrealized: -2.5,
     recurringInvestmentStatus: "N/A",
@@ -87,7 +86,6 @@ const data: Investment[] = [
       endDate: new Date("2025-07-14T15:30:00"),
       startDate: new Date("2025-07-14T15:30:00"),
     },
-    timesDebited: 3,
   },
   {
     id: "3",
@@ -127,7 +125,7 @@ export default function Investments() {
         accessorKey: "id",
         header: ({ column }) => (
           <Button
-            className="px-0 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
+            className="px-0 gap-1 flex text-xs justify-center w-full text-[#717680] max-w-[480px] font-semibold"
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
@@ -145,7 +143,7 @@ export default function Investments() {
         accessorKey: "investmentType",
         header: ({ column }) => (
           <Button
-            className="px-0 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
+            className="px-0 pl-4 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
@@ -157,7 +155,7 @@ export default function Investments() {
           const type = row.original.investmentType;
           const profiles = row.original.profiles.join(", ");
           return (
-            <div className="!text-sm text-[#181D27] font-medium">
+            <div className="!text-sm w-[200px] text-[#181D27] font-medium">
               {type === "recurring"
                 ? `Recurring Investment (${profiles})`
                 : `One-time Investment (${profiles})`}
@@ -178,44 +176,115 @@ export default function Investments() {
           </div>
         ),
       },
-      {
-        accessorKey: "usdcValue",
-        header: () => (
-          <div className="text-center text-xs text-[#717680] font-semibold">
-            Total Investment
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm text-center text-[#535862]">
-            {row.original.usdcValue.toLocaleString()} USDC
-          </div>
-        ),
-      },
-      {
-        accessorKey: "unrealizedPnL",
-        header: () => (
-          <div className="text-center text-xs text-[#717680] font-semibold">
-            Unrealized gain/loss (%)
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div
+    ];
+
+    const noOfDebitColumn: ColumnDef<Investment> = {
+      accessorKey: "timesDebited",
+      header: () => (
+        <div className="text-center text-xs text-[#717680] font-semibold">
+          No of Debit
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center items-center">
+          {row.original.timesDebited !== undefined && row.original.timesDebited !== null ? (
+            <div className="text-sm text-center text-[#535862]">
+              {row.original.timesDebited}
+            </div>
+          ) : (
+            <span className="px-2 py-[2px] rounded-[16px] text-xs font-medium bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]">
+              N/A
+            </span>
+          )}
+        </div>
+      ),
+    };
+
+    const deductedDailyColumn: ColumnDef<Investment> = {
+      accessorKey: "dailyDeduction",
+      header: () => (
+        <div className="text-center text-xs text-[#717680] font-semibold">
+          Deducted Daily
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center items-center">
+          {row.original.deductedDaily !== undefined && row.original.deductedDaily !== null ? (
+            <div className="text-sm text-center text-[#535862]">
+              {row.original.deductedDaily.toFixed(2)} USDC
+            </div>
+          ) : (
+            <span className="px-2 py-[2px] rounded-[16px] text-xs font-medium bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]">
+              N/A
+            </span>
+          )}
+        </div>
+      ),
+    };
+
+    const totalInvestmentColumn: ColumnDef<Investment> = {
+      accessorKey: "usdcValue",
+      header: () => (
+        <div className="text-center text-xs text-[#717680] font-semibold">
+          Total Investment
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-sm text-center text-[#535862]">
+          {row.original.usdcValue.toLocaleString()} USDC
+        </div>
+      ),
+    };
+
+    const unrealizedPnLColumn: ColumnDef<Investment> = {
+      accessorKey: "unrealizedPnL",
+      header: () => (
+        <div className="text-center text-xs text-[#717680] font-semibold">
+          Unrealized gain/loss (%)
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div
+          className={clsx(
+            "text-sm text-center",
+            row.original.unrealized >= 0 ? "text-green-600" : "text-red-600"
+          )}
+        >
+          {row.original.unrealized.toFixed(2)}%
+        </div>
+      ),
+    };
+
+    const recurringStatusColumn: ColumnDef<Investment> = {
+      accessorKey: "recurringInvestmentStatus",
+      header: () => (
+        <div className="text-center text-xs text-[#717680] font-semibold">
+          Recurring Status
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center items-center">
+          <span
             className={clsx(
-              "text-sm text-center",
-              row.original.unrealized >= 0 ? "text-green-600" : "text-red-600"
+              "px-2 py-[2px] rounded-[16px] text-xs font-medium",
+              row.original.recurringInvestmentStatus === "Active"
+                ? "bg-[#ECFDF3] text-[#067647] border border-[#ABEFC6]"
+                : row.original.recurringInvestmentStatus === "Inactive"
+                  ? "bg-[#FFFAEB] text-[#B54708] border border-[#FEDF89]"
+                  : "bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]"
             )}
           >
-            {row.original.unrealized.toFixed(2)}%
-          </div>
-        ),
-      },
-    ];
+            {row.original.recurringInvestmentStatus}
+          </span>
+        </div>
+      ),
+    };
 
     const dateRangeColumn: ColumnDef<Investment> = {
       accessorKey: "dateRange",
       header: ({ column }) => (
         <Button
-          className="px-0 gap-1 w-full justify-end flex text-xs text-[#717680] font-semibold"
+          className="px-3 gap-1 w-full justify-end flex text-xs text-[#717680] font-semibold"
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -250,62 +319,40 @@ export default function Investments() {
         b.original.dateRange.startDate.getTime(),
     };
 
-    const recurringColumns: ColumnDef<Investment>[] = [
-      {
-        accessorKey: "timesDebited",
-        header: () => (
-          <div className="text-center text-xs text-[#717680] font-semibold">
-            No of Debit
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm text-center text-[#535862]">
-            {row.original.timesDebited}
-          </div>
-        ),
-      },
-      {
-        accessorKey: "dailyDeduction",
-        header: () => (
-          <div className="text-center text-xs text-[#717680] font-semibold">
-            Deducted Daily
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm text-center text-[#535862]">
-            {row.original.deductedDaily?.toFixed(2)} USDC
-          </div>
-        ),
-      },
-      {
-        accessorKey: "recurringInvestmentStatus",
-        header: () => (
-          <div className="text-center text-xs text-[#717680] font-semibold">
-            Recurring Status
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="flex justify-center items-center">
-            <span
-              className={clsx(
-                "px-2 py-[2px] rounded-[16px] text-xs font-medium",
-                row.original.recurringInvestmentStatus === "Active"
-                  ? "bg-[#ECFDF3] text-[#067647] border border-[#ABEFC6]"
-                  : row.original.recurringInvestmentStatus === "Inactive"
-                    ? "bg-[#FFFAEB] text-[#B54708] border border-[#FEDF89]"
-                    : "bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]"
-              )}
-            >
-              {row.original.recurringInvestmentStatus}
-            </span>
-          </div>
-        ),
-      },
-    ];
+    const liquidateColumn: ColumnDef<Investment> = {
+      accessorKey: "liquidate",
+      header: () => (
+        <div className="text-center hidden text-xs text-[#717680] font-semibold">
+          Liquidate
+        </div>
+      ),
+      cell: () => (
+        <div className="flex justify-center items-center">
+          <Button className="my-[8px] px-[12px] rounded-[8px] bg-[#008B99] text-white">
+            Liquidate
+          </Button>
+        </div>
+      ),
+    };
 
     return activeTab === "recurring" || activeTab === "all"
-      ? [...baseColumns, ...recurringColumns, dateRangeColumn]
-      : [...baseColumns, dateRangeColumn];
+      ? [
+          ...baseColumns,
+          noOfDebitColumn,
+          deductedDailyColumn,
+          totalInvestmentColumn,
+          unrealizedPnLColumn,
+          recurringStatusColumn,
+          dateRangeColumn,
+          liquidateColumn,
+        ]
+      : [
+          ...baseColumns,
+          totalInvestmentColumn,
+          unrealizedPnLColumn,
+          dateRangeColumn,
+          liquidateColumn,
+        ];
   }, [activeTab]);
 
   const table = useReactTable({
@@ -320,7 +367,7 @@ export default function Investments() {
   });
 
   return (
-    <div className="relative pt-24 h-screen bg-gradient-to-b from-[#79B7BC]/5 via-[#AEDCE0]/5 to-[#FFFFFF] px-[112px] ">
+    <div className="pt-24 bg-gradient-to-b from-[#79B7BC]/5 via-[#AEDCE0]/5 to-[#FFFFFF] px-[112px] ">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h1 className="text-[#181D27] font-semibold text-[48px]">
@@ -380,7 +427,7 @@ export default function Investments() {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead className="px-6" key={header.id}>
+                  <TableHead className="w-fit px-0 min-w-[170px]" key={header.id}>
                     {flexRender(
                       header.column.columnDef.header,
                       header.getContext()
@@ -398,7 +445,7 @@ export default function Investments() {
                 onClick={() => setSelectedRow(row.original)} // pick row data
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell className="" key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
