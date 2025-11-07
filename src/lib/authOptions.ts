@@ -65,7 +65,6 @@ async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
   }
 }
 
-// Extend NextAuth types
 declare module "next-auth" {
   interface Session {
     user: {
