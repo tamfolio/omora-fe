@@ -1,7 +1,7 @@
 // app/api/auth/omora-verify/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/proxy';
+const API_BASE_URL = process.env.API_BASE_URL || 'https://api.omora.africa';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': '6434754426732', // ← ADDED API KEY
       },
       body: JSON.stringify({
         identifier,
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
+        'x-api-key': '6434754426732', // ← ADDED API KEY FOR PROFILE REQUEST TOO
       },
     });
 

@@ -5,7 +5,7 @@ const testimonials = [
   {
     name: "Segun A.",
     role: "Early Investor",
-    testimonial: `What convinced me was how clear Omora&apos;s value proposition is. It's not just crypto hype. The team has built an actual portfolio automation engine for serious investors. My returns have been stable, and i finally feel in control without being glued to the charts.`,
+    testimonial: `What convinced me was how clear Omora's value proposition is. It's not just crypto hype. The team has built an actual portfolio automation engine for serious investors. My returns have been stable, and i finally feel in control without being glued to the charts.`,
     stars: 5,
     img: "/assets/images/website/avatar-1.png",
   },
@@ -45,7 +45,7 @@ const testimonials = [
     name: "Anita O.",
     role: "Product Lead",
     testimonial:
-      "To be honest, i've always found most crypto platforms too complicated with overwhelming charts and too many moving parts. I built this platform for people like me-people who want to invest in crypto smartly, without needing a PhD in blockchain, With Omora, you don’t have to know when to buy or what token is trending. You just set your goal, and we have handle the rest simply, transparently, and automatically.",
+      "To be honest, i've always found most crypto platforms too complicated with overwhelming charts and too many moving parts. I built this platform for people like me-people who want to invest in crypto smartly, without needing a PhD in blockchain, With Omora, you don't have to know when to buy or what token is trending. You just set your goal, and we have handle the rest simply, transparently, and automatically.",
     stars: 5,
     img: "/assets/images/website/avatar-3.png",
   },
@@ -53,44 +53,46 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <div className="py-24 px-[112px] bg-[#005963] text-white">
-      <h2 className="text-center text-[36px] mb-16 font-semibold">
+    <div className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 md:px-12 lg:px-[112px] bg-[#005963] text-white">
+      <h2 className="text-center text-2xl sm:text-3xl md:text-[36px] mb-8 sm:mb-12 md:mb-16 font-semibold">
         Testimonials
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {testimonials.map((user, index) => (
           <div
             key={index}
-            className="bg-[#00717D] rounded-xl min-h-[389px] p-8 flex flex-col justify-between"
+            className="bg-[#00717D] rounded-xl min-h-[320px] sm:min-h-[360px] md:min-h-[389px] p-5 sm:p-6 md:p-8 flex flex-col justify-between"
           >
             <div>
-              <div className="flex mb-4">
+              <div className="flex mb-3 sm:mb-4">
                 {Array.from({ length: user.stars }).map((_, i) => (
                   <Image
                     key={i}
                     src="/assets/images/website/star.svg"
                     alt="star"
-                    width={20}
-                    height={20}
+                    width={16}
+                    height={16}
+                    className="sm:w-[18px] sm:h-[18px] md:w-[20px] md:h-[20px]"
                   />
                 ))}
               </div>
-              <p className="font-medium leading-6">{user.testimonial}</p>
+              <p className="font-medium leading-6 text-sm sm:text-base">{user.testimonial}</p>
             </div>
 
-            <div className="flex gap-3 items-center mt-8">
+            <div className="flex gap-2 sm:gap-3 items-center mt-6 sm:mt-7 md:mt-8">
               <Image
                 src={user.img}
                 alt="omora testimonial"
-                width={48}
-                height={48}
+                width={40}
+                height={40}
+                className="sm:w-[44px] sm:h-[44px] md:w-[48px] md:h-[48px]"
               />
               <div>
-                <span className="block font-semibold text-base">
+                <span className="block font-semibold text-sm sm:text-[15px] md:text-base">
                   {user.name}
                 </span>
-                <span className="block font-normal">({user.role})</span>
+                <span className="block font-normal text-xs sm:text-sm">({user.role})</span>
               </div>
             </div>
           </div>

@@ -4,7 +4,6 @@ import { useSearchParams } from "next/navigation";
 import { FiCopy, FiCheck } from "react-icons/fi";
 import { CiBank } from "react-icons/ci";
 import { useState } from "react";
-import NavBar from "@/components/fund-wallet/Navbar";
 
 export default function CompleteYourDeposit() {
   const searchParams = useSearchParams();
@@ -19,8 +18,6 @@ export default function CompleteYourDeposit() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50 flex flex-col">
-      {/* Navigation */}
-      <NavBar />
       {/* Main Content */}
       <main className="max-w-lg mx-auto px-6 py-4 flex-1">
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 animate-fade-in-up">
@@ -134,13 +131,6 @@ export default function CompleteYourDeposit() {
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="text-center py-3 mt-auto">
-          <p className="text-xs text-gray-500">
-            © 2025 OMORA. All rights reserved.
-          </p>
-        </footer>
       </main>
 
       {/* Floating Chat Button */}

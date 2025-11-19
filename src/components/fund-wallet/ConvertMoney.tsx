@@ -5,7 +5,6 @@ import Image from "next/image";
 import { FiArrowLeft, FiChevronDown } from "react-icons/fi";
 import Logo from "@/components/ui/Logo";
 import AuthenticatorModal from "./AuthenticatorModal";
-import Footer from "../ui/Footer";
 
 // Mock conversion rates - replace with API call later
 const CONVERSION_RATES: Record<string, number> = {
@@ -20,8 +19,8 @@ const CURRENCIES = [
   {
     code: "NGN",
     name: "Nigerian Naira",
-    symbol: "₦",
-    logo: "assets/images/currencies/naira.png",
+    symbol: "NGN", // Display code instead of ₦
+    logo: "/assets/images/currencies/naira.png",
   },
   {
     code: "USDT",
@@ -50,6 +49,11 @@ const getCurrencyLogo = (code: string): string => {
   return currency?.logo || "/images/currencies/placeholder.png";
 };
 
+const getCurrencySymbol = (code: string): string => {
+  const currency = CURRENCIES.find((c) => c.code === code);
+  return currency?.symbol || code;
+};
+
 const getFormattedBalance = (currencyCode: string): string => {
   const balance =
     MOCK_BALANCES[currencyCode as keyof typeof MOCK_BALANCES] || 0;
@@ -70,7 +74,7 @@ export default function ConvertMoney() {
       ? "USDT"
       : initialCurrency === "USDT"
         ? "NGN"
-        : "USDT", // Default for USDC → USDT
+        : "USDT"
   );
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
@@ -96,6 +100,16 @@ export default function ConvertMoney() {
       setConversionRate(rate);
       setConversionFee(fee);
       setAmountToConvert(amount - (fromCurrency === "NGN" ? fee : 0));
+    } else if (!rate && amount) {
+      // Reset if invalid conversion pair
+      setToAmount("0");
+      setConversionRate(0);
+    } else {
+      // Reset everything if no amount
+      setToAmount("");
+      setConversionRate(0);
+      setConversionFee(0);
+      setAmountToConvert(0);
     }
   }, [fromCurrency, toCurrency, fromAmount]);
 
@@ -106,7 +120,7 @@ export default function ConvertMoney() {
       case "USDT":
         return CURRENCIES.filter((c) => c.code === "NGN" || c.code === "USDC");
       case "USDC":
-        return CURRENCIES.filter((c) => c.code === "USDT"); // Only USDC → USDT allowed
+        return CURRENCIES.filter((c) => c.code === "USDT");
       default:
         return [];
     }
@@ -132,7 +146,7 @@ export default function ConvertMoney() {
     });
 
     router.push(
-      `/dashboard/fund-wallet/convert-money/review-transaction?${params.toString()}`,
+      `/dashboard/fund-wallet/convert-money/review-transaction?${params.toString()}`
     );
   };
 
@@ -258,7 +272,7 @@ export default function ConvertMoney() {
                     value={fromAmount}
                     onChange={(e) => setFromAmount(e.target.value)}
                     className="w-full border-none focus:outline-none text-right font-semibold text-xl text-gray-900 bg-transparent"
-                    placeholder="₦0"
+                    placeholder={`${getCurrencySymbol(fromCurrency)} 0`}
                   />
                 </div>
               </div>
@@ -278,7 +292,11 @@ export default function ConvertMoney() {
               </div>
               <div className="flex justify-between">
                 <span>Today&apos;s Rate:</span>
-                <span>₦1 = ${conversionRate.toFixed(12)}</span>
+                <span>
+                  {fromCurrency === "NGN"
+                    ? `#1 = $${conversionRate.toFixed(12)}`
+                    : `$1 = #${conversionRate.toFixed(2)}`}
+                </span>
               </div>
             </div>
           </div>
@@ -313,7 +331,7 @@ export default function ConvertMoney() {
                             <option key={currency.code} value={currency.code}>
                               {currency.code}
                             </option>
-                          ),
+                          )
                         )}
                       </select>
                       <FiChevronDown className="absolute right-0 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -347,7 +365,7 @@ export default function ConvertMoney() {
               className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
             />
             <label htmlFor="acceptRate" className="text-sm text-gray-600">
-              I accept the current FX rate of ₦1,300 per $1
+              I accept the current market conversion rate & fees
             </label>
           </div>
 
@@ -366,7 +384,6 @@ export default function ConvertMoney() {
         </div>
       </main>
 
-   <Footer />
       {/* Floating Chat Button */}
       <div className="fixed bottom-6 right-6">
         <button className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:bg-green-700 transition-colors">
