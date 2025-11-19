@@ -5,10 +5,11 @@ import React from "react";
 import { Button } from "../ui/button";
 import Image from "next/image";
 import { useSession, signIn } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function NavBar() {
   const pathName = usePathname();
+  const router = useRouter();
   const { data: session } = useSession();
 
   const excludedPaths = ["/auth"];
@@ -106,11 +107,14 @@ export default function NavBar() {
           <div className="flex items-center gap-3">
             <Button
               className="px-3.5 py-2.5 text-sm text-[#414651] font-semibold rounded-[8px] border border-[#D5D7DA] bg-transparent hover:bg-[#008B99] hover:text-white"
-              onClick={() => signIn()}
+              onClick={() => router.push("/auth/login")}
             >
               Log in
             </Button>
-            <Button className="px-3.5 py-2.5 text-sm font-semibold rounded-[8px] bg-[#008B99] hover:bg-[#008B99]">
+            <Button 
+              className="px-3.5 py-2.5 text-sm font-semibold rounded-[8px] bg-[#008B99] hover:bg-[#00a3b3]"
+              onClick={() => router.push("/auth/signup")}
+            >
               Sign up
             </Button>
           </div>

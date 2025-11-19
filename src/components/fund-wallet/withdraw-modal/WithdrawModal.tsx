@@ -2,9 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import USDTWithdrawModal from "./USDTWithdrawal";
-// Comment out these imports if the components don't exist
-// import VerificationModal from "../withdraw-modal/verification-modal/page";
-// import WithdrawalSuccessModal from "../withdraw-modal/withdrawal-success-modal/page";
 
 interface WithdrawData {
   currency: "NGN" | "USDT";
@@ -68,7 +65,7 @@ export default function WithdrawModal({
   initialCurrency = "NGN",
 }: WithdrawModalProps) {
   const [selectedCurrency, setSelectedCurrency] = useState<"NGN" | "USDT">(
-    initialCurrency,
+    initialCurrency
   );
   const [amount, setAmount] = useState("250000");
   const [bankAccount, setBankAccount] = useState("Fidelity Bank");
@@ -78,7 +75,8 @@ export default function WithdrawModal({
   const [isValidatingAccount, setIsValidatingAccount] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [pendingWithdrawData, setPendingWithdrawData] = useState<WithdrawData | null>(null);
+  const [pendingWithdrawData, setPendingWithdrawData] =
+    useState<WithdrawData | null>(null);
 
   useEffect(() => {
     setSelectedCurrency(initialCurrency);
@@ -106,7 +104,7 @@ export default function WithdrawModal({
   const handleAccountNumberChange = (value: string) => {
     setAccountNumber(value);
     if (selectedCurrency === "NGN") {
-      setAccountName(""); 
+      setAccountName("");
       validateAccountNumber(value);
     }
   };
@@ -343,16 +341,18 @@ export default function WithdrawModal({
       {showVerification && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
           <div className="bg-white p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">Verification Required</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Verification Required
+            </h3>
             <p className="mb-4">Please verify your withdrawal request.</p>
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={handleVerificationSuccess}
                 className="px-4 py-2 bg-teal-600 text-white rounded"
               >
                 Verify
               </button>
-              <button 
+              <button
                 onClick={handleCloseVerification}
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded"
               >
@@ -367,16 +367,18 @@ export default function WithdrawModal({
       {showSuccess && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
           <div className="bg-white p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">Withdrawal Successful</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Withdrawal Successful
+            </h3>
             <p className="mb-4">Your withdrawal has been processed.</p>
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={handleGoToDashboard}
                 className="px-4 py-2 bg-teal-600 text-white rounded"
               >
                 Go to Dashboard
               </button>
-              <button 
+              <button
                 onClick={handleGoBackToWallet}
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded"
               >

@@ -306,13 +306,6 @@ export default function TransactionReceipt() {
         </div>
       </main>
 
-      {/* Footer */}
-      <div className="text-center py-6 border-t border-gray-200 bg-white">
-        <p className="text-sm text-gray-500">
-          © 2025 OMORA. All rights reserved.
-        </p>
-      </div>
-
       {/* Floating Chat Button */}
       <div className="fixed bottom-6 right-6">
         <button className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:bg-green-700 transition-colors">
