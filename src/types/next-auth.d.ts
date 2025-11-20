@@ -13,6 +13,8 @@ declare module "next-auth" {
       refreshToken?: string;
       isFirstLogin?: boolean;
     } & DefaultSession["user"];
+    accessToken?: string;
+    error?: string;
   }
 
   interface User {
@@ -29,13 +31,22 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
+    id?: string;
+    email?: string;
+    name?: string;
+    role?: string;
     image?: string | null;
     accessToken?: string;
     refreshToken?: string;
     isFirstLogin?: boolean;
+    accessTokenExpires?: number;
+    error?: string;
+    user?: {
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      isFirstLogin?: boolean;
+    };
   }
 }

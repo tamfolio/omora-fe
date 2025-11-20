@@ -1,22 +1,36 @@
 "use client"
 import React, { useState } from "react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Search, Settings, Bell, User, LogOut, PiggyBank } from "lucide-react";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { IoCloseOutline } from "react-icons/io5";
 import Logo from "@/components/ui/Logo";
 import Logout from "@/components/ui/UserDashboard/Settings/Logout";
 
+// Type extension for session user
+type ExtendedUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  image?: string | null;
+  accessToken?: string;
+  refreshToken?: string;
+  isFirstLogin?: boolean;
+};
+
 function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
   
-  // ✅ Use REAL session from NextAuth
   const { data: session, status } = useSession();
   
   const isAuthenticated = status === "authenticated";
   const isLoading = status === "loading";
+  
+  // Type-safe user access
+  const user = session?.user as ExtendedUser | undefined;
 
   // Navigation items for authenticated users
   const authenticatedNavItems = [
@@ -94,18 +108,18 @@ function Navbar() {
                     {/* User Profile Dropdown */}
                     <div className="relative group">
                       <button className="flex items-center space-x-2 p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
-                        {session?.user?.image ? (
+                        {user?.image ? (
                           <img
-                            src={session.user.image}
-                            alt={session.user.name || "User"}
+                            src={user.image}
+                            alt={user.name || "User"}
                             className="h-6 w-6 rounded-full"
                           />
                         ) : (
                           <User className="h-5 w-5" />
                         )}
-                        {session?.user?.name && (
+                        {user?.name && (
                           <span className="text-sm font-medium text-gray-700">
-                            {session.user.name.split(" ")[0]}
+                            {user.name.split(" ")[0]}
                           </span>
                         )}
                       </button>
@@ -114,7 +128,7 @@ function Navbar() {
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                         <div className="py-1">
                           <div className="px-4 py-2 text-sm text-gray-500 border-b">
-                            {session?.user?.email}
+                            {user?.email}
                           </div>
                           <Link
                             href="/profile"
@@ -215,10 +229,10 @@ function Navbar() {
                     
                     <div className="flex items-center justify-between px-3 py-3 bg-teal-600 rounded-lg">
                       <div className="flex items-center space-x-3">
-                        {session?.user?.image ? (
+                        {user?.image ? (
                           <img
-                            src={session.user.image}
-                            alt={session.user.name || "User"}
+                            src={user.image}
+                            alt={user.name || "User"}
                             className="h-10 w-10 rounded-full"
                           />
                         ) : (
@@ -228,10 +242,10 @@ function Navbar() {
                         )}
                         <div className="flex-1">
                           <p className="text-sm font-semibold text-white">
-                            {session?.user?.name}
+                            {user?.name}
                           </p>
                           <p className="text-xs text-teal-100">
-                            {session?.user?.email}
+                            {user?.email}
                           </p>
                         </div>
                       </div>
