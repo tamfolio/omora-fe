@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: false, // Keep TypeScript checks active
+    ignoreBuildErrors: false, 
   },
   
   async redirects() {
@@ -23,9 +23,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // ❌ REMOVED THE PROBLEMATIC REWRITE
-  // This was preventing middleware from running!
-  /* other config options here */
+
 };
 
 export default nextConfig;
