@@ -16,7 +16,6 @@ const nextConfig: NextConfig = {
         destination: "/notfound",
         permanent: false,
       },
-      // You can add more redirects here if needed
       {
         source: "/error",
         destination: "/notfound",
@@ -24,17 +23,8 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // If you want to handle actual 404s automatically
-  async rewrites() {
-    return {
-      fallback: [
-        {
-          source: "/:path*",
-          destination: "/notfound",
-        },
-      ],
-    };
-  },
+  // ❌ REMOVED THE PROBLEMATIC REWRITE
+  // This was preventing middleware from running!
   /* other config options here */
 };
 

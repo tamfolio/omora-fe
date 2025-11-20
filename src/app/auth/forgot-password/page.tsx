@@ -1,4 +1,3 @@
-// app/auth/forgot-password/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -86,7 +85,7 @@ export default function ForgotPassword() {
 
     if (!validatePassword(password)) {
       setError(
-        "Password must be at least 8 characters and contain a special character and number",
+        "Password must be at least 8 characters and contain a special character and number"
       );
       setLoading(false);
       return;
@@ -210,7 +209,9 @@ export default function ForgotPassword() {
             </p>
 
             {error && (
-              <div className="text-red-500 text-sm text-center mb-4">{error}</div>
+              <div className="text-red-500 text-sm text-center mb-4">
+                {error}
+              </div>
             )}
 
             <div className="mb-6">

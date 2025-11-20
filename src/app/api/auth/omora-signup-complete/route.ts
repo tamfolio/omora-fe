@@ -1,11 +1,17 @@
-// app/api/auth/omora-signup-complete/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE_URL = process.env.API_BASE_URL || 'https://api.omora.africa';
-const API_KEY = '6434754426732';
+const API_BASE_URL = process.env.API_BASE_URL!;
+const API_KEY = process.env.OMORA_API_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!API_KEY) {
+      return NextResponse.json(
+        { error: 'API key not configured' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { emailAddress, otp } = body;
 
@@ -41,7 +47,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Account created successfully',
-      data: data, // Include any data returned from the API
+      data: data,
     });
   } catch (error) {
     console.error('Signup complete error:', error);
