@@ -1,5 +1,10 @@
 import TransactionReceipt from "@/components/fund-wallet/TransactionReceipt";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function TransactionReceiptPage() {
-  return <TransactionReceipt />;
+  return (
+    <ProtectedRoute>
+      <TransactionReceipt />
+    </ProtectedRoute>
+  );
 }
