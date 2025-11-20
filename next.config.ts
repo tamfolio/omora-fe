@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: false, // Keep TypeScript checks active
+    ignoreBuildErrors: false, 
   },
   
   async redirects() {
@@ -16,7 +16,6 @@ const nextConfig: NextConfig = {
         destination: "/notfound",
         permanent: false,
       },
-      // You can add more redirects here if needed
       {
         source: "/error",
         destination: "/notfound",
@@ -24,18 +23,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // If you want to handle actual 404s automatically
-  async rewrites() {
-    return {
-      fallback: [
-        {
-          source: "/:path*",
-          destination: "/notfound",
-        },
-      ],
-    };
-  },
-  /* other config options here */
+
 };
 
 export default nextConfig;

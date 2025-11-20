@@ -1,26 +1,34 @@
-// app/api/auth/reset-password/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/proxy';
+const API_BASE_URL = process.env.API_BASE_URL!;
+const API_KEY = process.env.OMORA_API_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!API_KEY) {
+      return NextResponse.json(
+        { error: 'API key not configured' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { identifier, newPassword, otp } = body;
 
     if (!identifier || !newPassword || !otp) {
       return NextResponse.json(
-        { error: 'Email, password, and OTP are required' },
+        { error: 'Email, new password, and OTP are required' },
         { status: 400 }
       );
     }
 
-    console.log('Reset password request for:', identifier);
+    console.log('Password reset complete for:', identifier);
 
     const response = await fetch(`${API_BASE_URL}/user/api/v1/forgot-password/complete`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
       },
       body: JSON.stringify({
         identifier,
@@ -30,9 +38,13 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await response.json();
-    console.log('Reset password response:', data);
+    console.log('Password reset complete response:', data);
 
-    if (!response.ok) {
+    // Backend returns "failed" status but with success message - handle both cases
+    const isSuccess = data.message?.toLowerCase().includes('success') || 
+                     data.message?.toLowerCase().includes('verified');
+
+    if (!response.ok && !isSuccess) {
       return NextResponse.json(
         { error: data.message || 'Failed to reset password' },
         { status: response.status }
@@ -44,9 +56,9 @@ export async function POST(request: NextRequest) {
       message: 'Password reset successfully',
     });
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error('Password reset complete error:', error);
     return NextResponse.json(
-      { error: 'An error occurred while resetting your password' },
+      { error: 'An error occurred during password reset' },
       { status: 500 }
     );
   }

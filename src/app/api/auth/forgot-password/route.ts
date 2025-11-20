@@ -1,10 +1,17 @@
-// app/api/auth/forgot-password/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/proxy';
+const API_BASE_URL = process.env.API_BASE_URL!;
+const API_KEY = process.env.OMORA_API_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!API_KEY) {
+      return NextResponse.json(
+        { error: 'API key not configured' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { email } = body;
 
@@ -22,9 +29,10 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
       },
       body: JSON.stringify({ 
-        identifier: email,  // Send as identifier, not email
+        identifier: email,
       }),
     });
 
