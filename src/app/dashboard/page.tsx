@@ -16,7 +16,7 @@ function Page() {
     }
   }, [status, router]);
 
-  // Show loading while checking auth
+  // Show loading while checking  auth
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
