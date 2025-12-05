@@ -113,6 +113,8 @@ export default function Investments() {
   });
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Investment | null>(null);
+  const [showLiquidateConfirm, setShowLiquidateConfirm] = useState(false);
+  const [liquidateRow, setLiquidateRow] = useState<Investment | null>(null);
 
   const filteredData = useMemo(() => {
     if (activeTab === "all") return data;
@@ -326,9 +328,16 @@ export default function Investments() {
           Liquidate
         </div>
       ),
-      cell: () => (
+      cell: ({ row }) => (
         <div className="flex justify-center items-center">
-          <Button className="my-[8px] px-[12px] rounded-[8px] bg-[#008B99] text-white">
+          <Button 
+            className="my-[8px] px-[12px] rounded-[8px] bg-[#008B99] hover:bg-[#008B99] text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLiquidateRow(row.original);
+              setShowLiquidateConfirm(true);
+            }}
+          >
             Liquidate
           </Button>
         </div>
@@ -389,19 +398,19 @@ export default function Investments() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap p-0 h-fit !bg-none border rounded-[8px] w-full md:flex-nowrap md:w-fit border-[#D5D7DA]">
             <TabsTrigger
-              className="w-full md:w-fit text-[#414651] border-b-[0.5px] md:border-r-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-t-[8px] md:rounded-tr-none md:rounded-l-[8px]"
+              className="w-full md:w-fit text-[#414651] md:border-r-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-t-[8px] md:rounded-tr-none md:rounded-l-[8px]"
               value="all"
             >
               View All
             </TabsTrigger>
             <TabsTrigger
-              className="w-full md:w-fit text-[#414651]  rounded-none border-y-[0.5px] md:order-y-none md:border-x-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white"
+              className="w-full md:w-fit text-[#414651]  rounded-none border-y-[0.5px] md:border-y-0 border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white"
               value="recurring"
             >
               Recurring Investment
             </TabsTrigger>
             <TabsTrigger
-              className="w-full md:w-fit text-[#414651] md:border-l-[0.5px] border-t-[0.5px] md:border-t-0 border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-b-[8px] md:rounded-bl-none md:rounded-r-[8px]"
+              className="w-full md:w-fit text-[#414651] md:border-l-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-b-[8px] md:rounded-bl-none md:rounded-r-[8px]"
               value="one-time"
             >
               One-time Investment
@@ -427,7 +436,10 @@ export default function Investments() {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead className="w-fit px-0 min-w-[170px]" key={header.id}>
+                  <TableHead 
+                    className={header.column.id === "id" ? "" : "px-0"} 
+                    key={header.id}
+                  >
                     {flexRender(
                       header.column.columnDef.header,
                       header.getContext()
@@ -718,6 +730,56 @@ export default function Investments() {
                   variant="outline"
                   className="rounded-[8px] border border-gray-300 font-semibold"
                   onClick={() => setShowConfirm(false)}
+                >
+                  No, I don&apos;t
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Liquidate Confirmation Dialog */}
+      <Dialog
+        open={showLiquidateConfirm}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setShowLiquidateConfirm(false);
+            setLiquidateRow(null);
+          }
+        }}
+      >
+        <DialogContent className="p-6 !rounded-[16px] bg-white max-w-[400px] h-fit max-h-full overflow-y-auto overflow-x-hidden">
+          {liquidateRow && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-[#181D27] text-center font-semibold mt-1.5">
+                  Liquidate Investment
+                </DialogTitle>
+              </DialogHeader>
+
+              <p className="text-[#535862] text-center">
+                Are you sure you want to liquidate your investment, once done, your investments will be stopped and your funds will be converted into USDT?
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3">
+                <Button 
+                  className="bg-[#008B99] h-11 hover:bg-[#008B99] text-white font-semibold rounded-[8px]"
+                  onClick={() => {
+                    // Add your liquidate logic here
+                    setShowLiquidateConfirm(false);
+                    setLiquidateRow(null);
+                  }}
+                >
+                  Yes, I do
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-[8px] h-11 border border-gray-300 font-semibold"
+                  onClick={() => {
+                    setShowLiquidateConfirm(false);
+                    setLiquidateRow(null);
+                  }}
                 >
                   No, I don&apos;t
                 </Button>
