@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import UpgradeLimitModal from "./UpgradeLimitModal";
 
 
 interface WithdrawData {
@@ -47,6 +48,7 @@ export default function USDTWithdrawModal({
   const [showVerification, setShowVerification] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [pendingWithdrawData, setPendingWithdrawData] = useState<WithdrawData | undefined>(undefined);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -246,7 +248,13 @@ export default function USDTWithdrawModal({
               <span className="text-sm text-gray-700">
                 Withdrawal Limit: {WITHDRAWAL_LIMIT.toLocaleString()} USDT
               </span>
-              <button className="text-xs text-teal-600 hover:text-teal-700">
+              <button 
+                className="text-xs text-teal-600 hover:text-teal-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowUpgradeModal(true);
+                }}
+              >
                 Upgrade Now
               </button>
             </div>
@@ -333,6 +341,18 @@ export default function USDTWithdrawModal({
           </div>
         </div>
       )}
+
+      {/* Upgrade Limit Modal */}
+      <UpgradeLimitModal
+        isOpen={showUpgradeModal}
+        onClose={() => {
+          setShowUpgradeModal(false);
+        }}
+        onConfirm={() => {
+          // Add your upgrade logic here
+          setShowUpgradeModal(false);
+        }}
+      />
     </div>
   );
 }
