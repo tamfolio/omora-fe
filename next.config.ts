@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // 👇 ADD THIS LINE HERE
+  reactStrictMode: false, 
+
   // Add ESLint bypass for deployment
   eslint: {
     ignoreDuringBuilds: true,

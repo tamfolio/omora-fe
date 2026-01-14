@@ -1,194 +1,87 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
-const API_BASE_URL = process.env.API_BASE_URL!;
-const API_KEY = process.env.OMORA_API_KEY!;
+const TARGET = process.env.OMORA_API_BASE_URL || process.env.API_BASE_URL || 'http://localhost:8000';
+const API_KEY = process.env.OMORA_API_KEY || '';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
+// 1. Define the type for Next.js 15 params
+type RouteProps = {
+  params: Promise<{ path: string[] }>;
+};
+
+async function forward(request: Request, params: { path: string[] }) {
+  const url = new URL(request.url);
+  // Now params.path is safe to use because we awaited it in the handlers below
+  const path = (params.path || []).join('/');
+  
+  // Remove trailing slash from TARGET and construct destination
+  const targetUrl = `${TARGET.replace(/\/$/, '')}/${path}${url.search}`;
+
+  // Obtain token from next-auth cookie
+  const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET });
+
+  const headers: Record<string, string> = {};
+  for (const [key, value] of (request.headers as any).entries()) {
+    // Filter out headers that confuse the upstream server
+    if (['host', 'cookie', 'authorization', 'content-length'].includes(key.toLowerCase())) continue;
+    headers[key] = value;
+  }
+
+  // Attach API Key and Bearer Token
+  if (API_KEY) headers['x-api-key'] = API_KEY;
+  if (token?.accessToken) headers['authorization'] = `Bearer ${token.accessToken}`;
+
+  // Read body only if not GET/HEAD
+  const body = ['GET', 'HEAD'].includes(request.method) ? undefined : await request.arrayBuffer();
+
   try {
-    if (!API_KEY) {
-      return NextResponse.json(
-        { error: 'API key not configured' },
-        { status: 500 }
-      );
-    }
-
-    const resolvedParams = await params;
-    const path = resolvedParams.path.join('/');
-    const url = `${API_BASE_URL}/${path}`;
-    
-    const headers: Record<string, string> = {
-      'x-api-key': API_KEY,
-    };
-    
-    const authHeader = request.headers.get('authorization');
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
-
-    console.log('Proxying GET request to:', url);
-
-    const response = await fetch(url, {
-      method: 'GET',
+    const res = await fetch(targetUrl, {
+      method: request.method,
       headers,
+      body,
     });
 
-    const data = await response.json();
-    console.log('Proxy GET response:', { status: response.status, data });
-    
-    return NextResponse.json(data, { status: response.status });
+    const responseHeaders = new Headers(res.headers);
+    responseHeaders.delete('transfer-encoding');
+
+    return new Response(await res.arrayBuffer(), {
+      status: res.status,
+      headers: responseHeaders,
+    });
   } catch (error) {
-    console.error('Proxy GET error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch from API' },
-      { status: 500 }
-    );
+    console.error("Proxy Error:", error);
+    return new Response(JSON.stringify({ message: "Proxy failed", error: String(error) }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
-  try {
-    if (!API_KEY) {
-      return NextResponse.json(
-        { error: 'API key not configured' },
-        { status: 500 }
-      );
-    }
-
-    const resolvedParams = await params;
-    const path = resolvedParams.path.join('/');
-    const url = `${API_BASE_URL}/${path}`;
-    
-    const headers: Record<string, string> = {
-      'x-api-key': API_KEY,
-      'Content-Type': 'application/json',
-    };
-    
-    const authHeader = request.headers.get('authorization');
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
-
-    console.log('Proxying POST request to:', url);
-
-    const body = await request.json();
-    console.log('Request body:', body);
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json();
-    console.log('Proxy POST response:', { status: response.status, data });
-    
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('Proxy POST error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch from API' },
-      { status: 500 }
-    );
-  }
+// 2. Update all exports to await the params object
+export async function GET(request: Request, props: RouteProps) {
+  const params = await props.params;
+  return forward(request, params);
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
-  try {
-    if (!API_KEY) {
-      return NextResponse.json(
-        { error: 'API key not configured' },
-        { status: 500 }
-      );
-    }
-
-    const resolvedParams = await params;
-    const path = resolvedParams.path.join('/');
-    const url = `${API_BASE_URL}/${path}`;
-    
-    const headers: Record<string, string> = {
-      'x-api-key': API_KEY,
-      'Content-Type': 'application/json',
-    };
-    
-    const authHeader = request.headers.get('authorization');
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
-
-    console.log('Proxying PUT request to:', url);
-
-    const body = await request.json();
-    console.log('Request body:', body);
-    
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json();
-    console.log('Proxy PUT response:', { status: response.status, data });
-    
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('Proxy PUT error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch from API' },
-      { status: 500 }
-    );
-  }
+export async function POST(request: Request, props: RouteProps) {
+  const params = await props.params;
+  return forward(request, params);
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
-  try {
-    if (!API_KEY) {
-      return NextResponse.json(
-        { error: 'API key not configured' },
-        { status: 500 }
-      );
-    }
+export async function PUT(request: Request, props: RouteProps) {
+  const params = await props.params;
+  return forward(request, params);
+}
 
-    const resolvedParams = await params;
-    const path = resolvedParams.path.join('/');
-    const url = `${API_BASE_URL}/${path}`;
-    
-    const headers: Record<string, string> = {
-      'x-api-key': API_KEY,
-    };
-    
-    const authHeader = request.headers.get('authorization');
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
+export async function DELETE(request: Request, props: RouteProps) {
+  const params = await props.params;
+  return forward(request, params);
+}
 
-    console.log('Proxying DELETE request to:', url);
+export async function PATCH(request: Request, props: RouteProps) {
+  const params = await props.params;
+  return forward(request, params);
+}
 
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers,
-    });
-
-    const data = await response.json();
-    console.log('Proxy DELETE response:', { status: response.status, data });
-    
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('Proxy DELETE error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch from API' },
-      { status: 500 }
-    );
-  }
+export async function OPTIONS() {
+  return new Response(null, { status: 204 });
 }

@@ -1,8 +1,8 @@
 // app/auth/login/page.tsx
 "use client";
 
-import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -21,10 +21,43 @@ export default function Login() {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const router = useRouter();
 
+  // Load saved email if "remember me" was checked previously
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("omora-remembered-email");
+    const rememberMeStatus = localStorage.getItem("omora-remember-me");
+    
+    if (savedEmail && rememberMeStatus === "true") {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
+  // Save or clear email based on "remember me" checkbox
+  const handleRememberMeChange = (checked: boolean) => {
+    setRememberMe(checked);
+    
+    if (checked && email) {
+      localStorage.setItem("omora-remembered-email", email);
+      localStorage.setItem("omora-remember-me", "true");
+    } else {
+      localStorage.removeItem("omora-remembered-email");
+      localStorage.removeItem("omora-remember-me");
+    }
+  };
+
   const handleInitialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Save email if remember me is checked
+    if (rememberMe) {
+      localStorage.setItem("omora-remembered-email", email);
+      localStorage.setItem("omora-remember-me", "true");
+    } else {
+      localStorage.removeItem("omora-remembered-email");
+      localStorage.removeItem("omora-remember-me");
+    }
 
     try {
       // Step 1: Call custom API route for initial sign-in
@@ -34,6 +67,7 @@ export default function Login() {
         body: JSON.stringify({
           identifier: email,
           password: password,
+          rememberMe: rememberMe, // Send remember me preference to backend
         }),
       });
 
@@ -70,6 +104,7 @@ export default function Login() {
         body: JSON.stringify({
           identifier: email,
           otp: otp,
+          rememberMe: rememberMe, // Include remember me in verification
         }),
       });
 
@@ -89,10 +124,19 @@ export default function Login() {
           userName: data.user.name,
           userRole: data.user.role,
           isFirstLogin: data.user.isFirstLogin?.toString() || "false",
+          rememberMe: rememberMe.toString(), // Pass to NextAuth for session duration
           redirect: false,
         });
 
         if (result?.ok) {
+          // Set a long-term cookie if remember me is checked
+          if (rememberMe) {
+            // Set a cookie that expires in 30 days
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 30);
+            document.cookie = `omora-session-extended=true; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
+          }
+
           // Check if first-time login
           if (data.user.isFirstLogin) {
             router.push("/firsttimelogin");
@@ -122,6 +166,7 @@ export default function Login() {
         body: JSON.stringify({
           identifier: email,
           password: password,
+          rememberMe: rememberMe,
         }),
       });
 
@@ -337,7 +382,13 @@ export default function Login() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
                     placeholder="oliviathomas@gmail.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      // Update saved email if remember me is checked
+                      if (rememberMe) {
+                        localStorage.setItem("omora-remembered-email", e.target.value);
+                      }
+                    }}
                     disabled={loading}
                   />
                 </div>
@@ -376,12 +427,12 @@ export default function Login() {
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
-                  <label className="flex items-center">
+                  <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                      onChange={(e) => handleRememberMeChange(e.target.checked)}
+                      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded cursor-pointer"
                       disabled={loading}
                     />
                     <span className="ml-2 text-gray-600">
