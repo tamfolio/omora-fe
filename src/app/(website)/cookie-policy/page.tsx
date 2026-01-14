@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 export default function CookiePolicy() {
   return (
@@ -29,19 +30,22 @@ export default function CookiePolicy() {
             </p>
           </div>
 
-          <div>
+          <div className="mb-10">
             <h2 className="font-semibold text-[30px] mb-5 text-[#181D27]">
               Types of Cookies We Use:
             </h2>
-            <ul className="text-[18px] text-[#535862] list-disc mb-10">
+            <ul className="text-[18px] text-[#535862] list-disc pl-6 space-y-3">
               <li>
-                Essential Cookies: Enable platform functionality (e.g., login
-                sessions)
+                <strong>Essential Cookies:</strong> Enable platform functionality (e.g., login
+                sessions). These cannot be disabled.
               </li>
-              <li>Analytics Cookies: Help us measure usage and performance</li>
               <li>
-                Marketing Cookies: Personalize ads and promotional messages
-                (where applicable)
+                <strong>Analytics Cookies:</strong> Help us measure usage and performance to
+                improve your experience.
+              </li>
+              <li>
+                <strong>Marketing Cookies:</strong> Personalize ads and promotional messages
+                (where applicable).
               </li>
             </ul>
           </div>
@@ -50,11 +54,17 @@ export default function CookiePolicy() {
             <h2 className="font-semibold text-[30px] mb-5 text-[#181D27]">
               Your Control
             </h2>
-            <p className="text-[18px] text-[#535862] mt-5">
-              You may accept or reject cookies through your browser settings.
-              Essential cookies cannot be disabled as they are necessary for
-              platform operation.
+            <p className="text-[18px] text-[#535862] mb-6">
+              You may accept or reject cookies through your browser settings or our
+              Cookie Settings page. Essential cookies cannot be disabled as they are
+              necessary for platform operation.
             </p>
+            <Link 
+              href="/dashboard/settings/cookies" 
+              className="inline-block px-6 py-3 bg-[#008B99] text-white font-semibold rounded-lg hover:bg-[#007A86] transition-colors"
+            >
+              Manage Cookie Preferences
+            </Link>
           </div>
         </div>
       </section>

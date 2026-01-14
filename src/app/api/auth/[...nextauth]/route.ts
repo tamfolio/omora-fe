@@ -5,7 +5,7 @@ import type { User } from "next-auth"
 import type { JWT } from "next-auth/jwt"
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/proxy'
-const API_KEY = '6434754426732'
+const API_KEY = process.env.OMORA_API_KEY || '';
 
 // Store temporary auth state for OTP verification
 const tempAuthStore = new Map<string, { email: string; timestamp: number }>();
@@ -20,7 +20,8 @@ const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
         otp: { label: "OTP", type: "text" },
-        mode: { label: "Mode", type: "text" }
+        mode: { label: "Mode", type: "text" },
+        rememberMe: { label: "Remember Me", type: "text" }, 
       },
       async authorize(credentials): Promise<User | null> {
         if (!credentials) return null;
@@ -53,7 +54,7 @@ const authOptions: NextAuthOptions = {
               role: 'pending',
               accessToken: '',
               refreshToken: '',
-            }
+            } as User
           }
 
           if (credentials.mode === 'verify' && credentials.otp) {
@@ -80,27 +81,30 @@ const authOptions: NextAuthOptions = {
             const data = await response.json();
             tempAuthStore.delete(credentials.email);
 
+            const accessToken = data.token?.accessToken || data.accessToken;
+
             const profileResponse = await fetch(`${API_BASE_URL}/user/api/v1/me`, {
               method: "GET",
               headers: { 
                 "x-api-key": API_KEY,
-                "Authorization": `Bearer ${data.token || data.accessToken}`
+                "Authorization": `Bearer ${accessToken}`
               },
             });
 
             const profile = profileResponse.ok ? await profileResponse.json() : {};
             
             return {
-              id: data.userId || profile.id || credentials.email,
+              id: data.data?.id || data.userId || profile.data?.user?.id || credentials.email,
               email: credentials.email,
-              name: profile.firstName && profile.lastName 
-                ? `${profile.firstName} ${profile.lastName}` 
+              name: profile.data?.user?.firstName && profile.data?.user?.lastName 
+                ? `${profile.data.user.firstName} ${profile.data.user.lastName}` 
                 : profile.name || credentials.email,
-              role: data.role || profile.role || 'user',
-              accessToken: data.token || data.accessToken,
-              refreshToken: data.refreshToken,
-              isFirstLogin: profile.isPinSet === false,
-            }
+              role: data.data?.role || data.role || profile.data?.user?.role || 'user',
+              accessToken: accessToken,
+              refreshToken: data.token?.refreshToken || data.refreshToken,
+              isFirstLogin: profile.data?.user?.isPinSet === false,
+              rememberMe: credentials.rememberMe === 'true',
+            } as User
           }
           
           return null
@@ -123,6 +127,7 @@ const authOptions: NextAuthOptions = {
         userName: { label: "User Name", type: "text" },
         userRole: { label: "User Role", type: "text" },
         isFirstLogin: { label: "First Login", type: "text" },
+        rememberMe: { label: "Remember Me", type: "text" },
       },
       async authorize(credentials): Promise<User | null> {
         if (!credentials || !credentials.accessToken) return null;
@@ -131,6 +136,7 @@ const authOptions: NextAuthOptions = {
           email: credentials.email,
           userId: credentials.userId,
           isFirstLogin: credentials.isFirstLogin,
+          rememberMe: credentials.rememberMe, // Log it
         });
 
         return {
@@ -141,12 +147,22 @@ const authOptions: NextAuthOptions = {
           accessToken: credentials.accessToken,
           refreshToken: credentials.refreshToken,
           isFirstLogin: credentials.isFirstLogin === 'true',
-        };
+          rememberMe: credentials.rememberMe === 'true',
+        } as User;
       },
     }),
   ],
-  session: { strategy: "jwt", maxAge: 60 * 60 },
-  jwt: { maxAge: 60 * 60 },
+  
+  //  Dynamic session configuration based on remember me
+  session: { 
+    strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60, // Default: 7 days
+  },
+  
+  jwt: { 
+    maxAge: 7 * 24 * 60 * 60, // Default: 7 days
+  },
+  
   callbacks: {
     async jwt({ token, user, account }): Promise<JWT> {
       if (account && user) {
@@ -157,11 +173,18 @@ const authOptions: NextAuthOptions = {
           }
         }
 
+        // Calculate expiry based on remember me preference
+        const expiryDuration = user.rememberMe 
+          ? 30 * 24 * 60 * 60 * 1000  // 30 days if remember me
+          : 7 * 24 * 60 * 60 * 1000;  // 7 days otherwise
+
         return {
           ...token,
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
-          accessTokenExpires: Date.now() + 30 * 60 * 1000,
+          accessTokenExpires: Date.now() + 30 * 60 * 1000, // Token refresh (30 min)
+          sessionExpires: Date.now() + expiryDuration, // Session expiry
+          rememberMe: user.rememberMe, //  Store preference
           user: {
             id: user.id,
             email: user.email,
@@ -172,7 +195,16 @@ const authOptions: NextAuthOptions = {
         }
       }
 
-      if (token.accessTokenExpires && Date.now() < token.accessTokenExpires) {
+      // ✅ Check if session has expired based on remember me preference
+      if (token.sessionExpires && Date.now() > (token.sessionExpires as number)) {
+        return {
+          ...token,
+          error: 'SessionExpired'
+        };
+      }
+
+      // Check if access token needs refresh (30 min)
+      if (token.accessTokenExpires && Date.now() < (token.accessTokenExpires as number)) {
         return token
       }
       
@@ -182,6 +214,7 @@ const authOptions: NextAuthOptions = {
 
       return token
     },
+    
     async session({ session, token }) {
       if (token.user) {
         session.user = {
@@ -189,29 +222,24 @@ const authOptions: NextAuthOptions = {
           ...token.user,
         }
       }
-      session.accessToken = token.accessToken || ''
+      
+      // Make tokens available in session
+      session.accessToken = token.accessToken as string || ''
+      session.refreshToken = (token.refreshToken as string) || '';
+      
       if (token.error) {
-        session.error = token.error
+        session.error = token.error as string
       }
       
       return session;
     },
   },
+  
   pages: {
     signIn: "/auth/login",
     error: "/auth/error",
   },
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    }
-  }
+  
 }
 
 async function refreshAccessToken(token: JWT): Promise<JWT> {
@@ -247,6 +275,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
   }
 }
 
+// Cleanup expired temp auth entries
 setInterval(() => {
   const now = Date.now();
   for (const [key, value] of tempAuthStore.entries()) {

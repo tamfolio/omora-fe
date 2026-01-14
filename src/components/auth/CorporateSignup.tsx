@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FiEye, FiEyeOff } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiChevronDown } from "react-icons/fi";
 
 interface CorporateSignupProps {
   onSuccess: () => void;
@@ -24,6 +24,8 @@ export default function CorporateSignup({
   const [emailError, setEmailError] = useState("");
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState("");
+  const [showRcTypeDropdown, setShowRcTypeDropdown] = useState(false);
+  const [rcType, setRcType] = useState<'rc' | 'bn'>('bn');
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -39,12 +41,22 @@ export default function CorporateSignup({
 
     // Auto-populate business name from RC number
     if (field === "rcNumber") {
-      const businessName = value ? `RC - ${value}` : "";
+      const businessName = value ? `${rcType.toUpperCase()} - ${value}` : "";
       setFormData((prev) => ({ ...prev, businessName }));
     }
 
     if (field === "email") {
       setEmailError("");
+    }
+  };
+
+  const handleRcTypeChange = (newType: 'rc' | 'bn') => {
+    setRcType(newType);
+    setShowRcTypeDropdown(false);
+    // Update business name with new type
+    if (formData.rcNumber) {
+      const businessName = `${newType.toUpperCase()} - ${formData.rcNumber}`;
+      setFormData((prev) => ({ ...prev, businessName }));
     }
   };
 
@@ -131,11 +143,12 @@ export default function CorporateSignup({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          firstName: formData.businessName, // Use business name as first name
-          lastName: "Corporate", // Default last name for corporate accounts
+          firstName: formData.businessName,
+          lastName: "Corporate",
           middleName: "",
           emailAddress: formData.email,
           password: formData.password,
+          rcType: rcType,
           rcNumber: formData.rcNumber,
         }),
       });
@@ -146,7 +159,6 @@ export default function CorporateSignup({
         onError(result.error || "An error occurred during sign up");
         setLoading(false);
       } else if (result.requiresOtp) {
-        // Show OTP modal
         setShowOtpModal(true);
         setLoading(false);
       }
@@ -167,7 +179,6 @@ export default function CorporateSignup({
     onError("");
 
     try {
-      // Step 2: Verify OTP
       const response = await fetch("/api/auth/omora-signup-complete", {
         method: "POST",
         headers: {
@@ -185,7 +196,6 @@ export default function CorporateSignup({
         onError(result.error || "Invalid verification code");
         setLoading(false);
       } else {
-        // Success! Redirect to login
         router.push("/auth/login?message=Account created successfully");
       }
     } catch (error) {
@@ -211,6 +221,7 @@ export default function CorporateSignup({
           middleName: "",
           emailAddress: formData.email,
           password: formData.password,
+          rcType: rcType,
           rcNumber: formData.rcNumber,
         }),
       });
@@ -297,7 +308,7 @@ export default function CorporateSignup({
   // Main signup form
   return (
     <form className="space-y-3" onSubmit={handleSubmit}>
-      {/* RC Number */}
+      {/* RC Number with Dropdown */}
       <div>
         <label
           htmlFor="rcNumber"
@@ -305,16 +316,56 @@ export default function CorporateSignup({
         >
           RC Number *
         </label>
-        <input
-          id="rcNumber"
-          type="text"
-          required
-          className="w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs"
-          placeholder="35478990987"
-          value={formData.rcNumber}
-          onChange={(e) => handleChange("rcNumber", e.target.value)}
-          disabled={loading}
-        />
+        <div className="relative">
+          {/* Dropdown Button */}
+          <button
+            type="button"
+            onClick={() => setShowRcTypeDropdown(!showRcTypeDropdown)}
+            className="absolute left-0 top-0 bottom-0 px-2 flex items-center space-x-1 text-gray-700 border-r border-gray-300 bg-gray-50 hover:bg-gray-100 transition-colors z-10 rounded-l-md"
+            disabled={loading}
+          >
+            <FiChevronDown className="h-3 w-3 text-gray-400" />
+            <span className="text-xs font-medium">{rcType.toUpperCase()} -</span>
+          </button>
+          
+          {/* Input */}
+          <input
+            id="rcNumber"
+            type="text"
+            required
+            className="w-full pl-16 pr-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs"
+            placeholder="35478990987"
+            value={formData.rcNumber}
+            onChange={(e) => handleChange("rcNumber", e.target.value.replace(/\D/g, '').slice(0, 10))}
+            disabled={loading}
+          />
+
+          {/* Dropdown Menu */}
+          {showRcTypeDropdown && (
+            <>
+              <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-20">
+                <button
+                  type="button"
+                  onClick={() => handleRcTypeChange('rc')}
+                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 transition-colors rounded-t-md"
+                >
+                  RC
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRcTypeChange('bn')}
+                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 transition-colors rounded-b-md"
+                >
+                  BN
+                </button>
+              </div>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setShowRcTypeDropdown(false)}
+              />
+            </>
+          )}
+        </div>
       </div>
 
       {/* Business Name */}

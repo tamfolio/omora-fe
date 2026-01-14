@@ -39,12 +39,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user profile with the token
-    const token = data.token || data.accessToken;
+    // 🎯 FIX: Extract accessToken properly from response
+    // Based on your logs, data.token is an object with accessToken property
+    const tokenObj = data.token;
+    const accessToken = tokenObj?.accessToken || data.accessToken;
     
-    if (!token) {
+    if (!accessToken) {
+      console.error('Token structure:', tokenObj);
       return NextResponse.json(
-        { error: 'No token received from API' },
+        { error: 'No access token received from API' },
         { status: 500 }
       );
     }
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${accessToken}`,
         'x-api-key': API_KEY,
       },
     });
@@ -67,14 +70,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       user: {
-        id: data.userId || profile.id || identifier,
+        id: data.data?.id || data.userId || profile.id || identifier,
         email: identifier,
         name: profile.firstName && profile.lastName 
           ? `${profile.firstName} ${profile.lastName}` 
           : profile.name || identifier,
-        role: data.role || profile.role || 'user',
-        accessToken: token,
-        refreshToken: data.refreshToken,
+        role: data.data?.role || data.role || profile.role || 'user',
+        accessToken: accessToken, // This is now the actual token string
+        refreshToken: tokenObj?.refreshToken || data.refreshToken,
         isFirstLogin: profile.isPinSet === false,
       },
     });
