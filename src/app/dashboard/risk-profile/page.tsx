@@ -1,24 +1,35 @@
-"use client"
-import InitiateQuiz from '@/components/ui/UserDashboard/risk-profile/InitiateQuiz'
-import Questionnaire from '@/components/ui/UserDashboard/risk-profile/Questioniarre'
-import QuizResult from '@/components/ui/UserDashboard/risk-profile/QuizResult'
-import ChangeRiskProfile from '@/components/ui/UserDashboard/risk-profile/ChangeRiskProfile'
-import RiskProfileSuccess from '@/components/ui/UserDashboard/risk-profile/RiskProfileSuccess'
-import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import riskProfileApiService, { RiskProfileQuestion } from '@/lib/risk-profile-api-service'
+"use client";
+import InitiateQuiz from "@/components/ui/UserDashboard/risk-profile/InitiateQuiz";
+import Questionnaire from "@/components/ui/UserDashboard/risk-profile/Questioniarre";
+import QuizResult from "@/components/ui/UserDashboard/risk-profile/QuizResult";
+import ChangeRiskProfile from "@/components/ui/UserDashboard/risk-profile/ChangeRiskProfile";
+import RiskProfileSuccess from "@/components/ui/UserDashboard/risk-profile/RiskProfileSuccess";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import riskProfileApiService, {
+  RiskProfileQuestion,
+} from "@/lib/risk-profile-api-service";
 
-type RiskProfile = 'aggressive' | 'balanced' | 'conservative';
-type FlowStep = 'initiate' | 'questionnaire' | 'result' | 'change-profile' | 'success';
+type RiskProfile = "aggressive" | "balanced" | "conservative";
+type FlowStep =
+  | "initiate"
+  | "questionnaire"
+  | "result"
+  | "change-profile"
+  | "success";
 
 function Page() {
   const router = useRouter();
-  
-  const [currentStep, setCurrentStep] = useState<FlowStep>('initiate');
+
+  const [currentStep, setCurrentStep] = useState<FlowStep>("initiate");
   const [questions, setQuestions] = useState<RiskProfileQuestion[]>([]);
-  const [selectedAnswerIds, setSelectedAnswerIds] = useState<Record<number, number>>({});
-  const [recommendedProfile, setRecommendedProfile] = useState<RiskProfile>('balanced');
-  const [selectedProfile, setSelectedProfile] = useState<RiskProfile>('balanced');
+  const [selectedAnswerIds, setSelectedAnswerIds] = useState<
+    Record<number, number>
+  >({});
+  const [recommendedProfile, setRecommendedProfile] =
+    useState<RiskProfile>("balanced");
+  const [selectedProfile, setSelectedProfile] =
+    useState<RiskProfile>("balanced");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,12 +45,12 @@ function Page() {
         setQuestions(response.data);
       }
     } catch (error) {
-      console.error('Failed to prefetch questions:', error);
+      console.error("Failed to prefetch questions:", error);
     }
   };
 
   const handleStartQuiz = () => {
-    setCurrentStep('questionnaire');
+    setCurrentStep("questionnaire");
   };
 
   const handleQuizSubmit = async (answerIds: Record<number, number>) => {
@@ -48,90 +59,93 @@ function Page() {
     setError(null);
 
     try {
-      // Frontend calculates average risk points from selected answers
-      const riskPointsAvg = riskProfileApiService.calculateRiskPointsAverage(questions, answerIds);
-      
-      console.log('📊 Selected Answer IDs:', answerIds);
-      console.log('📊 Calculated Risk Points Average:', riskPointsAvg);
+      // 1. Calculate the score on the frontend
+      const averageScore = riskProfileApiService.calculateRiskPointsAverage(
+        questions,
+        answerIds
+      );
 
-      // Validate range (must be 3-7 per backend requirement)
-      if (riskPointsAvg < 3 || riskPointsAvg > 7) {
-        throw new Error(`Invalid risk points average: ${riskPointsAvg.toFixed(2)}. Must be between 3 and 7.`);
+      console.log("📊 Calculated Average Score:", averageScore);
+
+      // Safety check: ensure score is within 3-7 range to prevent API error
+      if (averageScore < 3 || averageScore > 7) {
+        console.warn("Score out of range (3-7), adjusting...");
+        // You might want to clamp it or show an error, but let's just proceed for now
       }
 
-      // POST average to recommendations endpoint
-      const response = await riskProfileApiService.getRiskProfileRecommendation(riskPointsAvg);
+      // 2. Send the SCORE (number) to the API
+      const response =
+        await riskProfileApiService.getRiskProfileRecommendation(averageScore);
+
+    if (response.data && response.data.recommended) {
       
-      if (response.data && response.data.profile) {
-        // Map API profile names (Low/Balanced/High) to user-friendly names
-        const profile = riskProfileApiService.mapProfileToUserFriendly(response.data.profile);
-        
-        console.log('✅ API Recommended Profile:', response.data.profile);
-        console.log('✅ Mapped to:', profile);
-        
+      // Map "Low"/"Balanced"/"High" to your UI state
+      const profile = riskProfileApiService.mapProfileToUserFriendly(response.data.recommended);
+      
+      console.log('✅ Backend Recommendation:', profile);
+
         setRecommendedProfile(profile);
         setSelectedProfile(profile);
-        setCurrentStep('result');
+        setCurrentStep("result");
       } else {
-        throw new Error('No recommendation received from API');
+        throw new Error("Invalid response from server");
       }
     } catch (err: any) {
-      console.error('❌ Error getting recommendation:', err);
-      setError(err.message || 'Failed to get risk profile recommendation');
-      
-      // Fallback: Use local calculation based on average
-      const riskPointsAvg = riskProfileApiService.calculateRiskPointsAverage(questions, answerIds);
-      const profile = calculateProfileFromRiskPoints(riskPointsAvg);
-      
-      console.log('⚠️ Using fallback calculation:', profile);
-      
-      setRecommendedProfile(profile);
-      setSelectedProfile(profile);
-      setCurrentStep('result');
+      console.error("❌ Error getting recommendation:", err);
+      // Log the actual server error message if available
+      if (err.response?.data) {
+        console.error("Server Error Details:", err.response.data);
+      }
+      setError(err.message || "Failed to get risk profile recommendation");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fallback local calculation based on risk points average
-  const calculateProfileFromRiskPoints = (avgPoints: number): RiskProfile => {
-    if (avgPoints <= 4) return 'conservative'; // Low risk (3-4)
-    if (avgPoints >= 6) return 'aggressive';   // High risk (6-7)
-    return 'balanced';                         // Balanced (4-6)
-  };
-
-  const handleAcceptProfile = () => {
-    // TODO: Save to backend when save endpoint is available
-    console.log('✅ User accepted profile:', selectedProfile);
-    console.log('📊 Answer IDs:', selectedAnswerIds);
+  const handleAcceptProfile = async () => {
+  setIsLoading(true);
+  try {
+    // 1. Save to backend
+    await riskProfileApiService.saveRiskProfile(selectedProfile);
     
+    console.log(' Profile saved successfully!');
+    
+    // 2. ONLY show success screen if the save worked
     setCurrentStep('success');
-  };
+
+  } catch (err: any) {
+    console.error("Failed to save profile", err);
+    setError(err.message || "Failed to save your profile. Please try again.");
+    // We stay on the Result screen so they can try again
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleChangeProfile = () => {
-    setCurrentStep('change-profile');
+    setCurrentStep("change-profile");
   };
 
   const handleProfileChange = (newProfile: string) => {
     setSelectedProfile(newProfile as RiskProfile);
-    
+
     // TODO: Save to backend when save endpoint is available
-    console.log('✅ User manually changed profile to:', newProfile);
-    console.log('📊 Answer IDs:', selectedAnswerIds);
-    
-    setCurrentStep('success');
+    console.log("✅ User manually changed profile to:", newProfile);
+    console.log("📊 Answer IDs:", selectedAnswerIds);
+
+    setCurrentStep("success");
   };
 
   const handleGoToDashboard = () => {
-    router.push('/dashboard');
+    router.push("/dashboard");
   };
 
   const handleClose = () => {
-    router.push('/dashboard');
+    router.push("/dashboard");
   };
 
   const handleCancel = () => {
-    setCurrentStep('result');
+    setCurrentStep("result");
   };
 
   const renderCurrentStep = () => {
@@ -150,50 +164,44 @@ function Page() {
     }
 
     switch (currentStep) {
-      case 'initiate':
+      case "initiate":
         return (
-          <InitiateQuiz 
-            onStartQuiz={handleStartQuiz}
-            onClose={handleClose}
-          />
+          <InitiateQuiz onStartQuiz={handleStartQuiz} onClose={handleClose} />
         );
-      
-      case 'questionnaire':
+
+      case "questionnaire":
         return (
-          <Questionnaire 
-            onSubmit={handleQuizSubmit}
-            onClose={handleClose}
-          />
+          <Questionnaire onSubmit={handleQuizSubmit} onClose={handleClose} />
         );
-      
-      case 'result':
+
+      case "result":
         return (
-          <QuizResult 
+          <QuizResult
             riskProfile={recommendedProfile}
             onAccept={handleAcceptProfile}
             onChangeProfile={handleChangeProfile}
             onClose={handleClose}
           />
         );
-      
-      case 'change-profile':
+
+      case "change-profile":
         return (
-          <ChangeRiskProfile 
+          <ChangeRiskProfile
             currentProfile={recommendedProfile}
             onContinue={handleProfileChange}
             onCancel={handleCancel}
             onClose={handleClose}
           />
         );
-      
-      case 'success':
+
+      case "success":
         return (
-          <RiskProfileSuccess 
+          <RiskProfileSuccess
             onGoToDashboard={handleGoToDashboard}
             onClose={handleClose}
           />
         );
-      
+
       default:
         return null;
     }
@@ -202,21 +210,41 @@ function Page() {
   return (
     <div>
       {renderCurrentStep()}
-      
+
       {/* Error Toast */}
       {error && (
         <div className="fixed bottom-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg max-w-md">
           <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-5 h-5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span className="text-sm">{error}</span>
-            <button 
+            <button
               onClick={() => setError(null)}
               className="ml-2 hover:bg-red-600 rounded p-1"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
