@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // 👇 ADD THIS LINE HERE
   reactStrictMode: false, 
 
-  // Add ESLint bypass for deployment
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -27,6 +25,17 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // 👇 THIS IS THE NEW PART
+  async rewrites() {
+    return [
+      {
+        // When the frontend calls '/user/api/...'
+        source: "/user/api/:path*",
+        
+        destination: "https://api.omora.com/user/api/:path*", 
+      },
+    ];
+  },
 };
 
 export default nextConfig;

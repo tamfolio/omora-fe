@@ -9,9 +9,10 @@ import PersonalInformation from "@/components/ui/UserDashboard/kyc/PersonalInfor
 import DirectorInformation from "@/components/ui/UserDashboard/kyc/DirectorateInformation";
 import CompanyRegDetails from "@/components/ui/UserDashboard/kyc/CompanyRegDetails";
 import KycSuccessModal from "@/components/ui/UserDashboard/kyc/SuccessModal";
+import KycUnsuccessfulModal from "@/components/ui/UserDashboard/kyc/UnsuccessfulModal";
 
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type VerificationType = 'individual' | 'corporate';
 
@@ -44,8 +45,76 @@ export default function KycVerification() {
   
   const [userType, setUserType] = useState<VerificationType>('individual');
   const [pageProgress, setPageProgress] = useState(1);
+  
+  // Modal States
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showUnsuccessfulModal, setShowUnsuccessfulModal] = useState(false);
+  
+  // Data State
   const [formData, setFormData] = useState<KycFormData>({});
+  const [apiNextStep, setApiNextStep] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // --- NEW: FETCH LOGIC ---
+  useEffect(() => {
+    const checkKycStatus = async () => {
+      try {
+        const response = await fetch('/user/api/v1/me');
+        const result = await response.json();
+
+        if (result.status === 'success' && result.data?.onboardingState) {
+          const { currentStepStatus, nextStep } = result.data.onboardingState;
+          
+          // Store the next step for Retry logic
+          setApiNextStep(nextStep);
+
+          if (currentStepStatus === 'C') {
+            setShowSuccessModal(true);
+          } else if (currentStepStatus === 'NVP') {
+            setShowUnsuccessfulModal(true);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check KYC status", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkKycStatus();
+  }, []);
+
+  // --- NEW: RETRY LOGIC ---
+  const handleRetry = () => {
+    setShowUnsuccessfulModal(false);
+    
+    // Map the API "nextStep" string to your numeric pageProgress
+    if (apiNextStep) {
+      const stepNumber = getStepNumberFromApiStatus(apiNextStep);
+      setPageProgress(stepNumber);
+    } else {
+      // Default fallback if no step provided
+      setPageProgress(1);
+    }
+  };
+
+  // Helper to map API strings to Component Steps
+  const getStepNumberFromApiStatus = (apiStep: string): number => {
+    switch (apiStep) {
+      case 'initiation': return 1;
+      case 'verify-country': return 2;
+      case 'verify-bvn':      // Assuming BVN/NIN are in Personal Info (Step 3)
+      case 'verify-nin':      
+      case 'personal-info': return 3;
+      case 'contact-info': return 4;
+      case 'document-upload': return 5;
+      case 'facial-recognition': return 6;
+      case 'dashboard': 
+        router.push('/dashboard');
+        return 1;
+      default: return 1;
+    }
+  };
 
   const toggleUserType = () => {
     setUserType(prev => prev === 'individual' ? 'corporate' : 'individual');
@@ -189,6 +258,11 @@ export default function KycVerification() {
     }
   };
 
+  // Optional: Loading state while fetching initial status
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading verification status...</div>;
+  }
+
   return (
     <div className="kyc-verification">
       {/* Debug toggle - Remove in production */}
@@ -207,6 +281,14 @@ export default function KycVerification() {
 
       {showSuccessModal && (
         <KycSuccessModal onGoToDashboard={handleGoToDashboard} />
+      )}
+
+      {showUnsuccessfulModal && (
+        <KycUnsuccessfulModal 
+          onRetry={handleRetry} 
+          onContactSupport={() => router.push('/support')} // Or your support logic
+          message={apiNextStep ? `Verification stopped at ${apiNextStep}. Please retry.` : undefined}
+        />
       )}
     </div>
   );
