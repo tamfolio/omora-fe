@@ -1,9 +1,9 @@
 "use client";
-import InitiateQuiz from "@/components/ui/UserDashboard/risk-profile/InitiateQuiz";
-import Questionnaire from "@/components/ui/UserDashboard/risk-profile/Questioniarre";
-import QuizResult from "@/components/ui/UserDashboard/risk-profile/QuizResult";
-import ChangeRiskProfile from "@/components/ui/UserDashboard/risk-profile/ChangeRiskProfile";
-import RiskProfileSuccess from "@/components/ui/UserDashboard/risk-profile/RiskProfileSuccess";
+import InitiateQuiz from "@/components/ui/UserDashboard/risk-profile/initiateQuiz";
+import Questionnaire from "@/components/ui/UserDashboard/risk-profile/questioniarre";
+import QuizResult from "@/components/ui/UserDashboard/risk-profile/quizResult";
+import ChangeRiskProfile from "@/components/ui/UserDashboard/risk-profile/changeRiskProfile";
+import RiskProfileSuccess from "@/components/ui/UserDashboard/risk-profile/riskProfileSuccess";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import riskProfileApiService, {
