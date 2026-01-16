@@ -1,17 +1,12 @@
-"use client"
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/ui/Footer'
-import MainPage from '@/components/ui/UserDashboard/MainPage'
-import React from 'react'
+"use client";
 
-function page() {
+import ProtectedRoute from '@/components/ProtectedRoute';
+import MainPage from '@/components/ui/UserDashboard/MainPage';
+
+export default function Page() {
   return (
-    <div>
-      <MainPage/>
-      <Footer/>
-    </div>
+    <ProtectedRoute>
+      <MainPage />
+    </ProtectedRoute>
   );
 }
-
-export default page
-

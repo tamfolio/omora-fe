@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, Hash, MapPin, Upload } from 'lucide-react';
-import Image from 'next/image'; // Added Next.js Image import
+import Image from 'next/image';
 import Security from './Security';
 import Notifications from './Notifications';
 import Logout from './Logout';
@@ -17,25 +17,12 @@ function Profile() {
     { name: 'Log out' }
   ];
 
-  // Fix 1: Add proper typing for tabName parameter
   const handleTabClick = (tabName: string) => {
     if (tabName === 'Log out') {
       setShowLogoutModal(true);
     } else {
       setActiveTab(tabName);
     }
-  };
-
-  const handleLogout = () => {
-    // Add your logout logic here
-    console.log('User logged out');
-    setShowLogoutModal(false);
-    // For example, you might redirect to login page or clear user session
-    // window.location.href = '/login';
-  };
-
-  const handleLogoutCancel = () => {
-    setShowLogoutModal(false);
   };
 
   const PreKYCProfile = () => (
@@ -51,7 +38,6 @@ function Profile() {
             <div className="flex items-start space-x-6">
               <div className="flex flex-col items-start">
                 <div className="relative mb-4">
-                  {/* Fix 3: Replace img with Next.js Image component */}
                   <Image
                     src="/api/placeholder/80/80"
                     alt="Profile"
@@ -133,7 +119,6 @@ function Profile() {
             <div className="flex items-start space-x-6">
               <div className="flex flex-col items-start">
                 <div className="relative mb-4">
-                  {/* Fix 3: Replace img with Next.js Image component */}
                   <Image
                     src="/api/placeholder/80/80"
                     alt="Profile"
@@ -223,7 +208,6 @@ function Profile() {
           </div>
 
           <div className="mt-8">
-            {/* Fix 2: Escape quotes in the string */}
             <p className="text-sm text-teal-600">
               &ldquo;To change your account details, please contact your Relationship Manager through the Help option&rdquo;
             </p>
@@ -289,8 +273,7 @@ function Profile() {
 
       <Logout 
         isOpen={showLogoutModal}
-        onClose={handleLogoutCancel}
-        onConfirm={handleLogout}
+        onClose={() => setShowLogoutModal(false)}
       />
     </div>
   );

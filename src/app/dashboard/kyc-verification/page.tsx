@@ -1,90 +1,230 @@
 "use client";
-
-import BusinessInformation from "@/components/ui/UserDashboard/Kyc/Businessinformation";
-import ContactInformation from "@/components/ui/UserDashboard/Kyc/Contactinformation";
+import BusinessInformation from "@/components/ui/UserDashboard/Kyc/BusinessInformation";
+import ContactInformation from "@/components/ui/UserDashboard/Kyc/ContactInformation";
 import CountrySelect from "@/components/ui/UserDashboard/Kyc/CountrySelect";
 import DocumentUpload from "@/components/ui/UserDashboard/Kyc/DocumentUpload";
 import FacialRecognition from "@/components/ui/UserDashboard/Kyc/FacialRecognition";
 import KYCInitiation from "@/components/ui/UserDashboard/Kyc/KycInitiationPage";
 import PersonalInformation from "@/components/ui/UserDashboard/Kyc/PersonalInformation";
-import DirectorateInformation from "@/components/ui/UserDashboard/Kyc/DirectorateInformation";
+import DirectorInformation from "@/components/ui/UserDashboard/Kyc/DirectorateInformation";
 import CompanyRegDetails from "@/components/ui/UserDashboard/Kyc/CompanyRegDetails";
 import KycSuccessModal from "@/components/ui/UserDashboard/Kyc/SuccessModal";
+import KycUnsuccessfulModal from "@/components/ui/UserDashboard/Kyc/UnsuccessfulModal";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type VerificationType = 'individual' | 'corporate';
+
+interface KycFormData {
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  dateOfBirth?: string;
+  bvn?: string;
+  nin?: string;
+  gender?: 'MALE' | 'FEMALE';
+  occupation?: string;
+  sourceOfFund?: string;
+  verificationType?: string;
+  phone?: string;
+  mobileNumber?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  businessName?: string;
+  rcType?: string;
+  rcNumber?: string;
+  businessType?: string;
+  businessAddress?: string;
+  country?: string;
+}
 
 export default function KycVerification() {
   const router = useRouter();
   
-  // State for user type - starts with 'corporate' for testing
-  const [userType, setUserType] = useState<VerificationType>('corporate');
-  
-  // Page progress state - starts at 1 for KYC Initiation
+  const [userType, setUserType] = useState<VerificationType>('individual');
   const [pageProgress, setPageProgress] = useState(1);
+  
+  // Modal States
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showUnsuccessfulModal, setShowUnsuccessfulModal] = useState(false);
+  
+  // Data State
+  const [formData, setFormData] = useState<KycFormData>({});
+  const [apiNextStep, setApiNextStep] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Toggle function for testing both flows (remove this in production)
+  // --- NEW: FETCH LOGIC ---
+  useEffect(() => {
+    const checkKycStatus = async () => {
+      try {
+        const response = await fetch('/user/api/v1/me');
+        const result = await response.json();
+
+        if (result.status === 'success' && result.data?.onboardingState) {
+          const { currentStepStatus, nextStep } = result.data.onboardingState;
+          
+          // Store the next step for Retry logic
+          setApiNextStep(nextStep);
+
+          if (currentStepStatus === 'C') {
+            setShowSuccessModal(true);
+          } else if (currentStepStatus === 'NVP') {
+            setShowUnsuccessfulModal(true);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check KYC status", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkKycStatus();
+  }, []);
+
+  // --- NEW: RETRY LOGIC ---
+  const handleRetry = () => {
+    setShowUnsuccessfulModal(false);
+    
+    // Map the API "nextStep" string to your numeric pageProgress
+    if (apiNextStep) {
+      const stepNumber = getStepNumberFromApiStatus(apiNextStep);
+      setPageProgress(stepNumber);
+    } else {
+      // Default fallback if no step provided
+      setPageProgress(1);
+    }
+  };
+
+  // Helper to map API strings to Component Steps
+  const getStepNumberFromApiStatus = (apiStep: string): number => {
+    switch (apiStep) {
+      case 'initiation': return 1;
+      case 'verify-country': return 2;
+      case 'verify-bvn':      // Assuming BVN/NIN are in Personal Info (Step 3)
+      case 'verify-nin':      
+      case 'personal-info': return 3;
+      case 'contact-info': return 4;
+      case 'document-upload': return 5;
+      case 'facial-recognition': return 6;
+      case 'dashboard': 
+        router.push('/dashboard');
+        return 1;
+      default: return 1;
+    }
+  };
+
   const toggleUserType = () => {
     setUserType(prev => prev === 'individual' ? 'corporate' : 'individual');
+    setFormData({});
+    setPageProgress(1);
   };
 
-  // Get the total number of steps based on user type
   const getTotalSteps = () => {
-    return userType === 'individual' ? 6 : 6; // Both have 6 steps, just different components
+    return userType === 'individual' ? 6 : 6;
   };
 
-  // Function to go to next step
   const nextStep = () => {
     const totalSteps = getTotalSteps();
     if (pageProgress === totalSteps) {
-      // If we're on the last step, show success modal
       setShowSuccessModal(true);
     } else {
       setPageProgress((prev) => prev + 1);
     }
   };
 
-  // Function to go to previous step
   const prevStep = () => {
     if (pageProgress === 1) {
-      // If on first step, go back to dashboard
       router.push('/dashboard');
     } else {
       setPageProgress((prev) => prev - 1);
     }
   };
 
-  // Function to handle navigation to dashboard
   const handleGoToDashboard = () => {
     router.push('/dashboard');
   };
 
-  // Function to handle back navigation from first step
   const handleBackFromInitiation = () => {
     router.push('/dashboard');
   };
 
-  // Render different components based on current step and user type
+  const updateFormData = (data: Partial<KycFormData>) => {
+    setFormData(prev => ({ ...prev, ...data }));
+  };
+
+  const handlePersonalInfoNext = (data?: any) => {
+    if (data) {
+      updateFormData({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        middleName: data.middleName,
+        dateOfBirth: data.dateOfBirth,
+        verificationType: data.verificationType,
+        bvn: data.bvn,
+        nin: data.nin,
+        gender: data.gender,
+        occupation: data.occupation,
+        sourceOfFund: data.sourceOfFund
+      });
+    }
+    nextStep();
+  };
+
+  const handleContactInfoNext = (data?: any) => {
+    if (data) {
+      const phoneValue = data.mobileNumber || data.phone || '';
+      
+      updateFormData({
+        mobileNumber: phoneValue,
+        phone: phoneValue,
+        address: data.address,
+        city: data.city,
+        state: data.state
+      });
+    }
+    nextStep();
+  };
+
+  const handleBusinessInfoNext = (data?: any) => {
+    if (data) {
+      updateFormData({
+        businessName: data.businessName,
+        rcType: data.rcType,
+        rcNumber: data.rcNumber,
+        businessType: data.businessType,
+        businessAddress: data.businessAddress
+      });
+    }
+    nextStep();
+  };
+
+  const handleCountryNext = (country?: string) => {
+    if (country) {
+      updateFormData({ country });
+    }
+    nextStep();
+  };
+
   const renderCurrentStep = () => {
     switch (pageProgress) {
       case 1:
         return <KYCInitiation onContinue={nextStep} onBack={handleBackFromInitiation} />;
       
       case 2:
-        return <CountrySelect onNext={nextStep} onBack={prevStep} />;
+        return <CountrySelect onNext={handleCountryNext} onBack={prevStep} />;
       
       case 3:
         if (userType === 'individual') {
-          return <PersonalInformation onNext={nextStep} onBack={prevStep} />;
+          return <PersonalInformation onNext={handlePersonalInfoNext} onBack={prevStep} />;
         } else {
-          return <BusinessInformation onNext={nextStep} onBack={prevStep} />;
+          return <BusinessInformation onNext={handleBusinessInfoNext} onBack={prevStep} />;
         }
       
       case 4:
         if (userType === 'individual') {
-          return <ContactInformation onBack={prevStep} onNext={nextStep} />;
+          return <ContactInformation onBack={prevStep} onNext={handleContactInfoNext} />;
         } else {
           return <DirectorInformation onNext={nextStep} onBack={prevStep} />;
         }
@@ -98,11 +238,18 @@ export default function KycVerification() {
       
       case 6:
         if (userType === 'individual') {
-          return <FacialRecognition onBack={prevStep} onNext={nextStep} />;
-        } else {
-          // For corporate, step 6 shows success modal instead of facial recognition
-          setShowSuccessModal(true);
-          return null;
+          return (
+            <FacialRecognition 
+              onBack={prevStep} 
+              onNext={nextStep}
+              firstName={formData.firstName}
+              lastName={formData.lastName}
+              nin={formData.nin}
+              dateOfBirth={formData.dateOfBirth}
+              gender={formData.gender}
+              phone={formData.phone}
+            />
+          );
         }
       
       default:
@@ -110,26 +257,37 @@ export default function KycVerification() {
     }
   };
 
+  // Optional: Loading state while fetching initial status
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading verification status...</div>;
+  }
+
   return (
     <div className="kyc-verification">
-      {/* Temporary toggle for testing - remove in production */}
-      <div className="fixed top-4 right-4 z-50">
-        <button 
-          onClick={toggleUserType}
-          className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600"
-        >
-          Testing: {userType} 
-          <br />
-          <span className="text-xs">Click to switch</span>
-        </button>
-      </div>
+      {/* Debug toggle - Remove in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed top-4 right-4 z-50">
+          <button 
+            onClick={toggleUserType}
+            className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 text-xs"
+          >
+            {userType}
+          </button>
+        </div>
+      )}
 
-      {/* Current step component */}
       <div className="step-content">{renderCurrentStep()}</div>
 
-      {/* Success Modal - shows after completing all steps */}
       {showSuccessModal && (
         <KycSuccessModal onGoToDashboard={handleGoToDashboard} />
+      )}
+
+      {showUnsuccessfulModal && (
+        <KycUnsuccessfulModal 
+          onRetry={handleRetry} 
+          onContactSupport={() => router.push('/support')} // Or your support logic
+          message={apiNextStep ? `Verification stopped at ${apiNextStep}. Please retry.` : undefined}
+        />
       )}
     </div>
   );

@@ -54,7 +54,7 @@ export type Investment = {
     endDate: Date;
     startDate: Date;
   };
-  timesDebited: number;
+  timesDebited?: number;
 };
 
 // Mock Data
@@ -79,7 +79,6 @@ const data: Investment[] = [
     investmentType: "one-time",
     profiles: ["Bitcoin ETF", "Growth ETF"],
     duration: "360 days",
-    deductedDaily: undefined, // no daily deduction
     usdcValue: 500,
     unrealized: -2.5,
     recurringInvestmentStatus: "N/A",
@@ -87,7 +86,6 @@ const data: Investment[] = [
       endDate: new Date("2025-07-14T15:30:00"),
       startDate: new Date("2025-07-14T15:30:00"),
     },
-    timesDebited: 3,
   },
   {
     id: "3",
@@ -115,6 +113,8 @@ export default function Investments() {
   });
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Investment | null>(null);
+  const [showLiquidateConfirm, setShowLiquidateConfirm] = useState(false);
+  const [liquidateRow, setLiquidateRow] = useState<Investment | null>(null);
 
   const filteredData = useMemo(() => {
     if (activeTab === "all") return data;
@@ -127,7 +127,7 @@ export default function Investments() {
         accessorKey: "id",
         header: ({ column }) => (
           <Button
-            className="px-0 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
+            className="px-0 gap-1 flex text-xs justify-center w-full text-[#717680] max-w-[480px] font-semibold"
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
@@ -145,7 +145,7 @@ export default function Investments() {
         accessorKey: "investmentType",
         header: ({ column }) => (
           <Button
-            className="px-0 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
+            className="px-0 pl-4 gap-1 flex text-xs justify-start text-[#717680] max-w-[480px] font-semibold"
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
@@ -157,7 +157,7 @@ export default function Investments() {
           const type = row.original.investmentType;
           const profiles = row.original.profiles.join(", ");
           return (
-            <div className="!text-sm text-[#181D27] font-medium">
+            <div className="!text-sm w-[200px] text-[#181D27] font-medium">
               {type === "recurring"
                 ? `Recurring Investment (${profiles})`
                 : `One-time Investment (${profiles})`}
@@ -178,44 +178,115 @@ export default function Investments() {
           </div>
         ),
       },
-      {
-        accessorKey: "usdcValue",
-        header: () => (
-          <div className="text-center text-xs text-[#717680] font-semibold">
-            Total Investment
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm text-center text-[#535862]">
-            {row.original.usdcValue.toLocaleString()} USDC
-          </div>
-        ),
-      },
-      {
-        accessorKey: "unrealizedPnL",
-        header: () => (
-          <div className="text-center text-xs text-[#717680] font-semibold">
-            Unrealized gain/loss (%)
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div
+    ];
+
+    const noOfDebitColumn: ColumnDef<Investment> = {
+      accessorKey: "timesDebited",
+      header: () => (
+        <div className="text-center text-xs text-[#717680] font-semibold">
+          No of Debit
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center items-center">
+          {row.original.timesDebited !== undefined && row.original.timesDebited !== null ? (
+            <div className="text-sm text-center text-[#535862]">
+              {row.original.timesDebited}
+            </div>
+          ) : (
+            <span className="px-2 py-[2px] rounded-[16px] text-xs font-medium bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]">
+              N/A
+            </span>
+          )}
+        </div>
+      ),
+    };
+
+    const deductedDailyColumn: ColumnDef<Investment> = {
+      accessorKey: "dailyDeduction",
+      header: () => (
+        <div className="text-center text-xs text-[#717680] font-semibold">
+          Deducted Daily
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center items-center">
+          {row.original.deductedDaily !== undefined && row.original.deductedDaily !== null ? (
+            <div className="text-sm text-center text-[#535862]">
+              {row.original.deductedDaily.toFixed(2)} USDC
+            </div>
+          ) : (
+            <span className="px-2 py-[2px] rounded-[16px] text-xs font-medium bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]">
+              N/A
+            </span>
+          )}
+        </div>
+      ),
+    };
+
+    const totalInvestmentColumn: ColumnDef<Investment> = {
+      accessorKey: "usdcValue",
+      header: () => (
+        <div className="text-center text-xs text-[#717680] font-semibold">
+          Total Investment
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-sm text-center text-[#535862]">
+          {row.original.usdcValue.toLocaleString()} USDC
+        </div>
+      ),
+    };
+
+    const unrealizedPnLColumn: ColumnDef<Investment> = {
+      accessorKey: "unrealizedPnL",
+      header: () => (
+        <div className="text-center text-xs text-[#717680] font-semibold">
+          Unrealized gain/loss (%)
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div
+          className={clsx(
+            "text-sm text-center",
+            row.original.unrealized >= 0 ? "text-green-600" : "text-red-600"
+          )}
+        >
+          {row.original.unrealized.toFixed(2)}%
+        </div>
+      ),
+    };
+
+    const recurringStatusColumn: ColumnDef<Investment> = {
+      accessorKey: "recurringInvestmentStatus",
+      header: () => (
+        <div className="text-center text-xs text-[#717680] font-semibold">
+          Recurring Status
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center items-center">
+          <span
             className={clsx(
-              "text-sm text-center",
-              row.original.unrealized >= 0 ? "text-green-600" : "text-red-600"
+              "px-2 py-[2px] rounded-[16px] text-xs font-medium",
+              row.original.recurringInvestmentStatus === "Active"
+                ? "bg-[#ECFDF3] text-[#067647] border border-[#ABEFC6]"
+                : row.original.recurringInvestmentStatus === "Inactive"
+                  ? "bg-[#FFFAEB] text-[#B54708] border border-[#FEDF89]"
+                  : "bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]"
             )}
           >
-            {row.original.unrealized.toFixed(2)}%
-          </div>
-        ),
-      },
-    ];
+            {row.original.recurringInvestmentStatus}
+          </span>
+        </div>
+      ),
+    };
 
     const dateRangeColumn: ColumnDef<Investment> = {
       accessorKey: "dateRange",
       header: ({ column }) => (
         <Button
-          className="px-0 gap-1 w-full justify-end flex text-xs text-[#717680] font-semibold"
+          className="px-3 gap-1 w-full justify-end flex text-xs text-[#717680] font-semibold"
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
@@ -250,62 +321,47 @@ export default function Investments() {
         b.original.dateRange.startDate.getTime(),
     };
 
-    const recurringColumns: ColumnDef<Investment>[] = [
-      {
-        accessorKey: "timesDebited",
-        header: () => (
-          <div className="text-center text-xs text-[#717680] font-semibold">
-            No of Debit
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm text-center text-[#535862]">
-            {row.original.timesDebited}
-          </div>
-        ),
-      },
-      {
-        accessorKey: "dailyDeduction",
-        header: () => (
-          <div className="text-center text-xs text-[#717680] font-semibold">
-            Deducted Daily
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm text-center text-[#535862]">
-            {row.original.deductedDaily?.toFixed(2)} USDC
-          </div>
-        ),
-      },
-      {
-        accessorKey: "recurringInvestmentStatus",
-        header: () => (
-          <div className="text-center text-xs text-[#717680] font-semibold">
-            Recurring Status
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="flex justify-center items-center">
-            <span
-              className={clsx(
-                "px-2 py-[2px] rounded-[16px] text-xs font-medium",
-                row.original.recurringInvestmentStatus === "Active"
-                  ? "bg-[#ECFDF3] text-[#067647] border border-[#ABEFC6]"
-                  : row.original.recurringInvestmentStatus === "Inactive"
-                    ? "bg-[#FFFAEB] text-[#B54708] border border-[#FEDF89]"
-                    : "bg-[#F7F7F7] text-[#373A41] border border-[#ECECED]"
-              )}
-            >
-              {row.original.recurringInvestmentStatus}
-            </span>
-          </div>
-        ),
-      },
-    ];
+    const liquidateColumn: ColumnDef<Investment> = {
+      accessorKey: "liquidate",
+      header: () => (
+        <div className="text-center hidden text-xs text-[#717680] font-semibold">
+          Liquidate
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center items-center">
+          <Button 
+            className="my-[8px] px-[12px] rounded-[8px] bg-[#008B99] hover:bg-[#008B99] text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLiquidateRow(row.original);
+              setShowLiquidateConfirm(true);
+            }}
+          >
+            Liquidate
+          </Button>
+        </div>
+      ),
+    };
 
     return activeTab === "recurring" || activeTab === "all"
-      ? [...baseColumns, ...recurringColumns, dateRangeColumn]
-      : [...baseColumns, dateRangeColumn];
+      ? [
+          ...baseColumns,
+          noOfDebitColumn,
+          deductedDailyColumn,
+          totalInvestmentColumn,
+          unrealizedPnLColumn,
+          recurringStatusColumn,
+          dateRangeColumn,
+          liquidateColumn,
+        ]
+      : [
+          ...baseColumns,
+          totalInvestmentColumn,
+          unrealizedPnLColumn,
+          dateRangeColumn,
+          liquidateColumn,
+        ];
   }, [activeTab]);
 
   const table = useReactTable({
@@ -320,7 +376,7 @@ export default function Investments() {
   });
 
   return (
-    <div className="relative h-full pt-24 bg-gradient-to-b from-[#79B7BC]/5 via-[#AEDCE0]/5 to-[#FFFFFF] px-[112px]">
+    <div className="pt-24 bg-gradient-to-b from-[#79B7BC]/5 via-[#AEDCE0]/5 to-[#FFFFFF] px-[112px] ">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h1 className="text-[#181D27] font-semibold text-[48px]">
@@ -342,19 +398,19 @@ export default function Investments() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap p-0 h-fit !bg-none border rounded-[8px] w-full md:flex-nowrap md:w-fit border-[#D5D7DA]">
             <TabsTrigger
-              className="w-full md:w-fit text-[#414651] border-b-[0.5px] md:border-r-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-t-[8px] md:rounded-tr-none md:rounded-l-[8px]"
+              className="w-full md:w-fit text-[#414651] md:border-r-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-t-[8px] md:rounded-tr-none md:rounded-l-[8px]"
               value="all"
             >
               View All
             </TabsTrigger>
             <TabsTrigger
-              className="w-full md:w-fit text-[#414651]  rounded-none border-y-[0.5px] md:order-y-none md:border-x-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white"
+              className="w-full md:w-fit text-[#414651]  rounded-none border-y-[0.5px] md:border-y-0 border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white"
               value="recurring"
             >
               Recurring Investment
             </TabsTrigger>
             <TabsTrigger
-              className="w-full md:w-fit text-[#414651] md:border-l-[0.5px] border-t-[0.5px] md:border-t-0 border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-b-[8px] md:rounded-bl-none md:rounded-r-[8px]"
+              className="w-full md:w-fit text-[#414651] md:border-l-[0.5px] border-[#D5D7DA] data-[state=active]:bg-[#FAFAFA] bg-white rounded-b-[8px] md:rounded-bl-none md:rounded-r-[8px]"
               value="one-time"
             >
               One-time Investment
@@ -380,7 +436,10 @@ export default function Investments() {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead className="px-6" key={header.id}>
+                  <TableHead 
+                    className={header.column.id === "id" ? "" : "px-0"} 
+                    key={header.id}
+                  >
                     {flexRender(
                       header.column.columnDef.header,
                       header.getContext()
@@ -398,7 +457,7 @@ export default function Investments() {
                 onClick={() => setSelectedRow(row.original)} // pick row data
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell className="" key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -671,6 +730,56 @@ export default function Investments() {
                   variant="outline"
                   className="rounded-[8px] border border-gray-300 font-semibold"
                   onClick={() => setShowConfirm(false)}
+                >
+                  No, I don&apos;t
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Liquidate Confirmation Dialog */}
+      <Dialog
+        open={showLiquidateConfirm}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setShowLiquidateConfirm(false);
+            setLiquidateRow(null);
+          }
+        }}
+      >
+        <DialogContent className="p-6 !rounded-[16px] bg-white max-w-[400px] h-fit max-h-full overflow-y-auto overflow-x-hidden">
+          {liquidateRow && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-[#181D27] text-center font-semibold mt-1.5">
+                  Liquidate Investment
+                </DialogTitle>
+              </DialogHeader>
+
+              <p className="text-[#535862] text-center">
+                Are you sure you want to liquidate your investment, once done, your investments will be stopped and your funds will be converted into USDT?
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3">
+                <Button 
+                  className="bg-[#008B99] h-11 hover:bg-[#008B99] text-white font-semibold rounded-[8px]"
+                  onClick={() => {
+                    // Add your liquidate logic here
+                    setShowLiquidateConfirm(false);
+                    setLiquidateRow(null);
+                  }}
+                >
+                  Yes, I do
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-[8px] h-11 border border-gray-300 font-semibold"
+                  onClick={() => {
+                    setShowLiquidateConfirm(false);
+                    setLiquidateRow(null);
+                  }}
                 >
                   No, I don&apos;t
                 </Button>

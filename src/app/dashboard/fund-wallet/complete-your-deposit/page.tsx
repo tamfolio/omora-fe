@@ -1,5 +1,11 @@
-import CompleteYourDeposit from "@/components/fund-wallet/complete-your-deposit/page";
+import CompleteYourDeposit from "@/components/fund-wallet/CompleteYourDeposit";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function CompleteYourDepositPage() {
-  return <CompleteYourDeposit />;
+  return (
+    <ProtectedRoute>
+<CompleteYourDeposit />
+ </ProtectedRoute>
+  );
+  
 }

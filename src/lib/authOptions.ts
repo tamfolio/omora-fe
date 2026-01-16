@@ -65,7 +65,6 @@ async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
   }
 }
 
-// Extend NextAuth types
 declare module "next-auth" {
   interface Session {
     user: {
@@ -74,24 +73,24 @@ declare module "next-auth" {
       name: string
       role: string
     }
-    accessToken: string
+    accessToken?: string
     error?: string
   }
 }
 
 // Extend NextAuth types
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string
-      email: string
-      name: string
-      role: string
-    }
-    accessToken: string
-    error?: string
-  }
-}
+// declare module "next-auth" {
+//   interface Session {
+//     user: {
+//       id: string
+//       email: string
+//       name: string
+//       role: string
+//     }
+//     accessToken: string
+//     error?: string
+//   }
+// }
 
 // ---- Auth Options ---- //
 export const authOptions: NextAuthOptions = {
@@ -104,9 +103,9 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-
+console.log('Auth endpoint:', process.env.API_AUTH_ENDPOINT)
         try {
-          // Call backend API
+          
           const response = await fetch(`${process.env.API_AUTH_ENDPOINT}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -151,7 +150,7 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    // Use unknown type to avoid explicit any
+  
     async jwt({ token, user, account }) {
       // Initial sign in
       if (account && user) {

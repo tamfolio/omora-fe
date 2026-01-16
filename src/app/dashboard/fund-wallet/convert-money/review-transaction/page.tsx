@@ -1,5 +1,10 @@
-import ReviewTransaction from "@/components/fund-wallet/convert-money/review-transaction/page";
+import ReviewTransaction from "@/components/fund-wallet/ReviewTransaction";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function ConvertMoneyPage() {
-  return <ReviewTransaction />;
+  return (
+    <ProtectedRoute>
+      <ReviewTransaction />
+    </ProtectedRoute>
+  );
 }

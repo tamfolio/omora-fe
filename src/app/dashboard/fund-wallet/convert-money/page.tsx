@@ -1,5 +1,10 @@
-import ConvertMoney from "@/components/fund-wallet/convert-money/page";
+import ConvertMoney from "@/components/fund-wallet/ConvertMoney";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function ConvertMoneyPage() {
-  return <ConvertMoney />;
+  return (
+    <ProtectedRoute>
+      <ConvertMoney />
+    </ProtectedRoute>
+  );
 }

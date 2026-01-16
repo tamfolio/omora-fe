@@ -1,31 +1,65 @@
-import React from 'react';
+import React from "react";
+import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface LogoutProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
 }
 
-const Logout = ({ isOpen, onClose, onConfirm }: LogoutProps) => {
+const Logout = ({ isOpen, onClose }: LogoutProps) => {
+  const router = useRouter();
+
   if (!isOpen) return null;
+
+  const handleLogout = async () => {
+    try {
+      // Optional: Clear non-auth related local/session storage data
+      localStorage.clear();
+      sessionStorage.clear();
+
+      await signOut({
+        callbackUrl: "/auth/login", // The URL to redirect to after successful sign-out
+      });
+
+      // onClose() is safe to call after initiating the full redirect
+      onClose();
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Fallback in case the server signout fails
+      window.location.href = "/auth/login";
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl">
         <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
-          <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+          <svg
+            className="w-6 h-6 text-red-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"
+            />
           </svg>
         </div>
-        
-        <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">Warning</h3>
+
+        <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+          Warning
+        </h3>
         <p className="text-sm text-gray-600 text-center mb-6">
           Are you sure you want to logout?
         </p>
-        
+
         <div className="space-y-3">
           <button
-            onClick={onConfirm}
+            onClick={handleLogout}
             className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
           >
             Logout

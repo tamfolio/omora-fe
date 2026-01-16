@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import SetupDashboard from './SetupDashoard';
-import CompletedDashboard from './CompletedDashboard';
-
+"use client";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import SetupDashboard from "./SetupDashoard";
+import CompletedDashboard from "./CompletedDashboard";
+import { useSession } from "next-auth/react";
 
 interface SetupStep {
   id: number;
@@ -18,101 +19,163 @@ interface Post {
   date: string;
   title: string;
   description: string;
-  category: 'NFT' | 'BTC' | 'ALT';
+  category: "NFT" | "BTC" | "ALT";
   image: string;
 }
 
 function MainPage() {
   const router = useRouter();
-  
-  // State to control which dashboard to show
-  const [isKycCompleted, setIsKycCompleted] = useState(true);
-  const [isRiskProfileCompleted, setIsRiskProfileCompleted] = useState(true);
+  const { data: session, status } = useSession();
 
+ 
+  const [userName, setUserName] = useState("User");
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isKycCompleted, setIsKycCompleted] = useState(false);
+  const [isRiskProfileCompleted, setIsRiskProfileCompleted] = useState(false);
+  const [isAccountFunded, setIsAccountFunded] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.accessToken) {
+      const fetchUserStatus = async () => {
+        try {
+          const response = await fetch("/api/proxy/user/api/v1/me", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            console.error("Dashboard Status Error:", response.status);
+            return;
+          }
+
+          const result = await response.json();
+          // console.log("API Result:", result); 
+
+          if (result.status === "success") {
+            const { data } = result;
+
+          
+            if (data.user?.firstName) {
+             
+                const rawName = data.user.firstName;
+                const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+                setUserName(formattedName);
+            }
+
+            setIsKycCompleted(data.onboardingState?.currentStepStatus === "C");
+            setIsRiskProfileCompleted(data.user?.isRiskProfile === true);
+            setIsAccountFunded(data.personalWallet?.availableBalance > 0);
+          }
+        } catch (error) {
+          console.error("Failed to fetch user status", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchUserStatus();
+    } else if (status === "unauthenticated") {
+      setIsLoading(false);
+    }
+  }, [status, session]);
+
+  // ... (Keep your setupSteps array logic) ...
   const setupSteps: SetupStep[] = [
     {
       id: 1,
-      title: 'Verify Account',
-      description: 'Start your KYC to get started with OMORA',
+      title: "Verify Account",
+      description: "Start your KYC to get started with OMORA",
       completed: isKycCompleted,
-      current: !isKycCompleted
+      current: !isKycCompleted,
     },
     {
       id: 2,
-      title: 'Set Risk Profile',
-      description: 'Complete a short quiz to personalize your investment strategy',
+      title: "Set Risk Profile",
+      description: "Complete a short quiz to personalize your investment strategy",
       completed: isRiskProfileCompleted,
-      current: isKycCompleted && !isRiskProfileCompleted
+      current: isKycCompleted && !isRiskProfileCompleted,
     },
     {
       id: 3,
-      title: 'Fund Your Account',
-      description: 'Top up your account to activate your investment wallet',
-      completed: true,
-      current: isKycCompleted && isRiskProfileCompleted
+      title: "Fund Your Account",
+      description: "Top up your account to activate your investment wallet",
+      completed: isAccountFunded,
+      current: isKycCompleted && isRiskProfileCompleted && !isAccountFunded,
     },
     {
       id: 4,
-      title: 'Start Investment',
-      description: 'Turn on automation and let Omora grow your portfolio',
-      completed: true
-    }
+      title: "Start Investment",
+      description: "Turn on automation and let Omora grow your portfolio",
+      completed: false,
+      current: isKycCompleted && isRiskProfileCompleted && isAccountFunded,
+    },
   ];
 
+  // ... (Keep recentPosts array) ...
   const recentPosts: Post[] = [
     {
-      id: '1',
-      author: 'Lana Steiner',
-      date: '18 Jan 2025',
-      title: 'NFT Market Experiences Significant Development',
-      description: 'The rise of RESTful APIs has been met by a rise in tools for creating, testing, and managing them.',
-      category: 'NFT',
-      image: '/images/image1.jpg'
-    },
-    {
-      id: '2',
-      author: 'Natali Craig',
-      date: '14 Jan 2025',
-      title: "Ethereum's Recent Surge May Lead to...",
-      description: 'Collaboration can make our teams stronger, and our individual designs better.',
-      category: 'BTC',
-      image: '/images/image2.jpg'
-    },
-    {
-      id: '3',
-      author: 'Natali Craig',
-      date: '14 Jan 2025',
-      title: "Ethereum's Recent Surge May Lead to...",
-      description: 'Collaboration can make our teams stronger, and our individual designs better.',
-      category: 'ALT',
-      image: '/images/image2.jpg'
-    }
+        id: "1",
+        author: "Lana Steiner",
+        date: "18 Jan 2025",
+        title: "NFT Market Experiences Significant Development",
+        description:
+          "The rise of RESTful APIs has been met by a rise in tools for creating, testing, and managing them.",
+        category: "NFT",
+        image: "/images/image1.jpg",
+      },
+      {
+        id: "2",
+        author: "Natali Craig",
+        date: "14 Jan 2025",
+        title: "Ethereum's Recent Surge May Lead to...",
+        description:
+          "Collaboration can make our teams stronger, and our individual designs better.",
+        category: "BTC",
+        image: "/images/image2.jpg",
+      },
+      {
+        id: "3",
+        author: "Natali Craig",
+        date: "14 Jan 2025",
+        title: "Ethereum's Recent Surge May Lead to...",
+        description:
+          "Collaboration can make our teams stronger, and our individual designs better.",
+        category: "ALT",
+        image: "/images/image2.jpg",
+      },
   ];
 
-  const completedSteps = setupSteps.filter(step => step.completed).length;
-  const isSetupComplete = completedSteps === setupSteps.length;
+  const completedStepsCount = setupSteps.filter((step) => step.completed).length;
+  const isSetupComplete = completedStepsCount === setupSteps.length;
 
   const handleStepAction = (stepId: number) => {
-    console.log(`Action for step: ${stepId}`);
-    
-    if (stepId === 1) {
-      router.push('/dashboard/kyc-verification');
-    }
-    if (stepId === 2) {
-      router.push('/dashboard/risk-profile');
-    }
+    if (stepId === 1) router.push("/dashboard/kyc-verification");
+    if (stepId === 2) router.push("/dashboard/risk-profile");
+    if (stepId === 3) router.push("/dashboard/wallet/deposit");
   };
 
   const handleReadPost = (postId: string) => {
     console.log(`Reading post: ${postId}`);
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500">Loading your dashboard...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       {isSetupComplete ? (
-        <CompletedDashboard 
+        <CompletedDashboard
           recentPosts={recentPosts}
           onReadPost={handleReadPost}
+          userName={userName} 
         />
       ) : (
         <SetupDashboard
@@ -120,27 +183,9 @@ function MainPage() {
           recentPosts={recentPosts}
           onStepAction={handleStepAction}
           onReadPost={handleReadPost}
+          userName={userName} 
         />
       )}
-
-      {/* Debug Controls - Remove in production */}
-      <div className="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border border-gray-200">
-        <p className="text-sm font-medium text-gray-700 mb-2">Debug Controls:</p>
-        <div className="space-y-2">
-          <button
-            onClick={() => setIsKycCompleted(!isKycCompleted)}
-            className="block w-full px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Toggle KYC: {isKycCompleted ? 'Completed' : 'Pending'}
-          </button>
-          <button
-            onClick={() => setIsRiskProfileCompleted(!isRiskProfileCompleted)}
-            className="block w-full px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            Toggle Risk Profile: {isRiskProfileCompleted ? 'Completed' : 'Pending'}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

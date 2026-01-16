@@ -1,76 +1,110 @@
 import NextAuth from "next-auth"
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { JWT } from "next-auth/jwt"
+import type { User } from "next-auth"
+import type { JWT } from "next-auth/jwt"
 
-// Define custom types
-interface CustomUser {
-  id: string
-  email: string
-  name: string
-  role: string
-  accessToken: string
-  refreshToken: string
-}
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/proxy'
+const API_KEY = process.env.OMORA_API_KEY || '';
 
-// Fix 1: Don't extend JWT, just define our own interface for the token shape
-interface CustomToken {
-  accessToken: string
-  refreshToken: string
-  accessTokenExpires: number
-  user?: {
-    id: string
-    email: string
-    name: string
-    role: string
-  }
-  error?: string
-  // Include standard JWT properties we need - match JWT interface exactly
-  sub?: string
-  name?: string | null
-  email?: string | null
-  picture?: string | null
-  iat?: number
-  exp?: number
-  jti?: string
-}
-
+// Store temporary auth state for OTP verification
+const tempAuthStore = new Map<string, { email: string; timestamp: number }>();
 
 const authOptions: NextAuthOptions = {
   providers: [
+    // Provider 1: Two-step OTP flow (kept for compatibility)
     CredentialsProvider({
-      name: "credentials",
+      id: "credentials-with-otp",
+      name: "credentials-otp",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        otp: { label: "OTP", type: "text" },
+        mode: { label: "Mode", type: "text" },
+        rememberMe: { label: "Remember Me", type: "text" }, 
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-        
+      async authorize(credentials): Promise<User | null> {
+        if (!credentials) return null;
+
         try {
-          const response = await fetch(`${process.env.API_AUTH_ENDPOINT}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+          if (credentials.mode === 'signin') {
+            const response = await fetch(`${API_BASE_URL}/user/api/v1/sign-in`, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                "x-api-key": API_KEY
+              },
+              body: JSON.stringify({
+                identifier: credentials.email,
+                password: credentials.password,
+              }),
+            });
+            
+            if (!response.ok) return null;
+
+            tempAuthStore.set(credentials.email, {
               email: credentials.email,
-              password: credentials.password,
-            }),
-          });
-          
-          if (!response.ok) return null;
-          
-          const user = await response.json();
-          
-          // Return user object that will be stored in JWT
-          if (user && user.id) {
+              timestamp: Date.now()
+            });
+
             return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              role: user.role,
-              accessToken: user.accessToken,
-              refreshToken: user.refreshToken,
-            } as CustomUser
+              id: 'temp',
+              email: credentials.email,
+              name: 'pending_otp',
+              role: 'pending',
+              accessToken: '',
+              refreshToken: '',
+            } as User
+          }
+
+          if (credentials.mode === 'verify' && credentials.otp) {
+            const tempAuth = tempAuthStore.get(credentials.email);
+            
+            if (!tempAuth || Date.now() - tempAuth.timestamp > 5 * 60 * 1000) {
+              return null;
+            }
+
+            const response = await fetch(`${API_BASE_URL}/user/api/v1/sign-in/complete`, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                "x-api-key": API_KEY
+              },
+              body: JSON.stringify({
+                identifier: credentials.email,
+                otp: credentials.otp,
+              }),
+            });
+            
+            if (!response.ok) return null;
+            
+            const data = await response.json();
+            tempAuthStore.delete(credentials.email);
+
+            const accessToken = data.token?.accessToken || data.accessToken;
+
+            const profileResponse = await fetch(`${API_BASE_URL}/user/api/v1/me`, {
+              method: "GET",
+              headers: { 
+                "x-api-key": API_KEY,
+                "Authorization": `Bearer ${accessToken}`
+              },
+            });
+
+            const profile = profileResponse.ok ? await profileResponse.json() : {};
+            
+            return {
+              id: data.data?.id || data.userId || profile.data?.user?.id || credentials.email,
+              email: credentials.email,
+              name: profile.data?.user?.firstName && profile.data?.user?.lastName 
+                ? `${profile.data.user.firstName} ${profile.data.user.lastName}` 
+                : profile.name || credentials.email,
+              role: data.data?.role || data.role || profile.data?.user?.role || 'user',
+              accessToken: accessToken,
+              refreshToken: data.token?.refreshToken || data.refreshToken,
+              isFirstLogin: profile.data?.user?.isPinSet === false,
+              rememberMe: credentials.rememberMe === 'true',
+            } as User
           }
           
           return null
@@ -80,80 +114,141 @@ const authOptions: NextAuthOptions = {
         }
       },
     }),
+    
+    // Provider 2: Direct credentials (used by your login page after OTP verification)
+    CredentialsProvider({
+      id: "credentials",
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        accessToken: { label: "Access Token", type: "text" },
+        refreshToken: { label: "Refresh Token", type: "text" },
+        userId: { label: "User ID", type: "text" },
+        userName: { label: "User Name", type: "text" },
+        userRole: { label: "User Role", type: "text" },
+        isFirstLogin: { label: "First Login", type: "text" },
+        rememberMe: { label: "Remember Me", type: "text" },
+      },
+      async authorize(credentials): Promise<User | null> {
+        if (!credentials || !credentials.accessToken) return null;
+
+        console.log('NextAuth direct credentials authorize:', {
+          email: credentials.email,
+          userId: credentials.userId,
+          isFirstLogin: credentials.isFirstLogin,
+          rememberMe: credentials.rememberMe, // Log it
+        });
+
+        return {
+          id: credentials.userId || credentials.email,
+          email: credentials.email,
+          name: credentials.userName || credentials.email,
+          role: credentials.userRole || 'user',
+          accessToken: credentials.accessToken,
+          refreshToken: credentials.refreshToken,
+          isFirstLogin: credentials.isFirstLogin === 'true',
+          rememberMe: credentials.rememberMe === 'true',
+        } as User;
+      },
+    }),
   ],
-  session: { strategy: "jwt", maxAge: 60 * 60 },
-  jwt: { maxAge: 60 * 60 },
+  
+  //  Dynamic session configuration based on remember me
+  session: { 
+    strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60, // Default: 7 days
+  },
+  
+  jwt: { 
+    maxAge: 7 * 24 * 60 * 60, // Default: 7 days
+  },
+  
   callbacks: {
-    // Fix 2: Return JWT type but cast internally to CustomToken
     async jwt({ token, user, account }): Promise<JWT> {
-      // Initial sign in
       if (account && user) {
-        const customUser = user as CustomUser
-        const customToken: CustomToken = {
-          ...token,
-          accessToken: customUser.accessToken,
-          refreshToken: customUser.refreshToken,
-          accessTokenExpires: Date.now() + 30 * 60 * 1000, // 30 minutes (fixed from 60 minutes)
-          user: {
-            id: customUser.id,
-            email: customUser.email,
-            name: customUser.name,
-            role: customUser.role,
+        if (user.id === 'temp') {
+          return {
+            ...token,
+            error: 'OTP_REQUIRED'
           }
         }
-        return customToken as JWT
+
+        // Calculate expiry based on remember me preference
+        const expiryDuration = user.rememberMe 
+          ? 30 * 24 * 60 * 60 * 1000  // 30 days if remember me
+          : 7 * 24 * 60 * 60 * 1000;  // 7 days otherwise
+
+        return {
+          ...token,
+          accessToken: user.accessToken,
+          refreshToken: user.refreshToken,
+          accessTokenExpires: Date.now() + 30 * 60 * 1000, // Token refresh (30 min)
+          sessionExpires: Date.now() + expiryDuration, // Session expiry
+          rememberMe: user.rememberMe, //  Store preference
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            isFirstLogin: user.isFirstLogin,
+          }
+        }
       }
 
-      const customToken = token as CustomToken
+      // ✅ Check if session has expired based on remember me preference
+      if (token.sessionExpires && Date.now() > (token.sessionExpires as number)) {
+        return {
+          ...token,
+          error: 'SessionExpired'
+        };
+      }
 
-      // Return previous token if the access token has not expired yet
-      if (Date.now() < (customToken.accessTokenExpires || 0)) {
-        return customToken as JWT
+      // Check if access token needs refresh (30 min)
+      if (token.accessTokenExpires && Date.now() < (token.accessTokenExpires as number)) {
+        return token
       }
       
-      // Access token has expired, try to update it
-      const refreshedToken = await refreshAccessToken(customToken)
-      return refreshedToken as JWT
+      if (token.refreshToken) {
+        return await refreshAccessToken(token)
+      }
+
+      return token
     },
+    
     async session({ session, token }) {
-      const customToken = token as CustomToken
-      
-      if (customToken.user) {
-        session.user = customToken.user
+      if (token.user) {
+        session.user = {
+          ...session.user,
+          ...token.user,
+        }
       }
-      session.accessToken = customToken.accessToken || ''
-      if (customToken.error) {
-        session.error = customToken.error
+      
+      // Make tokens available in session
+      session.accessToken = token.accessToken as string || ''
+      session.refreshToken = (token.refreshToken as string) || '';
+      
+      if (token.error) {
+        session.error = token.error as string
       }
       
       return session;
     },
   },
+  
   pages: {
     signIn: "/auth/login",
     error: "/auth/error",
   },
   
-  // Security options
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    }
-  }
 }
 
-async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
+async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
-    const response = await fetch(`${process.env.API_BASE_URL}/auth/refresh`, {
+    const response = await fetch(`${API_BASE_URL}/user/api/v1/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
       },
       body: JSON.stringify({
         refreshToken: token.refreshToken,
@@ -169,17 +264,26 @@ async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
     return {
       ...token,
       accessToken: refreshedTokens.accessToken,
-      accessTokenExpires: Date.now() + 30 * 60 * 1000, // 30 minutes
+      accessTokenExpires: Date.now() + 30 * 60 * 1000,
       refreshToken: refreshedTokens.refreshToken ?? token.refreshToken,
     }
   } catch {
-    // Fix 3: Remove unused error parameter
     return {
       ...token,
       error: "RefreshAccessTokenError",
     }
   }
 }
+
+// Cleanup expired temp auth entries
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of tempAuthStore.entries()) {
+    if (now - value.timestamp > 5 * 60 * 1000) {
+      tempAuthStore.delete(key);
+    }
+  }
+}, 60 * 1000);
 
 const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }

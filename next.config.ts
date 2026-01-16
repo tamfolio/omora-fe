@@ -1,12 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Add ESLint bypass for deployment
+  reactStrictMode: false, 
+
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: false, // Keep TypeScript checks active
+    ignoreBuildErrors: false, 
   },
   
   async redirects() {
@@ -16,7 +17,6 @@ const nextConfig: NextConfig = {
         destination: "/notfound",
         permanent: false,
       },
-      // You can add more redirects here if needed
       {
         source: "/error",
         destination: "/notfound",
@@ -24,18 +24,18 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // If you want to handle actual 404s automatically
+
+  // 👇 THIS IS THE NEW PART
   async rewrites() {
-    return {
-      fallback: [
-        {
-          source: "/:path*",
-          destination: "/notfound",
-        },
-      ],
-    };
+    return [
+      {
+        // When the frontend calls '/user/api/...'
+        source: "/user/api/:path*",
+        
+        destination: "https://api.omora.com/user/api/:path*", 
+      },
+    ];
   },
-  /* other config options here */
 };
 
 export default nextConfig;

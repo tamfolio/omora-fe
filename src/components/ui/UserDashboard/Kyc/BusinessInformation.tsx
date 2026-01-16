@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ChevronDown, Info } from 'lucide-react';
 import Logo from '../../Logo';
+import kycApiService from '@/lib/kyc-api-service';
 
 interface BusinessInformationProps {
   onNext: () => void;
@@ -48,6 +49,9 @@ function BusinessInformation({ onNext, onBack }: BusinessInformationProps) {
     businessDescription: '',
     website: ''
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [dropdownStates, setDropdownStates] = useState({
     rcType: false,
@@ -97,10 +101,34 @@ function BusinessInformation({ onNext, onBack }: BusinessInformationProps) {
     // Website is optional, so not included in validation
   };
 
-  const handleNext = () => {
-    if (isFormValid()) {
-      console.log('Business Information:', formData);
+  const handleNext = async () => {
+    if (!isFormValid()) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const apiData = {
+        businessName: formData.businessName.trim(),
+        rcType: formData.rcType,
+        rcNumber: formData.rcNumber,
+        businessType: formData.businessType,
+        businessAddress: formData.businessAddress.trim(),
+        taxIdentificationNumber: formData.taxIdentificationNumber,
+        businessDescription: formData.businessDescription.trim(),
+        website: formData.website.trim() || undefined
+      };
+
+      console.log('Submitting business information:', apiData);
+      const response = await kycApiService.submitBusinessInformation(apiData);
+      
+      console.log('Business information submitted successfully:', response);
       onNext();
+    } catch (err: any) {
+      console.error('Error submitting business information:', err);
+      setError(err.message || 'Failed to submit business information. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -320,18 +348,25 @@ function BusinessInformation({ onNext, onBack }: BusinessInformationProps) {
             <p className="text-xs text-gray-500 mt-1">This is a hint text to help user.</p>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
           {/* Next Button */}
           <button
             type="button"
             onClick={handleNext}
-            disabled={!isFormValid()}
+            disabled={!isFormValid() || isSubmitting}
             className={`w-full py-4 rounded-lg font-semibold text-white transition-all duration-200 ${
-              isFormValid()
+              isFormValid() && !isSubmitting
                 ? 'bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800'
                 : 'bg-gray-300 cursor-not-allowed'
             }`}
           >
-            Next
+            {isSubmitting ? 'Submitting...' : 'Next'}
           </button>
         </div>
       </div>

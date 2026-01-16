@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mail } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Logo from '../../Logo';
+import kycApiService from '@/lib/kyc-api-service';
 
 interface ContactInformationProps {
-  onNext: () => void;
+  onNext: (data: any) => void;
   onBack: () => void;
 }
 
 interface ContactFormData {
-  email: string;
-  phoneNumber: string;
+  mobileNumber: string;
   address: string;
   city: string;
   state: string;
@@ -17,12 +17,14 @@ interface ContactFormData {
 
 function ContactInformation({ onNext, onBack }: ContactInformationProps) {
   const [formData, setFormData] = useState<ContactFormData>({
-    email: 'olivia@untitledui.com',
-    phoneNumber: '',
+    mobileNumber: '',
     address: '',
     city: '',
     state: ''
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof ContactFormData, value: string) => {
     setFormData(prev => ({
@@ -32,46 +34,61 @@ function ContactInformation({ onNext, onBack }: ContactInformationProps) {
   };
 
   const formatPhoneNumber = (value: string) => {
-    // Remove all non-digit characters
-    const digits = value.replace(/\D/g, '');
+    let cleaned = value.replace(/[^\d+]/g, '');
     
-    // Format Nigerian phone number
-    if (digits.startsWith('234')) {
-      // International format starting with 234
-      return digits.slice(0, 13);
-    } else if (digits.startsWith('0')) {
-      // Local format starting with 0
-      return digits.slice(0, 11);
-    } else {
-      // Assume local format without leading 0
-      return digits.slice(0, 10);
+    if (cleaned.startsWith('+234')) {
+      return cleaned.slice(0, 14);
     }
-  };
-
-  const isValidEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    
+    cleaned = cleaned.replace(/\+/g, '');
+    
+    if (cleaned.startsWith('234')) {
+      cleaned = cleaned.slice(0, 13);
+      return '+' + cleaned;
+    } else if (cleaned.startsWith('0')) {
+      cleaned = '234' + cleaned.slice(1, 11);
+      return '+' + cleaned;
+    } else if (cleaned.length > 0) {
+      cleaned = '234' + cleaned.slice(0, 10);
+      return '+' + cleaned;
+    }
+    
+    return cleaned;
   };
 
   const isFormValid = () => {
-    return formData.email.trim() !== '' &&
-           isValidEmail(formData.email) &&
-           formData.phoneNumber.trim() !== '' &&
+    return formData.mobileNumber.trim() !== '' &&
+           formData.mobileNumber.length >= 14 &&
            formData.address.trim() !== '' &&
            formData.city.trim() !== '' &&
            formData.state.trim() !== '';
   };
 
-  const handleNext = () => {
-    if (isFormValid()) {
-      console.log('Contact form data:', formData);
-      onNext();
+  const handleNext = async () => {
+    if (!isFormValid()) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const apiData = {
+        mobileNumber: formData.mobileNumber,
+        address: formData.address.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim()
+      };
+
+      await kycApiService.submitPersonalContactInformation(apiData);
+      onNext(apiData);
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit contact information. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
-      {/* Header */}
       <div className="bg-white px-4 py-4 flex items-center justify-between shadow-sm border-b border-gray-200">
         <div className="flex items-center space-x-4">
           <button 
@@ -81,80 +98,55 @@ function ContactInformation({ onNext, onBack }: ContactInformationProps) {
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
           <span className="text-sm text-gray-600 font-medium">Back</span>
-          <div className="flex items-center space-x-2">
-            <Logo width={150} height={40} />
-          </div>
+          <Logo width={150} height={40} />
         </div>
         <div className="flex items-center space-x-4">
           <div className="text-right">
             <div className="text-sm text-gray-500">Step 3/5</div>
             <div className="text-sm font-medium text-gray-700">Contact Details</div>
           </div>
-          <div className="w-12 h-12 rounded-full border-4 border-teal-500 flex items-center justify-center relative">
+          <div className="w-12 h-12 rounded-full border-4 border-teal-500 flex items-center justify-center">
             <span className="text-sm font-semibold text-teal-500">60%</span>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-md mx-auto px-6 py-12">
         <h1 className="text-2xl font-semibold text-gray-800 text-center mb-12">
           Contact Details
         </h1>
 
         <div className="space-y-6">
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors bg-gray-50"
-              />
-            </div>
-            {formData.email && !isValidEmail(formData.email) && (
-              <p className="text-xs text-red-500 mt-1">Please enter a valid email address</p>
-            )}
-          </div>
-
-          {/* Phone Number */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Phone Number <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
-              placeholder="Enter your phone number"
-              value={formData.phoneNumber}
-              onChange={(e) => handleInputChange('phoneNumber', formatPhoneNumber(e.target.value))}
+              placeholder="+2348012345678"
+              value={formData.mobileNumber}
+              onChange={(e) => handleInputChange('mobileNumber', formatPhoneNumber(e.target.value))}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
             />
+            <p className="text-xs text-gray-500 mt-1">Format: +234XXXXXXXXXX</p>
           </div>
 
-          {/* Address */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Address
+              Address <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              placeholder="Enter your street name"
+              placeholder="Enter your street address"
               value={formData.address}
               onChange={(e) => handleInputChange('address', e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
             />
           </div>
 
-          {/* City */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              City
+              City <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -165,10 +157,9 @@ function ContactInformation({ onNext, onBack }: ContactInformationProps) {
             />
           </div>
 
-          {/* State */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              State
+              State <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -179,30 +170,28 @@ function ContactInformation({ onNext, onBack }: ContactInformationProps) {
             />
           </div>
 
-          {/* Next Button */}
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
           <div className="pt-8">
             <button
               type="button"
               onClick={handleNext}
-              disabled={!isFormValid()}
+              disabled={!isFormValid() || isSubmitting}
               className={`w-full py-4 rounded-lg font-semibold text-white transition-all duration-200 ${
-                isFormValid()
+                isFormValid() && !isSubmitting
                   ? 'bg-teal-500 hover:bg-teal-600 active:bg-teal-700'
                   : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              Next
+              {isSubmitting ? 'Submitting...' : 'Next'}
             </button>
           </div>
         </div>
       </div>
-
-      {/* Support Button */}
-      <button className="fixed bottom-6 right-6 w-12 h-12 bg-teal-500 hover:bg-teal-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </button>
     </div>
   );
 }

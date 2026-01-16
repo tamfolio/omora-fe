@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ChevronDown, Mail, Info } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Info } from 'lucide-react';
 import Logo from '../../Logo';
+import kycApiService from '@/lib/kyc-api-service';
 
 interface DirectorInformationProps {
   onNext: () => void;
@@ -13,10 +14,12 @@ interface SelectOption {
 }
 
 interface FormData {
-  fullName: string;
-  email: string;
-  phoneNumber: string;
+  firstName: string;
+  lastName: string;
+  mobileNumber: string;
   address: string;
+  city: string;
+  state: string;
   role: string;
   bvn: string;
 }
@@ -33,10 +36,12 @@ const roleOptions = [
 
 function DirectorInformation({ onNext, onBack }: DirectorInformationProps) {
   const [formData, setFormData] = useState<FormData>({
-    fullName: '',
-    email: '',
-    phoneNumber: '',
+    firstName: '',
+    lastName: '',
+    mobileNumber: '',
     address: '',
+    city: '',
+    state: '',
     role: '',
     bvn: ''
   });
@@ -68,8 +73,19 @@ function DirectorInformation({ onNext, onBack }: DirectorInformationProps) {
   };
 
   const formatPhoneNumber = (value: string) => {
-    // Remove any non-digit characters
-    return value.replace(/\D/g, '');
+    // Remove all non-digit characters
+    let digits = value.replace(/\D/g, '');
+    
+    // Handle different input formats
+    if (digits.startsWith('234')) {
+      digits = digits.slice(0, 13); // 234 + 10 digits
+    } else if (digits.startsWith('0')) {
+      digits = '234' + digits.slice(1, 11);
+    } else if (digits.length > 0) {
+      digits = '234' + digits.slice(0, 10);
+    }
+    
+    return digits ? `+${digits}` : '';
   };
 
   const formatBVN = (value: string) => {
@@ -77,26 +93,50 @@ function DirectorInformation({ onNext, onBack }: DirectorInformationProps) {
     return value.replace(/\D/g, '').slice(0, 11);
   };
 
-  const isValidEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   const isFormValid = () => {
-    return formData.fullName.trim() !== '' &&
-           formData.email.trim() !== '' &&
-           isValidEmail(formData.email) &&
-           formData.phoneNumber.trim() !== '' &&
+    return formData.firstName.trim() !== '' &&
+           formData.lastName.trim() !== '' &&
+           formData.mobileNumber.trim() !== '' &&
+           formData.mobileNumber.length >= 14 && // +234 + 10 digits
            formData.address.trim() !== '' &&
+           formData.city.trim() !== '' &&
+           formData.state.trim() !== '' &&
            formData.role !== '' &&
            formData.bvn.trim() !== '' &&
            formData.bvn.length === 11;
   };
 
-  const handleNext = () => {
-    if (isFormValid()) {
-      console.log('Director Information:', formData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleNext = async () => {
+    if (!isFormValid()) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const apiData = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        mobileNumber: formData.mobileNumber,
+        address: formData.address.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim(),
+        role: formData.role,
+        bvn: formData.bvn
+      };
+
+      console.log('Submitting director information:', apiData);
+      const response = await kycApiService.submitDirectorInformation(apiData);
+      
+      console.log('Director information submitted successfully:', response);
       onNext();
+    } catch (err: any) {
+      console.error('Error submitting director information:', err);
+      setError(err.message || 'Failed to submit director information. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -139,37 +179,32 @@ function DirectorInformation({ onNext, onBack }: DirectorInformationProps) {
         </h1>
 
         <div className="space-y-6">
-          {/* Full Name */}
+          {/* First Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name <span className="text-red-500">*</span>
+              First Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              placeholder="Enter your first name"
-              value={formData.fullName}
-              onChange={(e) => handleInputChange('fullName', e.target.value)}
+              placeholder="Enter first name"
+              value={formData.firstName}
+              onChange={(e) => handleInputChange('firstName', e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
             />
-            <p className="text-xs text-gray-500 mt-1">Surname First</p>
           </div>
 
-          {/* Email */}
+          {/* Last Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email <span className="text-red-500">*</span>
+              Last Name <span className="text-red-500">*</span>
             </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="email"
-                placeholder="olivia@untitledui.com"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
-              />
-              <Info className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            </div>
+            <input
+              type="text"
+              placeholder="Enter last name"
+              value={formData.lastName}
+              onChange={(e) => handleInputChange('lastName', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
+            />
           </div>
 
           {/* Phone Number */}
@@ -179,24 +214,53 @@ function DirectorInformation({ onNext, onBack }: DirectorInformationProps) {
             </label>
             <input
               type="tel"
-              placeholder="Enter your phone number"
-              value={formData.phoneNumber}
-              onChange={(e) => handleInputChange('phoneNumber', formatPhoneNumber(e.target.value))}
+              placeholder="+2348012345678"
+              value={formData.mobileNumber}
+              onChange={(e) => handleInputChange('mobileNumber', formatPhoneNumber(e.target.value))}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
             />
+            <p className="text-xs text-gray-500 mt-1">Format: +234XXXXXXXXXX</p>
           </div>
 
           {/* Address */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Address
+              Address <span className="text-red-500">*</span>
             </label>
             <textarea
-              placeholder="Enter your street name"
+              placeholder="Enter street address"
               value={formData.address}
               onChange={(e) => handleInputChange('address', e.target.value)}
               rows={3}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors resize-none"
+            />
+          </div>
+
+          {/* City */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              City <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Enter city"
+              value={formData.city}
+              onChange={(e) => handleInputChange('city', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
+            />
+          </div>
+
+          {/* State */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              State <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Enter state"
+              value={formData.state}
+              onChange={(e) => handleInputChange('state', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
             />
           </div>
 
@@ -236,7 +300,7 @@ function DirectorInformation({ onNext, onBack }: DirectorInformationProps) {
           {/* BVN */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              BVN
+              BVN <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -249,22 +313,29 @@ function DirectorInformation({ onNext, onBack }: DirectorInformationProps) {
               />
               <Info className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
-            <p className="text-xs text-gray-500 mt-1">This is a hint text to help user.</p>
+            <p className="text-xs text-gray-500 mt-1">Enter 11-digit Bank Verification Number</p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
 
           {/* Next Button */}
           <div className="pt-8">
             <button
               type="button"
               onClick={handleNext}
-              disabled={!isFormValid()}
+              disabled={!isFormValid() || isSubmitting}
               className={`w-full py-4 rounded-lg font-semibold text-white transition-all duration-200 ${
-                isFormValid()
+                isFormValid() && !isSubmitting
                   ? 'bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800'
                   : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              Next
+              {isSubmitting ? 'Submitting...' : 'Next'}
             </button>
           </div>
         </div>
