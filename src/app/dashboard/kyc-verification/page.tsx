@@ -1,15 +1,15 @@
 "use client";
-import BusinessInformation from "@/components/ui/UserDashboard/Kyc/BusinessInformation";
-import ContactInformation from "@/components/ui/UserDashboard/Kyc/ContactInformation";
+
+import BusinessInformation from "@/components/ui/UserDashboard/Kyc/Businessinformation";
+import ContactInformation from "@/components/ui/UserDashboard/Kyc/Contactinformation";
 import CountrySelect from "@/components/ui/UserDashboard/Kyc/CountrySelect";
 import DocumentUpload from "@/components/ui/UserDashboard/Kyc/DocumentUpload";
-import FacialRecognition from "@/components/ui/UserDashboard/Kyc/FacialRecognistion";
+import FacialRecognition from "@/components/ui/UserDashboard/Kyc/FacialRecognition";
 import KYCInitiation from "@/components/ui/UserDashboard/Kyc/KycInitiationPage";
 import PersonalInformation from "@/components/ui/UserDashboard/Kyc/PersonalInformation";
-import DirectorInformation from "@/components/ui/UserDashboard/Kyc/DirectorateInformation";
+import DirectorateInformation from "@/components/ui/UserDashboard/Kyc/DirectorateInformation";
 import CompanyRegDetails from "@/components/ui/UserDashboard/Kyc/CompanyRegDetails";
 import KycSuccessModal from "@/components/ui/UserDashboard/Kyc/SuccessModal";
-
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
