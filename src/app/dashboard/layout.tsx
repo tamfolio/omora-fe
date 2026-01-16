@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import Navbar from "@/components/website/Navbar";
+import Navbar from "@/components/website/NavBar";
 import Footer from "@/components/ui/Footer";
 
 export default function DashboardLayout({
