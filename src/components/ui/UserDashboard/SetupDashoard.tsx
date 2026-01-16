@@ -7,6 +7,7 @@ interface SetupStep {
   description: string;
   completed: boolean;
   current?: boolean;
+  userName?: string; 
 }
 
 interface Post {
@@ -24,9 +25,10 @@ interface SetupDashboardProps {
   recentPosts: Post[];
   onStepAction: (stepId: number) => void;
   onReadPost: (postId: string) => void;
+  userName?: string;
 }
 
-function SetupDashboard({ setupSteps, recentPosts, onStepAction, onReadPost }: SetupDashboardProps) {
+function SetupDashboard({ setupSteps, recentPosts, onStepAction, onReadPost, userName = 'User' }: SetupDashboardProps) {
   const completedSteps = setupSteps.filter(step => step.completed).length;
   const progressPercentage = Math.round((completedSteps / setupSteps.length) * 100);
 // 
@@ -53,7 +55,7 @@ function SetupDashboard({ setupSteps, recentPosts, onStepAction, onReadPost }: S
       <div className="w-full mx-auto px-20">
         {/* Header */}
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Welcome back, Olivia
+          Welcome back, {userName}
         </h1>
 
         {/* Setup Progress Card */}

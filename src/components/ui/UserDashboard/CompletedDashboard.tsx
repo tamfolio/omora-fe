@@ -15,9 +15,11 @@ interface Post {
 interface CompletedDashboardProps {
   recentPosts: Post[];
   onReadPost: (postId: string) => void;
+  userName?: string;
+
 }
 
-function CompletedDashboard({ recentPosts, onReadPost }: CompletedDashboardProps) {
+function CompletedDashboard({ recentPosts, onReadPost, userName = 'User' }: CompletedDashboardProps) {
   const [activeTimeframe, setActiveTimeframe] = useState('12 months');
   const [isDcaActive, setIsDcaActive] = useState(true);
 
@@ -46,7 +48,7 @@ function CompletedDashboard({ recentPosts, onReadPost }: CompletedDashboardProps
       <div className="w-full mx-auto px-20">
         {/* Header */}
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Welcome back, Olivia
+          Welcome back, {userName}
         </h1>
 
         {/* Time Toggle and Status Bar */}

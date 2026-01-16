@@ -1,15 +1,15 @@
 "use client";
-import BusinessInformation from "@/components/ui/UserDashboard/kyc/BusinessInformation";
-import ContactInformation from "@/components/ui/UserDashboard/kyc/ContactInformation";
-import CountrySelect from "@/components/ui/UserDashboard/kyc/CountrySelect";
-import DocumentUpload from "@/components/ui/UserDashboard/kyc/DocumentUpload";
-import FacialRecognition from "@/components/ui/UserDashboard/kyc/FacialRecognition";
-import KYCInitiation from "@/components/ui/UserDashboard/kyc/KycInitiationPage";
-import PersonalInformation from "@/components/ui/UserDashboard/kyc/PersonalInformation";
-import DirectorInformation from "@/components/ui/UserDashboard/kyc/DirectorateInformation";
-import CompanyRegDetails from "@/components/ui/UserDashboard/kyc/CompanyRegDetails";
-import KycSuccessModal from "@/components/ui/UserDashboard/kyc/SuccessModal";
-import KycUnsuccessfulModal from "@/components/ui/UserDashboard/kyc/UnsuccessfulModal";
+import BusinessInformation from "@/components/ui/UserDashboard/kyc/businessInformation";
+import ContactInformation from "@/components/ui/UserDashboard/kyc/contactInformation";
+import CountrySelect from "@/components/ui/UserDashboard/kyc/countrySelect";
+import DocumentUpload from "@/components/ui/UserDashboard/kyc/documentUpload";
+import FacialRecognition from "@/components/ui/UserDashboard/kyc/facialRecognition";
+import KYCInitiation from "@/components/ui/UserDashboard/kyc/kycInitiationPage";
+import PersonalInformation from "@/components/ui/UserDashboard/kyc/personalInformation";
+import DirectorInformation from "@/components/ui/UserDashboard/kyc/directorateInformation";
+import CompanyRegDetails from "@/components/ui/UserDashboard/kyc/companyRegDetails";
+import KycSuccessModal from "@/components/ui/UserDashboard/kyc/successModal";
+import KycUnsuccessfulModal from "@/components/ui/UserDashboard/kyc/unsuccessfulModal";
 
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
