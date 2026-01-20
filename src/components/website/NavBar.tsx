@@ -248,13 +248,13 @@ function Navbar() {
                   {!isLoading && (
                     <div className="flex items-center space-x-4">
                       <Link
-                        href="/auth/login"
+                        href="/"
                         className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200"
                       >
                         Login
                       </Link>
                       <Link
-                        href="/auth/signup"
+                        href="/"
                         className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
                       >
                         Sign Up
