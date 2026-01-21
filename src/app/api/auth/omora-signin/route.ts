@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 const API_BASE_URL = process.env.API_BASE_URL!;
 const API_KEY = process.env.OMORA_API_KEY!;
@@ -7,21 +7,19 @@ export async function POST(request: NextRequest) {
   try {
     if (!API_KEY) {
       return NextResponse.json(
-        { error: 'API key not configured' },
-        { status: 500 }
+        { error: "API key not configured" },
+        { status: 500 },
       );
     }
 
     const body = await request.json();
     const { identifier, password } = body;
 
-    console.log('Omora sign-in attempt for:', identifier);
-
     const response = await fetch(`${API_BASE_URL}/user/api/v1/sign-in`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
+        "Content-Type": "application/json",
+        "x-api-key": API_KEY,
       },
       body: JSON.stringify({
         identifier,
@@ -30,17 +28,19 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await response.json();
-    console.log('Sign-in response:', data);
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: data.message || 'Invalid credentials' },
-        { status: response.status }
+        { error: data.message || "Invalid credentials" },
+        { status: response.status },
       );
     }
 
     // Check if OTP is required
-    if (data.status === 'success' || data.message?.toLowerCase().includes('otp')) {
+    if (
+      data.status === "success" ||
+      data.message?.toLowerCase().includes("otp")
+    ) {
       return NextResponse.json({
         success: true,
         requiresOtp: true,
@@ -50,10 +50,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Sign-in error:', error);
+    console.error("Sign-in error:", error);
     return NextResponse.json(
-      { error: 'An error occurred during sign in' },
-      { status: 500 }
+      { error: "An error occurred during sign in" },
+      { status: 500 },
     );
   }
 }

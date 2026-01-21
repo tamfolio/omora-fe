@@ -74,13 +74,6 @@ export default function FirstTimeLogin() {
       setShowManualCodeModal(false);
       setCompletedSteps((prev) => [...prev, 1]);
       setManualCode("");
-
-      // Don't auto-redirect, let user complete email verification
-      // if (completedSteps.length + 1 === verificationSteps.length) {
-      //   setTimeout(() => {
-      //     router.push("/dashboard");
-      //   }, 1000);
-      // }
     }
   };
 
@@ -103,11 +96,6 @@ export default function FirstTimeLogin() {
       setShowEmailVerificationModal(false);
       setCompletedSteps((prev) => [...prev, 2]);
       setEmailCode("");
-
-      // Don't auto-redirect immediately, show completion state first
-      // setTimeout(() => {
-      //   router.push("/dashboard");
-      // }, 1000);
     }
   };
 

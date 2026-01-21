@@ -1,40 +1,40 @@
-import type { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
+import type { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 // Define custom types without extending JWT to avoid conflicts
 interface CustomUser {
-  id: string
-  email: string
-  name: string
-  role: string
-  accessToken: string
-  refreshToken: string
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  accessToken: string;
+  refreshToken: string;
 }
 
 interface CustomToken {
-  accessToken?: string
-  refreshToken?: string
-  accessTokenExpires?: number
+  accessToken?: string;
+  refreshToken?: string;
+  accessTokenExpires?: number;
   user?: {
-    id: string
-    email: string
-    name: string
-    role: string
-  }
-  error?: string
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+  };
+  error?: string;
   // Include standard JWT properties without extending
-  sub?: string
-  name?: string | null
-  email?: string | null
-  picture?: string | null
-  iat?: number
-  exp?: number
-  jti?: string
+  sub?: string;
+  name?: string | null;
+  email?: string | null;
+  picture?: string | null;
+  iat?: number;
+  exp?: number;
+  jti?: string;
 }
 
 interface RefreshResponse {
-  accessToken: string
-  refreshToken?: string
+  accessToken: string;
+  refreshToken?: string;
 }
 
 async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
@@ -47,7 +47,7 @@ async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
       }),
     });
 
-    const refreshedTokens: RefreshResponse = await response.json()
+    const refreshedTokens: RefreshResponse = await response.json();
 
     if (!response.ok) throw refreshedTokens;
 
@@ -56,25 +56,25 @@ async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
       accessToken: refreshedTokens.accessToken,
       accessTokenExpires: Date.now() + 60 * 60 * 1000,
       refreshToken: refreshedTokens.refreshToken ?? token.refreshToken,
-    }
+    };
   } catch {
     return {
       ...token,
       error: "RefreshAccessTokenError",
-    }
+    };
   }
 }
 
 declare module "next-auth" {
   interface Session {
     user: {
-      id: string
-      email: string
-      name: string
-      role: string
-    }
-    accessToken?: string
-    error?: string
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+    };
+    accessToken?: string;
+    error?: string;
   }
 }
 
@@ -103,9 +103,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-console.log('Auth endpoint:', process.env.API_AUTH_ENDPOINT)
         try {
-          
           const response = await fetch(`${process.env.API_AUTH_ENDPOINT}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -117,8 +115,8 @@ console.log('Auth endpoint:', process.env.API_AUTH_ENDPOINT)
 
           if (!response.ok) return null;
 
-          const user = await response.json()
-          
+          const user = await response.json();
+
           // Return user object that will be stored in JWT
           if (user && user.id) {
             return {
@@ -128,13 +126,13 @@ console.log('Auth endpoint:', process.env.API_AUTH_ENDPOINT)
               role: user.role,
               accessToken: user.accessToken,
               refreshToken: user.refreshToken,
-            } as CustomUser
+            } as CustomUser;
           }
-          
-          return null
+
+          return null;
         } catch (error) {
-          console.error('Auth error:', error)
-          return null
+          console.error("Auth error:", error);
+          return null;
         }
       },
     }),
@@ -150,11 +148,10 @@ console.log('Auth endpoint:', process.env.API_AUTH_ENDPOINT)
   },
 
   callbacks: {
-  
     async jwt({ token, user, account }) {
       // Initial sign in
       if (account && user) {
-        const customUser = user as CustomUser
+        const customUser = user as CustomUser;
         const customToken: CustomToken = {
           ...token,
           accessToken: customUser.accessToken,
@@ -165,37 +162,37 @@ console.log('Auth endpoint:', process.env.API_AUTH_ENDPOINT)
             email: customUser.email,
             name: customUser.name,
             role: customUser.role,
-          }
-        }
+          },
+        };
         // Use unknown instead of any for ESLint compliance
-        return customToken as unknown as typeof token
+        return customToken as unknown as typeof token;
       }
 
-      const customToken = token as CustomToken
+      const customToken = token as CustomToken;
 
       // Return previous token if the access token has not expired yet
       if (Date.now() < (customToken.accessTokenExpires || 0)) {
-        return customToken as unknown as typeof token
+        return customToken as unknown as typeof token;
       }
 
       // Access token has expired, try to update it
-      const refreshedToken = await refreshAccessToken(customToken)
-      return refreshedToken as unknown as typeof token
+      const refreshedToken = await refreshAccessToken(customToken);
+      return refreshedToken as unknown as typeof token;
     },
 
     async session({ session, token }) {
-      const customToken = token as CustomToken
-      
+      const customToken = token as CustomToken;
+
       if (customToken.user) {
-        session.user = customToken.user
+        session.user = customToken.user;
       }
-      session.accessToken = customToken.accessToken || ''
+      session.accessToken = customToken.accessToken || "";
       if (customToken.error) {
-        session.error = customToken.error
+        session.error = customToken.error;
       }
-      
-      return session
-    }
+
+      return session;
+    },
   },
 
   pages: {

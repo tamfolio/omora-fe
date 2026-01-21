@@ -27,9 +27,7 @@ function MainPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
- 
   const [userName, setUserName] = useState("User");
-
   const [isLoading, setIsLoading] = useState(true);
   const [isKycCompleted, setIsKycCompleted] = useState(false);
   const [isRiskProfileCompleted, setIsRiskProfileCompleted] = useState(false);
@@ -52,20 +50,36 @@ function MainPage() {
           }
 
           const result = await response.json();
-          // console.log("API Result:", result); 
 
           if (result.status === "success") {
             const { data } = result;
 
-          
+            // Set user name
             if (data.user?.firstName) {
-             
-                const rawName = data.user.firstName;
-                const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
-                setUserName(formattedName);
+              const rawName = data.user.firstName;
+              const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+              setUserName(formattedName);
             }
 
-            setIsKycCompleted(data.onboardingState?.currentStepStatus === "C");
+            // FIX: Check if user has COMPLETED KYC (including liveness)
+            // currentStepStatus 'C' at 'verify-liveness' means user is ON that step, not completed
+            // KYC is only complete when currentStep is 'dashboard' or nextStep is 'dashboard'
+            const kycSteps = [
+              'verify-email', 
+              'create-pin', 
+              'verify-country', 
+              'personal-info', 
+              'contact-info', 
+              'document-upload', 
+              'facial-recognition',
+              'verify-liveness'
+            ];
+            const currentStep = data.onboardingState?.currentStep;
+            
+            // KYC is done ONLY when currentStep is 'dashboard'
+            const isKycDone = currentStep === 'dashboard';
+            
+            setIsKycCompleted(isKycDone);
             setIsRiskProfileCompleted(data.user?.isRiskProfile === true);
             setIsAccountFunded(data.personalWallet?.availableBalance > 0);
           }
@@ -82,7 +96,6 @@ function MainPage() {
     }
   }, [status, session]);
 
-  // ... (Keep your setupSteps array logic) ...
   const setupSteps: SetupStep[] = [
     {
       id: 1,
@@ -114,38 +127,37 @@ function MainPage() {
     },
   ];
 
-  // ... (Keep recentPosts array) ...
   const recentPosts: Post[] = [
     {
-        id: "1",
-        author: "Lana Steiner",
-        date: "18 Jan 2025",
-        title: "NFT Market Experiences Significant Development",
-        description:
-          "The rise of RESTful APIs has been met by a rise in tools for creating, testing, and managing them.",
-        category: "NFT",
-        image: "/images/image1.jpg",
-      },
-      {
-        id: "2",
-        author: "Natali Craig",
-        date: "14 Jan 2025",
-        title: "Ethereum's Recent Surge May Lead to...",
-        description:
-          "Collaboration can make our teams stronger, and our individual designs better.",
-        category: "BTC",
-        image: "/images/image2.jpg",
-      },
-      {
-        id: "3",
-        author: "Natali Craig",
-        date: "14 Jan 2025",
-        title: "Ethereum's Recent Surge May Lead to...",
-        description:
-          "Collaboration can make our teams stronger, and our individual designs better.",
-        category: "ALT",
-        image: "/images/image2.jpg",
-      },
+      id: "1",
+      author: "Lana Steiner",
+      date: "18 Jan 2025",
+      title: "NFT Market Experiences Significant Development",
+      description:
+        "The rise of RESTful APIs has been met by a rise in tools for creating, testing, and managing them.",
+      category: "NFT",
+      image: "/images/image1.jpg",
+    },
+    {
+      id: "2",
+      author: "Natali Craig",
+      date: "14 Jan 2025",
+      title: "Ethereum's Recent Surge May Lead to...",
+      description:
+        "Collaboration can make our teams stronger, and our individual designs better.",
+      category: "BTC",
+      image: "/images/image2.jpg",
+    },
+    {
+      id: "3",
+      author: "Natali Craig",
+      date: "14 Jan 2025",
+      title: "Ethereum's Recent Surge May Lead to...",
+      description:
+        "Collaboration can make our teams stronger, and our individual designs better.",
+      category: "ALT",
+      image: "/images/image2.jpg",
+    },
   ];
 
   const completedStepsCount = setupSteps.filter((step) => step.completed).length;
@@ -154,11 +166,11 @@ function MainPage() {
   const handleStepAction = (stepId: number) => {
     if (stepId === 1) router.push("/dashboard/kyc-verification");
     if (stepId === 2) router.push("/dashboard/risk-profile");
-    if (stepId === 3) router.push("/dashboard/wallet/deposit");
+    if (stepId === 3) router.push("/dashboard/fund-wallet");
   };
 
   const handleReadPost = (postId: string) => {
-    console.log(`Reading post: ${postId}`);
+   
   };
 
   if (isLoading) {
@@ -175,7 +187,7 @@ function MainPage() {
         <CompletedDashboard
           recentPosts={recentPosts}
           onReadPost={handleReadPost}
-          userName={userName} 
+          userName={userName}
         />
       ) : (
         <SetupDashboard
@@ -183,7 +195,7 @@ function MainPage() {
           recentPosts={recentPosts}
           onStepAction={handleStepAction}
           onReadPost={handleReadPost}
-          userName={userName} 
+          userName={userName}
         />
       )}
     </div>
