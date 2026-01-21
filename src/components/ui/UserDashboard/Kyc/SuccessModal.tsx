@@ -10,9 +10,7 @@ function KycSuccessModal({ onGoToDashboard }: KycSuccessModalProps) {
     if (onGoToDashboard) {
       onGoToDashboard();
     } else {
-      // For Next.js, you should pass a navigation function from the parent component
-      // that uses useRouter or Link component
-      console.log('Navigation to dashboard should be handled by parent component');
+      
     }
   };
 

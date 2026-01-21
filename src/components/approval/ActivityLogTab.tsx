@@ -60,7 +60,6 @@ const ActivityLogTab = () => {
   const handleDateRangeSelect = (startDate: Date | null, endDate: Date | null) => {
     setSelectedStartDate(startDate);
     setSelectedEndDate(endDate);
-    console.log("Date range selected:", { startDate, endDate });
   };
 
   const handleCalendarToggle = () => {

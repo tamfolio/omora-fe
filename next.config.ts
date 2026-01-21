@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
         // When the frontend calls '/user/api/...'
         source: "/user/api/:path*",
         
-        destination: "https://api.omora.com/user/api/:path*", 
+        destination: "https://api.omora.africa/:path*", 
       },
     ];
   },

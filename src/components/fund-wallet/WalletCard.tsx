@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CiCircleQuestion } from "react-icons/ci";
 import { IoCopyOutline } from "react-icons/io5";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -65,8 +65,46 @@ interface WalletCardProps {
   tooltipContent: string;
 }
 
+interface WalletAccountDetails {
+  accountNumber: string;
+  bankName: string;
+  accountName: string;
+}
+
 const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }) => {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
+  const [accountDetails, setAccountDetails] = useState<WalletAccountDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAccountDetails = async () => {
+      try {
+        const response = await fetch('/api/proxy/user/api/v1/me');
+        const result = await response.json();
+
+        if (result.status === 'success' && result.data) {
+          const { personalWallet, user } = result.data;
+          
+          setAccountDetails({
+            accountNumber: personalWallet?.accountNumber || '',
+            bankName: personalWallet?.bankName || '',
+            accountName: `${user.firstName} ${user.lastName}` || ''
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch account details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only fetch for naira wallet type
+    if (type === 'naira') {
+      fetchAccountDetails();
+    } else {
+      setLoading(false);
+    }
+  }, [type]);
 
   const getCardContent = () => {
     switch (type) {
@@ -74,17 +112,21 @@ const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }
         return {
           title: 'Naira Balance',
           balanceDisplay: `NGN ${balance?.toLocaleString() || "0"}`,
-          details: (
+          details: loading ? (
+            <div className="text-sm text-gray-500">Loading account details...</div>
+          ) : accountDetails ? (
             <div className="space-y-2 text-sm text-gray-600">
-              <div className="font-medium">Stanbic IBTC Bank</div>
+              <div className="font-medium">{accountDetails.bankName}</div>
               <div className="flex items-center justify-between">
-                <span>Account Name: <span className="font-medium">John Doe Micham</span></span>
+                <span>Account Name: <span className="font-medium">{accountDetails.accountName}</span></span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Account Number: <span className="font-medium">0123456789</span></span>
-                <CopyButton text="0123456789" />
+                <span>Account Number: <span className="font-medium">{accountDetails.accountNumber}</span></span>
+                <CopyButton text={accountDetails.accountNumber} />
               </div>
             </div>
+          ) : (
+            <div className="text-sm text-gray-500">Account details unavailable</div>
           )
         };
       

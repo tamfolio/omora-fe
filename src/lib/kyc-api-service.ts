@@ -11,10 +11,9 @@ export interface ApiResponse<T = any> {
 }
 
 export interface LivenessCheckInitiateRequest {
-  type: 'NIN';
-  value: string;
   dob: string;
   gender: 'MALE' | 'FEMALE';
+  idNumber: string;  
   employmentStatus?: string;
   pep?: string;
 }
@@ -26,6 +25,55 @@ export interface LivenessCheckInitiateResponse {
   status: string;
   statusCode: string;
   message?: string;
+}
+
+// NEW: Verification Response Types
+export interface VerificationResponse {
+  status: 'VERIFIED' | 'FAILED';
+  message: string | null;
+  gender?: string;
+  birthdate?: string;
+}
+
+export interface VerifyIdRequest {
+  idNumber: string;
+}
+
+// NEW: User Data Types
+export interface UserData {
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    emailAddress: string;
+    mobileNumber: string;
+    gender: string | null;
+    sex: string | null;
+    address: string;
+    username: string;
+    middleName: string | null;
+    state: string;
+    dateOfBirth: string;
+    city: string;
+    country: string | null;
+    role: string;
+    onboardingState: any;
+  };
+  verification: Array<{
+    id: number;
+    type: string;
+    value: string;
+    status: string;
+    remarks: string;
+    verificationReference: string;
+    expiryDate: string | null;
+  }>;
+  onboardingState: {
+    progress: number;
+    nextStep: string;
+    currentStep: string;
+    currentStepStatus: string;
+  };
 }
 
 export type PersonalInformationData = {
@@ -103,6 +151,29 @@ const makeAuthenticatedRequest = async <T>(
   }
 };
 
+// NEW: Get User Data
+export const getUserKycStatus = async (): Promise<ApiResponse<UserData>> => {
+  return makeAuthenticatedRequest<ApiResponse<UserData>>('/user/api/v1/me', 'GET');
+};
+
+// NEW: Verify NIN
+export const verifyNIN = async (idNumber: string): Promise<VerificationResponse> => {
+  return makeAuthenticatedRequest<VerificationResponse>(
+    '/user/verification/verify/nin',
+    'POST',
+    { idNumber }
+  );
+};
+
+// NEW: Verify BVN
+export const verifyBVN = async (idNumber: string): Promise<VerificationResponse> => {
+  return makeAuthenticatedRequest<VerificationResponse>(
+    '/user/verification/verify/bvn',
+    'POST',
+    { idNumber }
+  );
+};
+
 export const submitPersonalInformation = async (
   data: PersonalInformationData
 ): Promise<ApiResponse> => {
@@ -133,7 +204,7 @@ export const uploadDocument = async (
 export const initiateLivenessCheck = async (
   data: LivenessCheckInitiateRequest
 ): Promise<LivenessCheckInitiateResponse> => {
-  return makeAuthenticatedRequest<LivenessCheckInitiateResponse>('/user/verification/verify-initiate', 'POST', data);
+  return makeAuthenticatedRequest<LivenessCheckInitiateResponse>('/user/verification/initiate/liveness', 'POST', data);
 };
 
 export const submitBusinessInformation = async (
@@ -199,6 +270,22 @@ export const formatDateForAPI = (date: Date | string): string => {
 export const validateBVN = (bvn: string): boolean => /^\d{11}$/.test(bvn);
 export const validateNIN = (nin: string): boolean => /^\d{11}$/.test(nin);
 
+// NEW: Check if both NIN and BVN are verified
+export const checkVerificationStatus = (verifications: Array<{type: string; status: string}>): {
+  ninVerified: boolean;
+  bvnVerified: boolean;
+  bothVerified: boolean;
+} => {
+  const ninVerified = verifications.some(v => v.type === 'NIN' && v.status === 'C');
+  const bvnVerified = verifications.some(v => v.type === 'BVN' && v.status === 'C');
+  
+  return {
+    ninVerified,
+    bvnVerified,
+    bothVerified: ninVerified && bvnVerified
+  };
+};
+
 export class KYCAPIError extends Error {
   statusCode?: string;
   constructor(message: string, statusCode?: string) {
@@ -214,6 +301,9 @@ export const handleAPIError = (error: any): string => {
 };
 
 const kycApiService = {
+  getUserKycStatus,
+  verifyNIN,
+  verifyBVN,
   submitPersonalInformation,
   submitPersonalContactInformation,
   uploadDocument,
@@ -230,6 +320,7 @@ const kycApiService = {
   formatDateForAPI,
   validateBVN,
   validateNIN,
+  checkVerificationStatus,
   handleAPIError,
 };
 

@@ -1,9 +1,9 @@
 "use client";
-import InitiateQuiz from "@/components/ui/UserDashboard/risk-profile/InitiateQuiz";
-import Questionnaire from "@/components/ui/UserDashboard/risk-profile/Questioniarre";  
-import QuizResult from "@/components/ui/UserDashboard/risk-profile/QuizResult";
-import ChangeRiskProfile from "@/components/ui/UserDashboard/risk-profile/ChangeRiskProfile";
-import RiskProfileSuccess from "@/components/ui/UserDashboard/risk-profile/RiskProfileSuccess";
+import InitiateQuiz from "@/components/ui/UserDashboard/risk-profile/initiateQuiz";
+import Questionnaire from "@/components/ui/UserDashboard/risk-profile/questioniarre";
+import QuizResult from "@/components/ui/UserDashboard/risk-profile/quizResult";
+import ChangeRiskProfile from "@/components/ui/UserDashboard/risk-profile/changeRiskProfile";
+import RiskProfileSuccess from "@/components/ui/UserDashboard/risk-profile/riskProfileSuccess";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -63,10 +63,8 @@ function Page() {
       // 1. Calculate the score on the frontend
       const averageScore = riskProfileApiService.calculateRiskPointsAverage(
         questions,
-        answerIds
+        answerIds,
       );
-
-      console.log("📊 Calculated Average Score:", averageScore);
 
       // Safety check: ensure score is within 3-7 range to prevent API error
       if (averageScore < 3 || averageScore > 7) {
@@ -78,12 +76,11 @@ function Page() {
       const response =
         await riskProfileApiService.getRiskProfileRecommendation(averageScore);
 
-    if (response.data && response.data.recommended) {
-      
-      // Map "Low"/"Balanced"/"High" to your UI state
-      const profile = riskProfileApiService.mapProfileToUserFriendly(response.data.recommended);
-      
-      console.log('✅ Backend Recommendation:', profile);
+      if (response.data && response.data.recommended) {
+        // Map "Low"/"Balanced"/"High" to your UI state
+        const profile = riskProfileApiService.mapProfileToUserFriendly(
+          response.data.recommended,
+        );
 
         setRecommendedProfile(profile);
         setSelectedProfile(profile);
@@ -104,24 +101,21 @@ function Page() {
   };
 
   const handleAcceptProfile = async () => {
-  setIsLoading(true);
-  try {
-    // 1. Save to backend
-    await riskProfileApiService.saveRiskProfile(selectedProfile);
-    
-    console.log(' Profile saved successfully!');
-    
-    // 2. ONLY show success screen if the save worked
-    setCurrentStep('success');
+    setIsLoading(true);
+    try {
+      // 1. Save to backend
+      await riskProfileApiService.saveRiskProfile(selectedProfile);
 
-  } catch (err: any) {
-    console.error("Failed to save profile", err);
-    setError(err.message || "Failed to save your profile. Please try again.");
-    // We stay on the Result screen so they can try again
-  } finally {
-    setIsLoading(false);
-  }
-};
+      // 2. ONLY show success screen if the save worked
+      setCurrentStep("success");
+    } catch (err: any) {
+      console.error("Failed to save profile", err);
+      setError(err.message || "Failed to save your profile. Please try again.");
+      // We stay on the Result screen so they can try again
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleChangeProfile = () => {
     setCurrentStep("change-profile");
@@ -129,10 +123,6 @@ function Page() {
 
   const handleProfileChange = (newProfile: string) => {
     setSelectedProfile(newProfile as RiskProfile);
-
-    // TODO: Save to backend when save endpoint is available
-    console.log("✅ User manually changed profile to:", newProfile);
-    console.log("📊 Answer IDs:", selectedAnswerIds);
 
     setCurrentStep("success");
   };

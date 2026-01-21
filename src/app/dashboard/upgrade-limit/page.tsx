@@ -102,9 +102,6 @@ export default function UpgradeLimitPage() {
 
   const handleSubmit = () => {
     if (document && document.status === "success") {
-      // Handle submission logic here
-      console.log("Document submitted:", document);
-      // Show success modal
       setShowSuccessModal(true);
     }
   };

@@ -132,12 +132,6 @@ const authOptions: NextAuthOptions = {
       async authorize(credentials): Promise<User | null> {
         if (!credentials || !credentials.accessToken) return null;
 
-        console.log('NextAuth direct credentials authorize:', {
-          email: credentials.email,
-          userId: credentials.userId,
-          isFirstLogin: credentials.isFirstLogin,
-          rememberMe: credentials.rememberMe, // Log it
-        });
 
         return {
           id: credentials.userId || credentials.email,
