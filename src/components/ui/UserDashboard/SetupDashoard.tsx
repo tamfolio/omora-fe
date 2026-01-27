@@ -31,7 +31,7 @@ interface SetupDashboardProps {
 function SetupDashboard({ setupSteps, recentPosts, onStepAction, onReadPost, userName = 'User' }: SetupDashboardProps) {
   const completedSteps = setupSteps.filter(step => step.completed).length;
   const progressPercentage = Math.round((completedSteps / setupSteps.length) * 100);
-// 
+
   const getStepButtonText = (step: SetupStep) => {
     if (step.completed) return 'Completed';
     if (step.current) {

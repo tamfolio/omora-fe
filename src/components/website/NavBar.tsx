@@ -1,5 +1,6 @@
 "use client"
 import React, { useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Search, Settings, Bell, User, LogOut, PiggyBank, Wallet, Briefcase, HelpCircle } from "lucide-react";
@@ -49,10 +50,27 @@ function Navbar() {
     return "User";
   };
 
-  const getFirstName = () => {
-    const fullName = getDisplayName();
-    return fullName.split(" ")[0];
+const [userName, setUserName] = useState("User");
+
+
+useEffect(() => {
+  const fetchUserName = async () => {
+    try {
+      const response = await fetch("/api/proxy/user/api/v1/me");
+      const result = await response.json();
+      
+      if (result.status === "success" && result.data.user?.firstName) {
+        const rawName = result.data.user.firstName;
+        const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+        setUserName(formattedName);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user name", error);
+    }
   };
+
+  fetchUserName();
+}, []);
 
   const authenticatedNavItems = [
     { name: "Dashboard", href: "/dashboard" },
@@ -154,7 +172,7 @@ function Navbar() {
                             )}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-gray-900 truncate">
-                                {getDisplayName()}
+                                {userName}
                               </p>
                               <p className="text-xs text-gray-500 truncate">
                                 {user?.email}
