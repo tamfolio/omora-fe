@@ -186,20 +186,7 @@ export const submitPersonalContactInformation = async (
   return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/personal/contact/information', 'POST', data);
 };
 
-export const uploadDocument = async (
-  file: File,
-  documentType: string
-): Promise<ApiResponse> => {
-  // Simulate upload delay
-  await new Promise((resolve) => setTimeout(resolve, 1500));
 
-  return {
-    status: 'success',
-    statusCode: '200',
-    message: 'Document uploaded successfully',
-    data: { reference: `DOC-${Date.now()}` }
-  };
-};
 
 export const initiateLivenessCheck = async (
   data: LivenessCheckInitiateRequest
@@ -306,7 +293,6 @@ const kycApiService = {
   verifyBVN,
   submitPersonalInformation,
   submitPersonalContactInformation,
-  uploadDocument,
   initiateLivenessCheck,
   submitBusinessInformation,
   submitDirectorInformation,
