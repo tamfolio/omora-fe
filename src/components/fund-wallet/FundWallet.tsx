@@ -26,7 +26,7 @@ interface WithdrawData {
   description: string;
 }
 
-// Custom hook to manage user deposit state
+// UPDATED: Fetch real balances from API
 function useUserDeposits() {
   const [hasDeposits, setHasDeposits] = useState(false);
   const [userBalances, setUserBalances] = useState<UserBalances>({
@@ -40,13 +40,37 @@ function useUserDeposits() {
   useEffect(() => {
     setIsClient(true);
 
-    const checkDepositHistory = async () => {
+    const fetchWalletBalance = async () => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Fetch from API
+        const response = await fetch('/api/proxy/user/api/v1/me');
+        const result = await response.json();
 
+        if (result.status === 'success' && result.data?.personalWallet) {
+          const { availableBalance } = result.data.personalWallet;
+          
+          // Set real balance from API
+          const balances = {
+            naira: availableBalance || 0,
+            usdt: 0, // TODO: Add USDT balance when available from API
+            usdc: 0, // TODO: Add USDC balance when available from API
+          };
+
+          setUserBalances(balances);
+          setHasDeposits(availableBalance > 0);
+
+          // Optional: Still save to localStorage for offline support
+          if (typeof window !== "undefined") {
+            localStorage.setItem("userHasDeposits", availableBalance > 0 ? "true" : "false");
+            localStorage.setItem("userBalances", JSON.stringify(balances));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching wallet balance:", error);
+        
+        // Fallback to localStorage if API fails
         if (typeof window !== "undefined") {
-          const hasDepositsStored =
-            localStorage.getItem("userHasDeposits") === "true";
+          const hasDepositsStored = localStorage.getItem("userHasDeposits") === "true";
           const storedBalances = localStorage.getItem("userBalances");
 
           if (hasDepositsStored && storedBalances) {
@@ -59,14 +83,12 @@ function useUserDeposits() {
             }
           }
         }
-      } catch (error) {
-        console.error("Error checking deposits:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkDepositHistory();
+    fetchWalletBalance();
   }, []);
 
   const updateUserDeposits = (newBalances: UserBalances) => {
@@ -133,14 +155,6 @@ export default function FundWalletComponent() {
     );
   }
 
-  const displayBalances = hasDeposits
-    ? userBalances
-    : {
-        usdc: 0,
-        naira: 0,
-        usdt: 0,
-      };
-
   return (
     <>
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -159,19 +173,19 @@ export default function FundWalletComponent() {
           <div className="grid grid-cols-3 gap-6 mb-8">
             <WalletCard
               type="naira"
-              balance={displayBalances.naira}
+              balance={userBalances.naira}
               tooltipContent="Your Naira balance. Fund this wallet directly in NGN and convert to USDC for investments or payouts."
             />
             
             <WalletCard
               type="usdt"
-              balance={displayBalances.usdt}
+              balance={userBalances.usdt}
               tooltipContent="Your earnings wallet. After a recurring investment is completed, both your capital and returns move here. From this wallet, you can withdraw to an external wallet address or convert back to NGN."
             />
             
             <WalletCard
               type="usdc"
-              balance={displayBalances.usdc}
+              balance={userBalances.usdc}
               tooltipContent="This is your investment wallet. Naira deposits convert to USDC here."
             />
           </div>
