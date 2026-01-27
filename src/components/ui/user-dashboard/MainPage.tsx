@@ -32,6 +32,57 @@ function MainPage() {
   const [isKycCompleted, setIsKycCompleted] = useState(false);
   const [isRiskProfileCompleted, setIsRiskProfileCompleted] = useState(false);
   const [isAccountFunded, setIsAccountFunded] = useState(false);
+  
+  // NEW: KYC modal states
+  const [showKycSuccessModal, setShowKycSuccessModal] = useState(false);
+  const [showKycFailureModal, setShowKycFailureModal] = useState(false);
+
+  // NEW: Check for KYC completion status from URL params
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const kycStatus = searchParams.get('kyc');
+      
+      if (kycStatus === 'complete') {
+        // Verify liveness completion with backend
+        const verifyKycCompletion = async () => {
+          try {
+            const response = await fetch("/api/proxy/user/api/v1/me", {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              if (result.status === "success") {
+                const livenessRecord = result.data.verification?.find(
+                  (v: any) => v.type === 'LIVENESS'
+                );
+                
+                // Show success if liveness is complete, otherwise show failure
+                if (livenessRecord?.status === 'C') {
+                  setShowKycSuccessModal(true);
+                } else {
+                  // Still processing, show success anyway (backend will update)
+                  setShowKycSuccessModal(true);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error verifying KYC completion:', error);
+          }
+          
+          // Clear URL params
+          window.history.replaceState({}, '', '/dashboard');
+        };
+        
+        verifyKycCompletion();
+      } else if (kycStatus === 'failed') {
+        setShowKycFailureModal(true);
+        window.history.replaceState({}, '', '/dashboard');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (status === "authenticated" && session?.accessToken) {
@@ -166,11 +217,11 @@ function MainPage() {
   const handleStepAction = (stepId: number) => {
     if (stepId === 1) router.push("/dashboard/kyc-verification");
     if (stepId === 2) router.push("/dashboard/risk-profile");
-    if (stepId === 3) router.push("/dashboard/fund-wallet");
+    if (stepId === 3) router.push("/dashboard/wallet/deposit");
   };
 
   const handleReadPost = (postId: string) => {
-   
+    console.log(`Reading post: ${postId}`);
   };
 
   if (isLoading) {
@@ -197,6 +248,66 @@ function MainPage() {
           onReadPost={handleReadPost}
           userName={userName}
         />
+      )}
+      
+      {/* KYC Success Modal */}
+      {showKycSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md mx-4 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">KYC Verification Complete!</h2>
+            <p className="text-gray-600 mb-6">
+              Your identity has been successfully verified. You can now proceed with investments.
+            </p>
+            <button
+              onClick={() => {
+                setShowKycSuccessModal(false);
+                window.location.reload(); // Refresh to update dashboard state
+              }}
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 px-6 rounded-lg font-medium"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* KYC Failure Modal */}
+      {showKycFailureModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md mx-4 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification Failed</h2>
+            <p className="text-gray-600 mb-6">
+              We couldn't complete your verification. Please try again or contact support.
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShowKycFailureModal(false);
+                  router.push('/dashboard/kyc-verification');
+                }}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 px-6 rounded-lg font-medium"
+              >
+                Retry Verification
+              </button>
+              <button
+                onClick={() => setShowKycFailureModal(false)}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

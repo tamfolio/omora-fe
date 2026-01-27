@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Camera, RefreshCw } from "lucide-react";
-import Logo from "../../Logo";
-import kycApiService from "@/lib/kyc-api-service";
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Camera, RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import Logo from '../../Logo';
+import kycApiService from '@/lib/kyc-api-service';
 
 interface FacialRecognitionProps {
   onNext: () => void;
@@ -11,7 +12,7 @@ interface FacialRecognitionProps {
   nin?: string;
   bvn?: string;
   dateOfBirth?: string;
-  gender?: "MALE" | "FEMALE";
+  gender?: 'MALE' | 'FEMALE';
   phone?: string;
 }
 
@@ -24,128 +25,75 @@ declare global {
   }
 }
 
-function FacialRecognition({
-  onNext,
-  onBack,
+function FacialRecognition({ 
+  onNext, 
+  onBack, 
   firstName,
   lastName,
   nin,
-  bvn, // ← FIXED: Added bvn to destructuring
-  dateOfBirth,
+  bvn,
+  dateOfBirth, 
   gender,
-  phone,
+  phone
 }: FacialRecognitionProps) {
+  const router = useRouter();
   const [isVerifying, setIsVerifying] = useState(false);
   const [showManualButton, setShowManualButton] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [customerReference, setCustomerReference] = useState<string>("");
+  const [customerReference, setCustomerReference] = useState<string>('');
   const [verificationComplete, setVerificationComplete] = useState(false);
-  const [showContinueButton, setShowContinueButton] = useState(false);
-
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   const hasStartedRef = useRef(false);
-  const pollAttemptsRef = useRef(0);
 
   // Load QoreID SDK
   useEffect(() => {
     if (document.querySelector('script[src*="qoreid.js"]')) return;
 
-    const script = document.createElement("script");
-    script.src = "https://dashboard.qoreid.com/qoreid-sdk/qoreid.js";
+    const script = document.createElement('script');
+    script.src = 'https://dashboard.qoreid.com/qoreid-sdk/qoreid.js';
     script.async = true;
     document.body.appendChild(script);
-
-    return () => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    };
   }, []);
-
-  const stopPolling = () => {
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
-  };
-
-  const startPolling = () => {
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    pollAttemptsRef.current = 0;
-
-    pollIntervalRef.current = setInterval(async () => {
-      try {
-        pollAttemptsRef.current += 1;
-
-        // Check verification ping
-        const status: any = await kycApiService.verificationPing();
-        const isPingVerified =
-          status?.status === "verified" || status?.data?.status === "verified";
-
-        // Also check /me for liveness status update
-        const meData: any = await kycApiService.getUserKycStatus();
-        const livenessRecord = meData?.data?.verification?.find(
-          (v: any) => v.type === "LIVENESS",
-        );
-        const isLivenessComplete = livenessRecord?.status === "C";
-
-        // Check onboarding state
-        const onboardingState = meData?.data?.onboardingState;
-        const isOnDashboard = onboardingState?.currentStep === "dashboard";
-
-        console.log("Polling attempt:", pollAttemptsRef.current, {
-          isPingVerified,
-          isLivenessComplete,
-          isOnDashboard,
-        });
-
-        if (isPingVerified || isLivenessComplete || isOnDashboard) {
-          stopPolling();
-          setVerificationComplete(true);
-
-          // Auto-redirect after 2 seconds
-          setTimeout(() => {
-            onNext();
-          }, 2000);
-        }
-
-        // After 12 attempts (60 seconds), show manual continue button
-        if (pollAttemptsRef.current >= 12) {
-          setShowContinueButton(true);
-        }
-
-        // Stop polling after 24 attempts (2 minutes)
-        if (pollAttemptsRef.current >= 24) {
-          stopPolling();
-          setShowContinueButton(true);
-        }
-      } catch (error) {
-        console.log("Polling error:", error);
-      }
-    }, 5000);
-  };
 
   const triggerQoreIDSDK = () => {
     if (hasStartedRef.current) return;
-
+    
     hasStartedRef.current = true;
 
     try {
-      const button = document.getElementById("QoreIDButton");
+      const button = document.getElementById('QoreIDButton');
       if (button) {
         const newButton = button.cloneNode(true) as HTMLElement;
         button.parentNode?.replaceChild(newButton, button);
 
-        newButton.addEventListener("qoreid:verificationSubmitted", (() => {
-          startPolling();
+        // ✅ NEW: Immediate redirect on verification submission
+        newButton.addEventListener('qoreid:verificationSubmitted', (() => {
+          console.log('QoreID verification submitted - showing success state');
+          setVerificationComplete(true);
+          
+          // Redirect to dashboard with success flag after brief delay
+          setTimeout(() => {
+            console.log('Redirecting to dashboard with kyc=complete');
+            router.push('/dashboard?kyc=complete');
+          }, 1500);
         }) as EventListener);
 
-        newButton.addEventListener("qoreid:verificationError", (() => {
-          stopPolling();
+        // ✅ NEW: Redirect on error
+        newButton.addEventListener('qoreid:verificationError', ((event: any) => {
+          console.log('QoreID verification error:', event.detail);
           setIsVerifying(false);
-          setError("Verification process failed.");
+          setError('Verification process failed. Redirecting...');
           hasStartedRef.current = false;
+          
+          // Redirect to dashboard with failure flag
+          setTimeout(() => {
+            console.log('Redirecting to dashboard with kyc=failed');
+            router.push('/dashboard?kyc=failed');
+          }, 2000);
         }) as EventListener);
 
-        newButton.addEventListener("qoreid:verificationClosed", () => {
+        newButton.addEventListener('qoreid:verificationClosed', () => {
+          console.log('QoreID verification closed by user');
           setIsVerifying(false);
           setShowManualButton(false);
           hasStartedRef.current = false;
@@ -158,7 +106,7 @@ function FacialRecognition({
 
       if (window.QoreIDWebSdk) {
         window.QoreIDWebSdk.start();
-
+        
         setTimeout(() => {
           if (isVerifying) setShowManualButton(true);
         }, 5000);
@@ -166,87 +114,81 @@ function FacialRecognition({
         setShowManualButton(true);
         hasStartedRef.current = false;
       }
+
     } catch (err) {
+      console.error('Error triggering QoreID SDK:', err);
       setShowManualButton(true);
       hasStartedRef.current = false;
     }
   };
 
   const handleContinue = async () => {
-    if (!nin) return setError("NIN required");
-    if (!bvn) return setError("BVN required");
-
+    if (!nin) return setError('NIN required');
+    if (!bvn) return setError('BVN required');
+    
     setError(null);
     setShowManualButton(false);
     hasStartedRef.current = false;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      stream.getTracks().forEach((track) => track.stop());
-
+      stream.getTracks().forEach(track => track.stop());
+      
       await initiateVerification();
     } catch (error: any) {
-      setError("Camera access is required. Please check permissions.");
+      setError('Camera access is required. Please check permissions.');
     }
   };
 
   const initiateVerification = async () => {
     setIsVerifying(true);
-
+    
     try {
-      // FIXED: Proper payload structure with BVN as idNumber
       const verificationData = {
-        dob: dateOfBirth || "",
-        gender: (gender || "MALE") as "MALE" | "FEMALE",
-        idNumber: bvn || "", // ← BVN goes here
-        employmentStatus: "Employed",
-        pep: "salary",
+        dob: dateOfBirth || '',
+        gender: (gender || 'MALE') as 'MALE' | 'FEMALE',
+        idNumber: bvn || '',
+        employmentStatus: 'Employed',
+        pep: 'salary'
       };
 
-      const response =
-        await kycApiService.initiateLivenessCheck(verificationData);
-      const custRef =
-        (response as any)?.data?.reference || (response as any)?.reference;
+      const response = await kycApiService.initiateLivenessCheck(verificationData);
+      const custRef = (response as any)?.data?.reference || (response as any)?.reference;
 
-      if (!custRef) throw new Error("No reference returned from backend");
+      if (!custRef) throw new Error('No reference returned from backend');
 
       setCustomerReference(custRef);
 
       setTimeout(() => {
         triggerQoreIDSDK();
       }, 1000);
+
     } catch (err: any) {
       setIsVerifying(false);
-      setError(err.message || "Failed to initialize session");
+      setError(err.message || 'Failed to initialize session');
     }
   };
 
-  const clientId = process.env.NEXT_PUBLIC_QOREID_CLIENT_ID || "";
-  const applicantData = JSON.stringify({
-    firstname: firstName || "",
-    lastname: lastName || "",
-    phone: phone || "",
-    email: "",
+  const clientId = process.env.NEXT_PUBLIC_QOREID_CLIENT_ID || '';
+  const applicantData = JSON.stringify({ 
+    firstname: firstName || '', 
+    lastname: lastName || '',
+    phone: phone || '',
+    email: ''
   });
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
       <div className="bg-white px-4 py-4 flex items-center justify-between shadow-sm">
-        <button
-          onClick={onBack}
-          disabled={isVerifying}
-          className="p-2 hover:bg-gray-100 rounded-full"
-        >
+        <button onClick={onBack} disabled={isVerifying} className="p-2 hover:bg-gray-100 rounded-full">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <Logo width={150} height={40} />
       </div>
 
       {customerReference && (
-        <div style={{ height: 0, overflow: "hidden" }}>
-          <div
-            dangerouslySetInnerHTML={{
-              __html: `
+        <div style={{ height: 0, overflow: 'hidden' }}>
+          <div dangerouslySetInnerHTML={{__html: `
             <qoreid-button
               id="QoreIDButton"
               clientId="${clientId}"
@@ -254,21 +196,17 @@ function FacialRecognition({
               customerReference="${customerReference}"
               applicantData='${applicantData}'
             ></qoreid-button>
-          `,
-            }}
-          />
+          `}} />
         </div>
       )}
 
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-6">
         <div className="w-full max-w-md text-center">
           <h1 className="text-2xl font-semibold mb-4">Facial Recognition</h1>
-
+          
           {!isVerifying ? (
             <div className="space-y-6">
-              <p className="text-gray-600">
-                Please complete the video verification.
-              </p>
+              <p className="text-gray-600">Please complete the video verification.</p>
               <button
                 onClick={handleContinue}
                 className="w-full py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-semibold flex items-center justify-center gap-2"
@@ -280,48 +218,26 @@ function FacialRecognition({
           ) : verificationComplete ? (
             <div className="text-center space-y-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <svg
-                  className="w-8 h-8 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <div>
-                <p className="font-semibold text-gray-800 text-lg">
-                  Verification Complete!
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Redirecting to dashboard...
-                </p>
+                <p className="font-semibold text-gray-800 text-lg">Verification Complete!</p>
+                <p className="text-sm text-gray-500 mt-2">Redirecting to dashboard...</p>
               </div>
             </div>
           ) : (
             <div className="text-center space-y-6">
               <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
               <div>
-                <p className="font-semibold text-gray-800 text-lg">
-                  Verification in progress...
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  {showContinueButton
-                    ? "Waiting for confirmation..."
-                    : "Connecting to secure server..."}
-                </p>
+                <p className="font-semibold text-gray-800 text-lg">Verification in progress...</p>
+                <p className="text-sm text-gray-500 mt-2">Please complete the liveness check...</p>
               </div>
 
-              {showManualButton && !showContinueButton && (
+              {showManualButton && (
                 <div className="bg-orange-50 border border-orange-100 p-4 rounded-lg">
-                  <p className="text-sm text-orange-700 mb-3">
-                    Popup didn't open?
-                  </p>
+                  <p className="text-sm text-orange-700 mb-3">Popup didn't open?</p>
                   <button
                     onClick={() => {
                       hasStartedRef.current = false;
@@ -334,29 +250,10 @@ function FacialRecognition({
                   </button>
                 </div>
               )}
-
-              {showContinueButton && (
-                <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg">
-                  <p className="text-sm text-blue-700 mb-3">
-                    Verification may be complete. Click below to continue.
-                  </p>
-                  <button
-                    onClick={() => {
-                      stopPolling();
-                      onNext();
-                    }}
-                    className="w-full px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-lg"
-                  >
-                    Continue to Dashboard
-                  </button>
-                </div>
-              )}
             </div>
           )}
-
-          {error && (
-            <p className="text-red-500 mt-4 bg-red-50 p-3 rounded">{error}</p>
-          )}
+          
+          {error && <p className="text-red-500 mt-4 bg-red-50 p-3 rounded">{error}</p>}
         </div>
       </div>
     </div>
