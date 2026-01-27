@@ -1,5 +1,5 @@
 'use client'
-import Profile from '@/components/ui/UserDashboard/Settings/Profile'
+import Profile from '@/components/ui/user-dashboard/settings/Profile'
 import React from 'react'
 
 function page() {

@@ -8,7 +8,7 @@ import { RxHamburgerMenu } from "react-icons/rx";
 import { IoCloseOutline } from "react-icons/io5";
 import { FaLinkedin, FaWhatsapp } from "react-icons/fa";
 import Logo from "@/components/ui/Logo";
-import Logout from "@/components/ui/UserDashboard/Settings/Logout";
+import Logout from "@/components/ui/user-dashboard/settings/Logout"
 
 type ExtendedUser = {
   id: string;
