@@ -140,7 +140,7 @@ export default function KycVerification() {
     }
   };
 
-  // Helper to map API strings to Component Steps (UPDATED - no document upload)
+  // Helper to map API strings to Component Steps 
   const getStepNumberFromApiStatus = (apiStep: string): number => {
     switch (apiStep) {
       case 'initiation': return 1;
@@ -152,7 +152,7 @@ export default function KycVerification() {
         return isPersonalInfoVerified ? 4 : 3;
       case 'contact-info': return 4;
       case 'facial-recognition':
-      case 'verify-liveness': return 5;  // Changed from 6 to 5 (no document upload)
+      case 'verify-liveness': return 5; 
       case 'dashboard': 
         router.push('/dashboard');
         return 1;
@@ -166,7 +166,6 @@ export default function KycVerification() {
     setPageProgress(1);
   };
 
-  // UPDATED: Total steps reduced from 6 to 5 (removed document upload)
   const getTotalSteps = () => {
     return userType === 'individual' ? 5 : 5;
   };
