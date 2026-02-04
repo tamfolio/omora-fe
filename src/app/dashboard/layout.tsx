@@ -25,7 +25,7 @@ export default function DashboardLayout({
     }
     
     setIsChecking(false);
-
+// 
     if (status === "unauthenticated") {
       const returnUrl = encodeURIComponent(pathname || "/dashboard");
       router.push(`/auth/login?returnUrl=${returnUrl}`);
