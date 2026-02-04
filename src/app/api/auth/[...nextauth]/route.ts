@@ -12,7 +12,7 @@ const tempAuthStore = new Map<string, { email: string; timestamp: number }>();
 
 const authOptions: NextAuthOptions = {
   providers: [
-    // Provider 1: Two-step OTP flow (kept for compatibility)
+    // Provider 1: Two-step OTP flow
     CredentialsProvider({
       id: "credentials-with-otp",
       name: "credentials-otp",
@@ -115,7 +115,7 @@ const authOptions: NextAuthOptions = {
       },
     }),
     
-    // Provider 2: Direct credentials (used by your login page after OTP verification)
+    // Provider 2: Direct credentials
     CredentialsProvider({
       id: "credentials",
       name: "credentials",
@@ -132,7 +132,6 @@ const authOptions: NextAuthOptions = {
       async authorize(credentials): Promise<User | null> {
         if (!credentials || !credentials.accessToken) return null;
 
-
         return {
           id: credentials.userId || credentials.email,
           email: credentials.email,
@@ -147,14 +146,13 @@ const authOptions: NextAuthOptions = {
     }),
   ],
   
-  //  Dynamic session configuration based on remember me
   session: { 
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60, // Default: 7 days
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   
   jwt: { 
-    maxAge: 7 * 24 * 60 * 60, // Default: 7 days
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   
   callbacks: {
@@ -176,9 +174,8 @@ const authOptions: NextAuthOptions = {
           ...token,
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
-          accessTokenExpires: Date.now() + 30 * 60 * 1000, // Token refresh (30 min)
-          sessionExpires: Date.now() + expiryDuration, // Session expiry
-          rememberMe: user.rememberMe, //  Store preference
+          sessionExpires: Date.now() + expiryDuration,
+          rememberMe: user.rememberMe,
           user: {
             id: user.id,
             email: user.email,
@@ -189,7 +186,7 @@ const authOptions: NextAuthOptions = {
         }
       }
 
-      // ✅ Check if session has expired based on remember me preference
+      // ✅ Check if session has expired
       if (token.sessionExpires && Date.now() > (token.sessionExpires as number)) {
         return {
           ...token,
@@ -197,16 +194,8 @@ const authOptions: NextAuthOptions = {
         };
       }
 
-      // Check if access token needs refresh (30 min)
-      if (token.accessTokenExpires && Date.now() < (token.accessTokenExpires as number)) {
-        return token
-      }
-      
-      if (token.refreshToken) {
-        return await refreshAccessToken(token)
-      }
-
-      return token
+      // ✅ NO TOKEN REFRESH - just return the token as-is
+      return token;
     },
     
     async session({ session, token }) {
@@ -217,7 +206,6 @@ const authOptions: NextAuthOptions = {
         }
       }
       
-      // Make tokens available in session
       session.accessToken = token.accessToken as string || ''
       session.refreshToken = (token.refreshToken as string) || '';
       
@@ -233,40 +221,6 @@ const authOptions: NextAuthOptions = {
     signIn: "/auth/login",
     error: "/auth/error",
   },
-  
-}
-
-async function refreshAccessToken(token: JWT): Promise<JWT> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/user/api/v1/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-      },
-      body: JSON.stringify({
-        refreshToken: token.refreshToken,
-      }),
-    })
-
-    const refreshedTokens = await response.json()
-
-    if (!response.ok) {
-      throw refreshedTokens
-    }
-
-    return {
-      ...token,
-      accessToken: refreshedTokens.accessToken,
-      accessTokenExpires: Date.now() + 30 * 60 * 1000,
-      refreshToken: refreshedTokens.refreshToken ?? token.refreshToken,
-    }
-  } catch {
-    return {
-      ...token,
-      error: "RefreshAccessTokenError",
-    }
-  }
 }
 
 // Cleanup expired temp auth entries

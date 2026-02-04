@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/website/NavBar";
@@ -20,16 +20,13 @@ export default function DashboardLayout({
   const isKycRoute = pathname?.includes('/kyc-verification');
 
   useEffect(() => {
-    // Wait for session to be checked
     if (status === "loading") {
       return;
     }
-
+    
     setIsChecking(false);
 
-    // Redirect to login if not authenticated
     if (status === "unauthenticated") {
-      // Save the attempted URL to redirect back after login
       const returnUrl = encodeURIComponent(pathname || "/dashboard");
       router.push(`/auth/login?returnUrl=${returnUrl}`);
       return;

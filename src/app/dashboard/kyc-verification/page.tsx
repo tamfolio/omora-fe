@@ -67,7 +67,7 @@ export default function KycVerification() {
       if (result.status === 'success' && result.data) {
         const { user, verification, onboardingState, business } = result.data;
 
-        // 1. Populate User Data (Standard Stuff)
+        // 1. Populate User Data
         updateFormData({
           firstName: user.firstName,
           lastName: user.lastName,
@@ -82,7 +82,7 @@ export default function KycVerification() {
           gender: user.gender as 'MALE' | 'FEMALE' | undefined,
         });
 
-        // 2. Handle Verification Status (Checkmarks)
+        // 2. Handle Verification Status
         if (verification) {
           const { bothVerified } = checkVerificationStatus(verification);
           setIsPersonalInfoVerified(bothVerified);
@@ -93,33 +93,36 @@ export default function KycVerification() {
           if (bvnRecord) updateFormData({ bvn: bvnRecord.value });
         }
 
-        // 3. THE NAVIGATION LOGIC
+        // 3. Navigation Logic
         if (onboardingState) {
-          const next = onboardingState.nextStep; // e.g., "upload-business-docs"
-          setApiNextStep(next);
+          const currentStep = onboardingState.currentStep;
+          const currentStepStatus = onboardingState.currentStepStatus;
+          const nextStep = onboardingState.nextStep;
+          
+          setApiNextStep(currentStep);
 
-          // Calculate which page number this is
-          const targetStep = getStepNumberFromApiStatus(next);
+          // Calculate target step based on currentStep (what user needs to complete)
+          const targetStep = getStepNumberFromApiStatus(currentStep);
 
-          // CRITICAL: If the target is Step 6 or 7, FORCE Corporate Mode.
-          // This ensures the renderCurrentStep function doesn't hide the component.
+          // Force corporate mode if needed
           if (targetStep >= 6 || business?.businessId) {
              setUserType('corporate');
           }
 
-          // 4. Success/Failure Checks
-          const livenessRecord = verification?.find(v => v.type === 'LIVENESS');
-          const isLivenessComplete = livenessRecord?.status === 'C';
+          // 4. ✅ CORRECT SUCCESS/FAILURE LOGIC
+          // Success: currentStepStatus is 'C' (complete) AND nextStep is 'dashboard'
+          const isKycComplete = 
+            currentStepStatus === 'C' && 
+            nextStep === 'dashboard';
           
-          // If we are at dashboard step or fully complete
-          if (onboardingState.currentStep === 'dashboard') {
+          if (isKycComplete) {
              setShowSuccessModal(true);
           } 
-          // If Liveness failed specifically
-          else if (onboardingState.currentStep === 'verify-liveness' && onboardingState.currentStepStatus === 'NVP') {
+          // Failed verification
+          else if (currentStepStatus === 'NVP') {
              setShowUnsuccessfulModal(true);
           } 
-          // Otherwise, Go to the "nextStep"
+          // In progress or pending - go to currentStep
           else {
              setPageProgress(targetStep);
           }
@@ -140,43 +143,39 @@ export default function KycVerification() {
 
     if (apiNextStep) {
       const stepNumber = getStepNumberFromApiStatus(apiNextStep);
-      console.log("🔍 Setting step:", stepNumber, "userType:", userType);
       setPageProgress(stepNumber);
     } else {
       setPageProgress(1);
     }
   };
+
   const getStepNumberFromApiStatus = (apiStep: string): number => {
     switch (apiStep) {
       case "initiation":
-        return 1; // Initiation Page
+        return 1;
 
       case "verify-country":
-        return 2; // Country Select
+        return 2;
 
       case "verify-bvn":
       case "verify-nin":
       case "personal-info":
-        // If personal info is verified, we might skip to 4, but let's be safe and go to 3
         return 3;
 
       case "contact-info":
-        return 4; // Contact Information
+        return 4;
 
       case "facial-recognition":
       case "verify-liveness":
-        return 5; // Facial Recognition
+        return 5;
 
-      // --- CORPORATE STEPS ---
-      // If nextStep is "upload-business-details", go to Step 6
       case "upload-business-details":
-      case "business-information": // handling potential alias
-      case "business-info": // handling potential alias
+      case "business-information":
+      case "business-info":
         return 6;
 
-      // If nextStep is "upload-business-docs", go to Step 7
       case "upload-business-docs":
-      case "company-documents": // handling potential alias
+      case "company-documents":
         return 7;
 
       case "dashboard":
@@ -190,15 +189,12 @@ export default function KycVerification() {
   };
 
   const getTotalSteps = () => {
-    // Individual: 5 steps (Initiation → Country → Personal → Contact → Liveness)
-    // Corporate: 7 steps (Initiation → Country → Personal → Contact → Liveness → Business → Documents)
     return userType === "individual" ? 5 : 7;
   };
 
   const nextStep = () => {
     const totalSteps = getTotalSteps();
 
-    // Skip Personal Info if already verified (Individual only)
     if (
       pageProgress === 2 &&
       isPersonalInfoVerified &&
@@ -297,7 +293,6 @@ export default function KycVerification() {
   };
 
   const renderCurrentStep = () => {
-    // Step 1: KYC Initiation (Both)
     if (pageProgress === 1) {
       return (
         <KYCInitiation
@@ -310,12 +305,10 @@ export default function KycVerification() {
       );
     }
 
-    // Step 2: Country Select (Both)
     if (pageProgress === 2) {
       return <CountrySelect onNext={handleCountryNext} onBack={prevStep} />;
     }
 
-    // Step 3: Personal Information (Both)
     if (pageProgress === 3) {
       return (
         <PersonalInformation
@@ -326,14 +319,12 @@ export default function KycVerification() {
       );
     }
 
-    // Step 4: Contact Information (Both Individual and Corporate)
     if (pageProgress === 4) {
       return (
         <ContactInformation onBack={prevStep} onNext={handleContactInfoNext} />
       );
     }
 
-    // Step 5: Facial Recognition / Liveness (Both)
     if (pageProgress === 5) {
       return (
         <FacialRecognition
@@ -350,7 +341,6 @@ export default function KycVerification() {
       );
     }
 
-    // Step 6: Business Information (Corporate Only)
     if (pageProgress === 6 && userType === "corporate") {
       return (
         <BusinessInformation
@@ -360,12 +350,10 @@ export default function KycVerification() {
       );
     }
 
-    // Step 7: Company Registration Documents (Corporate Only)
     if (pageProgress === 7 && userType === "corporate") {
       return <CompanyRegDetails onNext={nextStep} onBack={prevStep} />;
     }
 
-    // Default fallback
     return (
       <KYCInitiation
         onContinue={(selectedType: VerificationType) => {

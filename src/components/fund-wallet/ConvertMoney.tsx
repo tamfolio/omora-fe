@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { FiArrowLeft, FiChevronDown } from "react-icons/fi";
+import { FiArrowLeft, FiChevronDown, FiHeadphones } from "react-icons/fi";
 import Logo from "@/components/ui/Logo";
 import AuthenticatorModal from "./AuthenticatorModal";
 
@@ -19,7 +19,7 @@ const CURRENCIES = [
   {
     code: "NGN",
     name: "Nigerian Naira",
-    symbol: "NGN", // Display code instead of ₦
+    symbol: "NGN", 
     logo: "/assets/images/currencies/naira.png",
   },
   {
@@ -387,7 +387,7 @@ export default function ConvertMoney() {
       {/* Floating Chat Button */}
       <div className="fixed bottom-6 right-6">
         <button className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:bg-green-700 transition-colors">
-          <span className="text-white font-bold text-lg">J</span>
+          <FiHeadphones className="text-white text-lg" />
         </button>
       </div>
 

@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft, FiHeadphones } from "react-icons/fi";
 import Logo from "@/components/ui/Logo";
 import PDFHelper from "./PDFHelper";
 
@@ -305,11 +305,10 @@ export default function TransactionReceipt() {
           />
         </div>
       </main>
-
-      {/* Floating Chat Button */}
+ {/* Floating Chat Button */}
       <div className="fixed bottom-6 right-6">
         <button className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:bg-green-700 transition-colors">
-          <span className="text-white font-bold text-lg">J</span>
+          <FiHeadphones className="text-white text-lg" />
         </button>
       </div>
     </div>
