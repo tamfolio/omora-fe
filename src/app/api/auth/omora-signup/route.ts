@@ -13,14 +13,39 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { firstName, lastName, middleName, emailAddress, password, rcNumber } = body;
+    
+    // Extract all fields
+    const { 
+      firstName, 
+      lastName, 
+      middleName, 
+      emailAddress, 
+      password, 
+      rcNumber 
+    } = body;
 
+    // Validate required fields
     if (!firstName || !lastName || !emailAddress || !password) {
+      console.error('Missing required fields:', { firstName, lastName, emailAddress, password: !!password });
       return NextResponse.json(
-        { error: 'Required fields are missing' },
+        { error: 'Required fields are missing: firstName, lastName, emailAddress, password' },
         { status: 400 }
       );
     }
+
+    // Build payload - include all fields
+    const payload: any = {
+      firstName,
+      lastName,
+      emailAddress,
+      password,
+    };
+
+    // Optional fields
+    if (middleName) payload.middleName = middleName;
+    if (rcNumber) payload.rcNumber = rcNumber;
+
+    console.log('Sending signup payload:', { ...payload, password: '***' }); // Debug log
 
     // Call Omora signup endpoint
     const response = await fetch(`${API_BASE_URL}/user/api/v1/signup`, {
@@ -29,19 +54,13 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'x-api-key': API_KEY,
       },
-      body: JSON.stringify({
-        firstName,
-        lastName,
-        middleName: middleName || '',
-        emailAddress,
-        password,
-        rcNumber: rcNumber || '',
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('Backend signup error:', data);
       return NextResponse.json(
         { error: data.message || 'Failed to create account' },
         { status: response.status }
@@ -61,3 +80,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+
+

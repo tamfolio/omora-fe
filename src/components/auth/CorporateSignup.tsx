@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiEye, FiEyeOff, FiChevronDown } from "react-icons/fi";
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 interface CorporateSignupProps {
   onSuccess: () => void;
@@ -25,39 +26,224 @@ export default function CorporateSignup({
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState("");
   const [showRcTypeDropdown, setShowRcTypeDropdown] = useState(false);
-  const [rcType, setRcType] = useState<'rc' | 'bn'>('bn');
+  const [rcType, setRcType] = useState<'RC' | 'BN'>('RC');
+  
+  // RC Verification states
+  const [rcVerificationStatus, setRcVerificationStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
+  const [rcVerificationError, setRcVerificationError] = useState('');
+  
+  // BVN / NIN verification states
+  const [bvnStatus, setBvnStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
+  const [bvnError, setBvnError] = useState('');
+  const [ninStatus, setNinStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
+  const [ninError, setNinError] = useState('');
+  
+  // Debounce timer ref
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   const router = useRouter();
 
   const [formData, setFormData] = useState({
     rcNumber: "",
     businessName: "",
+    firstName: "",
+    lastName: "",
+    bvn: "",
+    nin: "",
+    dateOfBirth: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
 
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Check /me for existing verified NIN/BVN on mount
+  useEffect(() => {
+    let mounted = true;
+    const checkVerified = async () => {
+      try {
+        const response = await fetch('/api/proxy/user/api/v1/me', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        
+        if (!response.ok) return;
+        
+        const result = await response.json();
+        const data = (result as any)?.data;
+        if (!mounted || !data?.verification || !Array.isArray(data.verification)) return;
+        
+        // Check if NIN/BVN already verified
+        const ninRecord = data.verification.find((v: any) => v.type === 'NIN' && v.status === 'C');
+        const bvnRecord = data.verification.find((v: any) => v.type === 'BVN' && v.status === 'C');
+        
+        // Auto-populate verified NIN
+        if (ninRecord && mounted) {
+          setFormData(prev => ({ ...prev, nin: ninRecord.value }));
+          setNinStatus('success');
+        }
+        
+        // Auto-populate verified BVN
+        if (bvnRecord && mounted) {
+          setFormData(prev => ({ ...prev, bvn: bvnRecord.value }));
+          setBvnStatus('success');
+        }
+        
+        // Auto-populate dateOfBirth and gender from user object
+        if ((ninRecord || bvnRecord) && data.user && mounted) {
+          if (data.user.dateOfBirth) {
+            const [year, month, day] = data.user.dateOfBirth.split('-');
+            setFormData(prev => ({ ...prev, dateOfBirth: `${year}-${month}-${day}` }));
+          }
+          if (data.user.firstName && !formData.firstName) {
+            setFormData(prev => ({ ...prev, firstName: data.user.firstName }));
+          }
+          if (data.user.lastName && !formData.lastName) {
+            setFormData(prev => ({ ...prev, lastName: data.user.lastName }));
+          }
+        }
+      } catch (err) {
+        // ignore - user will manually verify
+      }
+    };
+    checkVerified();
+    return () => { mounted = false; };
+  }, []);
+
+  // Verify RC Number with backend
+  const verifyRCNumber = async (rcNumber: string, type: 'RC' | 'BN') => {
+    if (rcNumber.length < 6) {
+      setRcVerificationStatus('idle');
+      setFormData((prev) => ({ ...prev, businessName: '' }));
+      return;
+    }
+
+    setRcVerificationStatus('verifying');
+    setRcVerificationError('');
+
+    try {
+      // Send with prefix (RC or BN)
+      const idNumber = `${type}${rcNumber}`;
+      
+      const response = await fetch('/api/proxy/user/verification/verify/reg-no', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          idNumber: idNumber,
+        }),
+      });
+
+      const result = await response.json();
+
+      // Debug logging
+      console.log('RC Verification Response:', {
+        status: response.status,
+        ok: response.ok,
+        result: result
+      });
+
+      if (response.ok && result.status === 'VERIFIED') {
+        setRcVerificationStatus('success');
+        // Set actual business name from API
+        setFormData((prev) => ({ 
+          ...prev, 
+          businessName: result.businessName || '' 
+        }));
+      } else {
+        setRcVerificationStatus('error');
+        setRcVerificationError(result.message || 'Invalid RC/BN Number');
+        setFormData((prev) => ({ ...prev, businessName: '' }));
+      }
+    } catch (error) {
+      console.error('RC verification error:', error);
+      setRcVerificationStatus('error');
+      setRcVerificationError('Failed to verify RC/BN Number');
+      setFormData((prev) => ({ ...prev, businessName: '' }));
+    }
+  };
+
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-    // Auto-populate business name from RC number
+    // Verify RC Number when user types
     if (field === "rcNumber") {
-      const businessName = value ? `${rcType.toUpperCase()} - ${value}` : "";
-      setFormData((prev) => ({ ...prev, businessName }));
+      // Clear previous timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      if (value.length >= 4) {
+        // Set new timer
+        debounceTimerRef.current = setTimeout(() => {
+          verifyRCNumber(value, rcType);
+        }, 800); 
+      } else {
+        setRcVerificationStatus('idle');
+        setRcVerificationError('');
+        setFormData((prev) => ({ ...prev, businessName: '' }));
+      }
     }
 
     if (field === "email") {
       setEmailError("");
     }
+
+    // If user edits BVN/NIN fields, reset statuses
+    if (field === 'bvn') {
+      setBvnStatus('idle');
+      setBvnError('');
+    }
+    if (field === 'nin') {
+      setNinStatus('idle');
+      setNinError('');
+    }
   };
 
-  const handleRcTypeChange = (newType: 'rc' | 'bn') => {
+  const handleRcTypeChange = (newType: 'RC' | 'BN') => {
     setRcType(newType);
     setShowRcTypeDropdown(false);
-    // Update business name with new type
-    if (formData.rcNumber) {
-      const businessName = `${newType.toUpperCase()} - ${formData.rcNumber}`;
-      setFormData((prev) => ({ ...prev, businessName }));
+    // Re-verify with new type if RC number exists
+    if (formData.rcNumber && formData.rcNumber.length >= 6) {
+      verifyRCNumber(formData.rcNumber, newType);
     }
+  };
+
+  const getStatusIcon = () => {
+    if (rcVerificationStatus === 'verifying') {
+      return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+    }
+    if (rcVerificationStatus === 'success') {
+      return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+    }
+    if (rcVerificationStatus === 'error') {
+      return <XCircle className="w-4 h-4 text-red-500" />;
+    }
+    return null;
+  };
+
+  const getBVNIcon = () => {
+    if (bvnStatus === 'verifying') return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+    if (bvnStatus === 'success') return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+    if (bvnStatus === 'error') return <XCircle className="w-4 h-4 text-red-500" />;
+    return null;
+  };
+
+  const getNINIcon = () => {
+    if (ninStatus === 'verifying') return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+    if (ninStatus === 'success') return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+    if (ninStatus === 'error') return <XCircle className="w-4 h-4 text-red-500" />;
+    return null;
   };
 
   const validatePassword = (password: string): boolean => {
@@ -104,6 +290,81 @@ export default function CorporateSignup({
     }
   };
 
+  // Verify BVN with backend and populate name/DOB on success
+  const verifyBVN = async (bvn: string) => {
+    if (bvn.length < 11) {
+      setBvnStatus('idle');
+      setBvnError('');
+      return;
+    }
+
+    setBvnStatus('verifying');
+    setBvnError('');
+
+    try {
+      const response = await fetch('/api/proxy/user/verification/verify/bvn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idNumber: bvn }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && (result.status === 'VERIFIED' || result.verified)) {
+        setBvnStatus('success');
+        // Attempt to extract names and birthdate from response
+        const r: any = result;
+        const first = r.data?.firstName ?? r.firstName ?? r.first_name ?? '';
+        const last = r.data?.lastName ?? r.lastName ?? r.last_name ?? '';
+        const dob = r.data?.birthdate ?? r.birthdate ?? r.dateOfBirth ?? r.dob ?? '';
+        setFormData((prev) => ({ ...prev, firstName: first || prev.firstName, lastName: last || prev.lastName, dateOfBirth: dob || prev.dateOfBirth }));
+      } else {
+        setBvnStatus('error');
+        setBvnError(result.message || 'BVN verification failed');
+      }
+    } catch (err) {
+      console.error('BVN verification error:', err);
+      setBvnStatus('error');
+      setBvnError('BVN verification failed');
+    }
+  };
+
+  // Verify NIN with backend and populate DOB on success
+  const verifyNIN = async (nin: string) => {
+    if (nin.length < 11) {
+      setNinStatus('idle');
+      setNinError('');
+      return;
+    }
+
+    setNinStatus('verifying');
+    setNinError('');
+
+    try {
+      const response = await fetch('/api/proxy/user/verification/verify/nin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idNumber: nin }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && (result.status === 'VERIFIED' || result.verified)) {
+        setNinStatus('success');
+        const r: any = result;
+        const dob = r.data?.birthdate ?? r.birthdate ?? r.dateOfBirth ?? r.dob ?? '';
+        setFormData((prev) => ({ ...prev, dateOfBirth: dob || prev.dateOfBirth }));
+      } else {
+        setNinStatus('error');
+        setNinError(result.message || 'NIN verification failed');
+      }
+    } catch (err) {
+      console.error('NIN verification error:', err);
+      setNinStatus('error');
+      setNinError('NIN verification failed');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -111,6 +372,31 @@ export default function CorporateSignup({
 
     if (!acceptTerms) {
       onError("Please accept the Terms and Privacy Policy");
+      setLoading(false);
+      return;
+    }
+
+    if (rcVerificationStatus !== 'success') {
+      onError("Please wait for RC/BN Number verification to complete");
+      setLoading(false);
+      return;
+    }
+
+    // Require first and last name
+    if (!formData.firstName || !formData.firstName.trim() || !formData.lastName || !formData.lastName.trim()) {
+      onError("Please provide both first name and last name");
+      setLoading(false);
+      return;
+    }
+
+    if (bvnStatus !== 'success') {
+      onError('Please verify BVN before continuing');
+      setLoading(false);
+      return;
+    }
+
+    if (ninStatus !== 'success') {
+      onError('Please verify NIN before continuing');
       setLoading(false);
       return;
     }
@@ -136,21 +422,25 @@ export default function CorporateSignup({
     }
 
     try {
-      // Step 1: Call signup API
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        dateOfBirth: formData.dateOfBirth,
+        bvn: formData.bvn,
+        nin: formData.nin,
+        emailAddress: formData.email,
+        password: formData.password,
+        rcNumber: `${rcType}${formData.rcNumber}`,
+      };
+
+      console.log('Corporate Signup Payload:', { ...payload, password: '***' });
+
       const response = await fetch("/api/auth/omora-signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          firstName: formData.businessName,
-          lastName: "Corporate",
-          middleName: "",
-          emailAddress: formData.email,
-          password: formData.password,
-          rcType: rcType,
-          rcNumber: formData.rcNumber,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
@@ -216,13 +506,14 @@ export default function CorporateSignup({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          firstName: formData.businessName,
-          lastName: "Corporate",
-          middleName: "",
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          dateOfBirth: formData.dateOfBirth,
+          bvn: formData.bvn,
+          nin: formData.nin,
           emailAddress: formData.email,
           password: formData.password,
-          rcType: rcType,
-          rcNumber: formData.rcNumber,
+          rcNumber: `${rcType}${formData.rcNumber}`,
         }),
       });
 
@@ -245,30 +536,23 @@ export default function CorporateSignup({
     return (
       <div className="space-y-4">
         <div className="text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Verify your email
+          <h3 className="text-sm font-medium text-gray-900 mb-1">
+            Enter Verification Code
           </h3>
-          <p className="text-sm text-gray-600">
-            Enter the 6-digit code sent to {formData.email}
+          <p className="text-xs text-gray-600">
+            We sent a 6-digit code to {formData.email}
           </p>
         </div>
 
-        <div>
-          <input
-            type="text"
-            maxLength={6}
-            value={otp}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, "");
-              setOtp(value);
-              onError("");
-            }}
-            placeholder="000000"
-            className="w-full px-3 py-3 text-center text-2xl font-mono tracking-widest border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            disabled={loading}
-            autoFocus
-          />
-        </div>
+        <input
+          type="text"
+          maxLength={6}
+          value={otp}
+          onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+          className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-center text-sm tracking-widest"
+          placeholder="000000"
+          disabled={loading}
+        />
 
         <button
           onClick={handleOtpSubmit}
@@ -308,6 +592,46 @@ export default function CorporateSignup({
   // Main signup form
   return (
     <form className="space-y-3" onSubmit={handleSubmit}>
+      {/* First Name */}
+      <div>
+        <label
+          htmlFor="firstName"
+          className="block text-xs font-medium text-gray-700 mb-1"
+        >
+          First Name *
+        </label>
+        <input
+          id="firstName"
+          type="text"
+          required
+          className="w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs"
+          placeholder="Enter your first name"
+          value={formData.firstName}
+          onChange={(e) => handleChange("firstName", e.target.value)}
+          disabled={loading}
+        />
+      </div>
+
+      {/* Last Name */}
+      <div>
+        <label
+          htmlFor="lastName"
+          className="block text-xs font-medium text-gray-700 mb-1"
+        >
+          Last Name *
+        </label>
+        <input
+          id="lastName"
+          type="text"
+          required
+          className="w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs"
+          placeholder="Enter your last name"
+          value={formData.lastName}
+          onChange={(e) => handleChange("lastName", e.target.value)}
+          disabled={loading}
+        />
+      </div>
+
       {/* RC Number with Dropdown */}
       <div>
         <label
@@ -325,7 +649,7 @@ export default function CorporateSignup({
             disabled={loading}
           >
             <FiChevronDown className="h-3 w-3 text-gray-400" />
-            <span className="text-xs font-medium">{rcType.toUpperCase()} -</span>
+            <span className="text-xs font-medium">{rcType} -</span>
           </button>
           
           {/* Input */}
@@ -333,12 +657,20 @@ export default function CorporateSignup({
             id="rcNumber"
             type="text"
             required
-            className="w-full pl-16 pr-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs"
-            placeholder="35478990987"
+            className={`w-full pl-16 pr-10 py-1.5 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs ${
+              rcVerificationStatus === 'success' ? 'border-green-500 bg-green-50' :
+              rcVerificationStatus === 'error' ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="1173476"
             value={formData.rcNumber}
             onChange={(e) => handleChange("rcNumber", e.target.value.replace(/\D/g, '').slice(0, 10))}
             disabled={loading}
           />
+
+          {/* Status Icon */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            {getStatusIcon()}
+          </div>
 
           {/* Dropdown Menu */}
           {showRcTypeDropdown && (
@@ -346,14 +678,14 @@ export default function CorporateSignup({
               <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-20">
                 <button
                   type="button"
-                  onClick={() => handleRcTypeChange('rc')}
+                  onClick={() => handleRcTypeChange('RC')}
                   className="w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 transition-colors rounded-t-md"
                 >
                   RC
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleRcTypeChange('bn')}
+                  onClick={() => handleRcTypeChange('BN')}
                   className="w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 transition-colors rounded-b-md"
                 >
                   BN
@@ -366,6 +698,9 @@ export default function CorporateSignup({
             </>
           )}
         </div>
+        {rcVerificationError && (
+          <p className="text-xs text-red-500 mt-1">{rcVerificationError}</p>
+        )}
       </div>
 
       {/* Business Name */}
@@ -379,15 +714,71 @@ export default function CorporateSignup({
         <input
           id="businessName"
           type="text"
-          className="w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs bg-gray-50"
-          placeholder="Adenifuja Business Enterprise"
+          className={`w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs ${
+            rcVerificationStatus === 'success' ? 'bg-green-50' : 'bg-gray-50'
+          }`}
+          placeholder="Will be auto-populated"
           value={formData.businessName}
           readOnly
           disabled={loading}
         />
         <p className="text-xs text-gray-500 mt-0.5">
-          Auto-populated based on RC Number
+          {rcVerificationStatus === 'verifying' ? 'Verifying RC Number...' : 
+           rcVerificationStatus === 'success' ? 'Verified ✓' :
+           'Auto-populated based on RC Number'}
         </p>
+      </div>
+
+      {/* BVN */}
+      <div>
+        <label
+          htmlFor="bvn"
+          className="block text-xs font-medium text-gray-700 mb-1"
+        >
+          BVN (11 digits) *
+        </label>
+        <div className="relative">
+          <input
+            id="bvn"
+            type="text"
+            maxLength={11}
+            required
+            className={`w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs ${bvnStatus === 'success' ? 'bg-green-50' : ''}`}
+            placeholder="00000000000"
+            value={formData.bvn}
+            onChange={(e) => handleChange('bvn', e.target.value.replace(/\D/g, '').slice(0, 11))}
+            onBlur={() => { if (formData.bvn.length === 11) verifyBVN(formData.bvn); }}
+            disabled={loading}
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">{getBVNIcon()}</div>
+        </div>
+        {bvnError && <p className="text-xs text-red-500 mt-1">{bvnError}</p>}
+      </div>
+
+      {/* NIN */}
+      <div>
+        <label
+          htmlFor="nin"
+          className="block text-xs font-medium text-gray-700 mb-1"
+        >
+          NIN (11 digits) *
+        </label>
+        <div className="relative">
+          <input
+            id="nin"
+            type="text"
+            maxLength={11}
+            required
+            className={`w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs ${ninStatus === 'success' ? 'bg-green-50' : ''}`}
+            placeholder="00000000000"
+            value={formData.nin}
+            onChange={(e) => handleChange('nin', e.target.value.replace(/\D/g, '').slice(0, 11))}
+            onBlur={() => { if (formData.nin.length === 11) verifyNIN(formData.nin); }}
+            disabled={loading}
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">{getNINIcon()}</div>
+        </div>
+        {ninError && <p className="text-xs text-red-500 mt-1">{ninError}</p>}
       </div>
 
       {/* Email */}
@@ -509,7 +900,7 @@ export default function CorporateSignup({
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={loading || !acceptTerms || !!emailError}
+        disabled={loading || !acceptTerms || !!emailError || rcVerificationStatus !== 'success' || bvnStatus !== 'success' || ninStatus !== 'success'}
         className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
       >
         {loading ? "Creating account..." : "Get started"}

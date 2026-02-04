@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ChevronDown, Info, Calendar, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import Logo from '../../Logo';
 import kycApiService, { verifyNIN, verifyBVN } from '@/lib/kyc-api-service';
 
@@ -19,27 +19,9 @@ interface PersonalInformationProps {
   };
 }
 
-interface SelectOption {
-  value: string;
-  label: string;
-}
-
-interface FormData {
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  dateOfBirth: string;
-  bvn: string;
-  nin: string;
-  gender: string;
-  occupation: string;
-  sourceOfFunds: string;
-}
-
 const genderOptions = [
   { value: 'MALE', label: 'Male' },
   { value: 'FEMALE', label: 'Female' },
-  { value: 'OTHER', label: 'Other' },
 ];
 
 const occupationOptions = [
@@ -49,234 +31,239 @@ const occupationOptions = [
   { value: 'business-owner', label: 'Business Owner' },
   { value: 'unemployed', label: 'Unemployed' },
   { value: 'retired', label: 'Retired' },
-  { value: 'other', label: 'Other' }
 ];
 
 const sourceOfFundsOptions = [
   { value: 'salary', label: 'Salary/Employment Income' },
   { value: 'business', label: 'Business Income' },
   { value: 'investment', label: 'Investment Returns' },
-  { value: 'inheritance', label: 'Inheritance' },
-  { value: 'gift', label: 'Gift' },
   { value: 'savings', label: 'Personal Savings' },
-  { value: 'other', label: 'Other' }
 ];
 
-const months = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
-
-const capitalizeFirstLetter = (str: string) => {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-};
-
-function PersonalInformation({ onNext, onBack, initialData }: PersonalInformationProps) {
-  const [formData, setFormData] = useState<FormData>({
+export default function PersonalInformation({ onNext, onBack, initialData }: PersonalInformationProps) {
+  const [formData, setFormData] = useState({
     firstName: initialData?.firstName || '',
     middleName: initialData?.middleName || '',
     lastName: initialData?.lastName || '',
     dateOfBirth: initialData?.dateOfBirth || '',
-    bvn: initialData?.bvn || '',
     nin: initialData?.nin || '',
+    bvn: initialData?.bvn || '',
     gender: initialData?.gender || '',
     occupation: initialData?.occupation || '',
     sourceOfFunds: initialData?.sourceOfFund || ''
   });
 
+  const [ninStatus, setNinStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
+  const [bvnStatus, setBvnStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCorporate, setIsCorporate] = useState(false);
+
+  // Initialize verified status
+// Initialize verified status
+useEffect(() => {
+  if (initialData?.nin) setNinStatus('success');
+  if (initialData?.bvn) setBvnStatus('success');
   
-  // NEW: Verification states
-  const [ninVerified, setNinVerified] = useState(false);
-  const [bvnVerified, setBvnVerified] = useState(false);
-  const [ninVerifying, setNinVerifying] = useState(false);
-  const [bvnVerifying, setBvnVerifying] = useState(false);
-  const [verificationErrors, setVerificationErrors] = useState({ nin: '', bvn: '' });
+  // Set dateOfBirth and gender from initialData (already in correct format from /me)
+  setFormData(prev => ({
+    ...prev,
+    ...(initialData?.dateOfBirth && { dateOfBirth: initialData.dateOfBirth }),
+    ...(initialData?.gender && { gender: initialData.gender })
+  }));
+}, [initialData]);
 
-  const [dropdownStates, setDropdownStates] = useState({
-    gender: false,
-    occupation: false,
-    sourceOfFunds: false,
-    calendar: false,
-    yearDropdown: false,
-    monthDropdown: false
-  });
 
-  const [calendarDate, setCalendarDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // NEW: Initialize from initialData
-  useEffect(() => {
-    if (initialData) {
-      // If NIN/BVN exist in initialData, mark as verified
-      if (initialData.nin) setNinVerified(true);
-      if (initialData.bvn) setBvnVerified(true);
-      
-      // Convert date format if needed
-      if (initialData.dateOfBirth && initialData.dateOfBirth.includes('-')) {
-        const [year, month, day] = initialData.dateOfBirth.split('T')[0].split('-');
-        setFormData(prev => ({
-          ...prev,
-          dateOfBirth: `${day}/${month}/${year}`
-        }));
-      }
-    }
-  }, [initialData]);
+// Inside PersonalInformation.tsx
 
-  // NEW: Verify NIN
-  const handleVerifyNIN = async () => {
-    if (!formData.nin || formData.nin.length !== 11) {
-      setVerificationErrors(prev => ({ ...prev, nin: 'NIN must be 11 digits' }));
-      return;
-    }
-
-    setNinVerifying(true);
-    setVerificationErrors(prev => ({ ...prev, nin: '' }));
-
+useEffect(() => {
+  let mounted = true;
+  const check = async () => {
     try {
-      const response = await verifyNIN(formData.nin);
+      const res = await kycApiService.getUserKycStatus();
+      const data = (res as any)?.data;
+      if (!mounted) return;
       
-      if (response.status === 'VERIFIED') {
-        setNinVerified(true);
+      // 1. Check if corporate
+      if (data?.business && data.business.businessId) {
+        setIsCorporate(true);
+      }
+      
+      // 2. Check for verified NIN/BVN
+      if (data?.verification && Array.isArray(data.verification)) {
+        const ninRecord = data.verification.find((v: any) => v.type === 'NIN' && v.status === 'C');
+        const bvnRecord = data.verification.find((v: any) => v.type === 'BVN' && v.status === 'C');
         
-        // Auto-populate DOB and Gender
-        if (response.birthdate) {
-          const [day, month, year] = response.birthdate.split('-');
-          setFormData(prev => ({ 
-            ...prev, 
-            dateOfBirth: `${day}/${month}/${year}` 
-          }));
+        if (ninRecord) {
+          setFormData(prev => ({ ...prev, nin: ninRecord.value }));
+          setNinStatus('success');
         }
         
+        if (bvnRecord) {
+          setFormData(prev => ({ ...prev, bvn: bvnRecord.value }));
+          setBvnStatus('success');
+        }
+        
+        // 3. THE DATE FIX IS HERE
+        if ((ninRecord || bvnRecord) && data.user) {
+          if (data.user.dateOfBirth) {
+            // Remove time portion first: "1996-05-12T00:00:00" -> "1996-05-12"
+            const dateOnly = data.user.dateOfBirth.split('T')[0];
+            const [year, month, day] = dateOnly.split('-');
+            
+            // Reformat to dd/mm/yyyy
+            setFormData(prev => ({ ...prev, dateOfBirth: `${day}/${month}/${year}` }));
+          }
+          
+          if (data.user.gender) {
+            const gender = data.user.gender.toUpperCase() === 'M' || data.user.gender.toUpperCase() === 'MALE' ? 'MALE' : 'FEMALE';
+            setFormData(prev => ({ ...prev, gender }));
+          }
+        }
+      }
+    } catch (err) {
+      // ignore
+    }
+  };
+  check();
+  return () => { mounted = false; };
+}, []);
+
+  // Auto-verify NIN on 11 digits
+  useEffect(() => {
+    if (formData.nin.length === 11 && ninStatus === 'idle') {
+      verifyNINAuto();
+    }
+  }, [formData.nin]);
+
+  // Auto-verify BVN on 11 digits
+  useEffect(() => {
+    if (formData.bvn.length === 11 && bvnStatus === 'idle') {
+      verifyBVNAuto();
+    }
+  }, [formData.bvn]);
+
+  const verifyNINAuto = async () => {
+    setNinStatus('verifying');
+    try {
+      const response = await verifyNIN(formData.nin);
+      if (response.status === 'VERIFIED') {
+        setNinStatus('success');
+        if (response.birthdate) {
+          // Handle ISO format (yyyy-mm-ddT00:00:00) or dd-mm-yyyy
+          let dateStr = response.birthdate.split('T')[0]; // Remove time portion if present
+          let formattedDate = '';
+          if (dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+            // If yyyy-mm-dd format (year is first and 4 digits)
+            if (parts[0].length === 4) {
+              formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            } else {
+              // If dd-mm-yyyy format
+              formattedDate = `${parts[0]}/${parts[1]}/${parts[2]}`;
+            }
+          }
+          if (formattedDate) {
+            setFormData(prev => ({ ...prev, dateOfBirth: formattedDate }));
+          }
+        }
         if (response.gender) {
           const gender = response.gender.toLowerCase() === 'm' ? 'MALE' : 'FEMALE';
           setFormData(prev => ({ ...prev, gender }));
         }
       } else {
-        setVerificationErrors(prev => ({ 
-          ...prev, 
-          nin: 'NIN verification failed. Please check the number.' 
-        }));
+        setNinStatus('error');
       }
-    } catch (error: any) {
-      setVerificationErrors(prev => ({ 
-        ...prev, 
-        nin: error.message || 'Failed to verify NIN' 
-      }));
-    } finally {
-      setNinVerifying(false);
+    } catch (error) {
+      setNinStatus('error');
     }
   };
 
-  // NEW: Verify BVN
-  const handleVerifyBVN = async () => {
-    if (!formData.bvn || formData.bvn.length !== 11) {
-      setVerificationErrors(prev => ({ ...prev, bvn: 'BVN must be 11 digits' }));
-      return;
-    }
-
-    setBvnVerifying(true);
-    setVerificationErrors(prev => ({ ...prev, bvn: '' }));
-
+  const verifyBVNAuto = async () => {
+    setBvnStatus('verifying');
     try {
       const response = await verifyBVN(formData.bvn);
-      
       if (response.status === 'VERIFIED') {
-        setBvnVerified(true);
-        
-        // Auto-populate DOB and Gender if not already set
+        setBvnStatus('success');
         if (response.birthdate && !formData.dateOfBirth) {
-          const [day, month, year] = response.birthdate.split('-');
-          setFormData(prev => ({ 
-            ...prev, 
-            dateOfBirth: `${day}/${month}/${year}` 
-          }));
+          // Handle ISO format (yyyy-mm-ddT00:00:00) or dd-mm-yyyy
+          let dateStr = response.birthdate.split('T')[0]; // Remove time portion if present
+          let formattedDate = '';
+          if (dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+            // If yyyy-mm-dd format (year is first and 4 digits)
+            if (parts[0].length === 4) {
+              formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            } else {
+              // If dd-mm-yyyy format
+              formattedDate = `${parts[0]}/${parts[1]}/${parts[2]}`;
+            }
+          }
+          if (formattedDate) {
+            setFormData(prev => ({ ...prev, dateOfBirth: formattedDate }));
+          }
         }
-        
         if (response.gender && !formData.gender) {
           const gender = response.gender.toLowerCase() === 'm' ? 'MALE' : 'FEMALE';
           setFormData(prev => ({ ...prev, gender }));
         }
       } else {
-        setVerificationErrors(prev => ({ 
-          ...prev, 
-          bvn: 'BVN verification failed. Please check the number.' 
-        }));
+        setBvnStatus('error');
       }
-    } catch (error: any) {
-      setVerificationErrors(prev => ({ 
-        ...prev, 
-        bvn: error.message || 'Failed to verify BVN' 
-      }));
-    } finally {
-      setBvnVerifying(false);
+    } catch (error) {
+      setBvnStatus('error');
     }
   };
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Reset verification if NIN/BVN changes
-    if (field === 'nin' && ninVerified) {
-      setNinVerified(false);
-      setVerificationErrors(prev => ({ ...prev, nin: '' }));
-    }
-    if (field === 'bvn' && bvnVerified) {
-      setBvnVerified(false);
-      setVerificationErrors(prev => ({ ...prev, bvn: '' }));
-    }
+    // Reset verification status if user changes input
+    if (field === 'nin' && value.length < 11) setNinStatus('idle');
+    if (field === 'bvn' && value.length < 11) setBvnStatus('idle');
   };
 
-  const toggleDropdown = (dropdown: keyof typeof dropdownStates) => {
-    setDropdownStates(prev => ({
-      ...prev,
-      [dropdown]: !prev[dropdown]
-    }));
-  };
-
-  const selectOption = (field: keyof FormData, value: string) => {
-    handleInputChange(field, value);
-    setDropdownStates(prev => ({
-      ...prev,
-      [field]: false
-    }));
+  const getStatusIcon = (status: string) => {
+    if (status === 'verifying') return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
+    if (status === 'success') return <CheckCircle2 className="w-5 h-5 text-green-500" />;
+    if (status === 'error') return <XCircle className="w-5 h-5 text-red-500" />;
+    return null;
   };
 
   const isFormValid = () => {
-    return formData.firstName.trim() !== '' &&
-           formData.lastName.trim() !== '' &&
-           formData.dateOfBirth.trim() !== '' &&
-           ninVerified && // Must be verified
-           bvnVerified && // Must be verified
-           formData.gender !== '' &&
-           formData.occupation !== '' &&
-           formData.sourceOfFunds !== '';
+      return formData.firstName.trim() !== '' &&
+        formData.lastName.trim() !== '' &&
+        formData.dateOfBirth.trim() !== '' &&
+        ninStatus === 'success' &&
+        bvnStatus === 'success' &&
+        formData.gender !== '' &&
+        (isCorporate || (formData.occupation !== '' && formData.sourceOfFunds !== ''));
   };
 
   const handleNext = async () => {
-    if (!isFormValid()) {
-      if (!ninVerified || !bvnVerified) {
-        setError('Please verify both NIN and BVN before proceeding');
-      }
-      return;
-    }
+    if (!isFormValid()) return;
 
     setIsSubmitting(true);
     setError(null);
 
     try {
-      if (!formData.dateOfBirth.includes('/')) {
-        throw new Error("Invalid date format. Please select a date from the calendar.");
+      // Parse dateOfBirth defensively
+      if (!formData.dateOfBirth || !formData.dateOfBirth.includes('/')) {
+        setError('Date of birth must be in dd/mm/yyyy format');
+        setIsSubmitting(false);
+        return;
       }
-      
-      const [day, month, year] = formData.dateOfBirth.split('/');
-      const dateObject = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0);
-      const formattedDate = dateObject.toISOString().split('T')[0];
+
+      const parts = formData.dateOfBirth.split('/');
+      if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
+        setError('Date of birth must be in dd/mm/yyyy format');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const [day, month, year] = parts;
+      const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
       
       const apiData = {
         firstName: formData.firstName.trim(),
@@ -285,440 +272,232 @@ function PersonalInformation({ onNext, onBack, initialData }: PersonalInformatio
         dateOfBirth: formattedDate,
         bvn: formData.bvn,
         nin: formData.nin,
-        gender: formData.gender === 'MALE' ? 'Male' : formData.gender === 'FEMALE' ? 'Female' : 'Other',
-        occupation: capitalizeFirstLetter(formData.occupation),
-        sourceOfFund: capitalizeFirstLetter(formData.sourceOfFunds)
+        gender: formData.gender,
+        ...(isCorporate ? {} : {
+          occupation: formData.occupation ? formData.occupation.charAt(0).toUpperCase() + formData.occupation.slice(1) : undefined,
+          sourceOfFund: formData.sourceOfFunds ? formData.sourceOfFunds.charAt(0).toUpperCase() + formData.sourceOfFunds.slice(1) : undefined,
+        })
       };
 
-      const response = await kycApiService.submitPersonalInformation(apiData);
-      
-      console.log('Success:', response);
-      
-      onNext({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        middleName: formData.middleName,
-        dateOfBirth: formattedDate,
-        bvn: formData.bvn,
-        nin: formData.nin,
-        gender: formData.gender,
-        occupation: formData.occupation,
-        sourceOfFund: formData.sourceOfFunds
-      });
+      await kycApiService.submitPersonalInformation(apiData);
+      onNext(apiData);
       
     } catch (err: any) {
-      console.error('Error submitting:', err);
-      setError(err.message || 'Failed to submit. Please check your inputs.');
+      setError(err.message || 'Failed to submit');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const formatBVN = (value: string) => {
-    return value.replace(/\D/g, '').slice(0, 11);
-  };
-
-  const formatNIN = (value: string) => {
-    return value.replace(/\D/g, '').slice(0, 11);
-  };
-
-  const getSelectedLabel = (field: string, options: SelectOption[]) => {
-    const selected = options.find(opt => opt.value === formData[field as keyof FormData]);
-    return selected ? selected.label : '';
-  };
-
-  const navigateMonth = (monthIndex: number) => {
-    setCalendarDate(new Date(calendarDate.getFullYear(), monthIndex, 1));
-    setDropdownStates(prev => ({ ...prev, monthDropdown: false }));
-  };
-
-  const navigateYear = (year: number) => {
-    setCalendarDate(new Date(year, calendarDate.getMonth(), 1));
-    setDropdownStates(prev => ({ ...prev, yearDropdown: false }));
-  };
-
-  const getYearOptions = () => {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let i = currentYear - 100; i <= currentYear - 18; i++) {
-      years.push(i);
-    }
-    return years.reverse();
-  };
-
-  const selectDate = (date: Date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    const formattedDate = `${day}/${month}/${year}`;
-    handleInputChange('dateOfBirth', formattedDate);
-    setSelectedDate(date);
-    setDropdownStates(prev => ({ ...prev, calendar: false }));
-  };
-
-  const renderCalendar = () => {
-    const year = calendarDate.getFullYear();
-    const month = calendarDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const currentYear = new Date().getFullYear();
-    const maxDate = new Date(currentYear - 18, 11, 31);
-    
-    const days = [];
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="w-8 h-8" />);
-    }
-    
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
-      const isFutureDate = date > maxDate;
-      
-      days.push(
-        <button
-          key={day}
-          type="button"
-          onClick={() => !isFutureDate && selectDate(date)}
-          disabled={isFutureDate}
-          className={`w-8 h-8 flex items-center justify-center rounded-full text-sm transition-colors
-            ${isSelected ? 'bg-teal-500 text-white' : ''}
-            ${!isSelected && !isFutureDate ? 'hover:bg-gray-100' : ''}
-            ${isFutureDate ? 'text-gray-300 cursor-not-allowed' : ''}`}
-        >
-          {day}
-        </button>
-      );
-    }
-    return days;
-  };
-
   return (
-    <div className="min-h-screen bg-white flex flex-col relative">
-      <div className="w-full max-w-2xl mx-auto px-6 py-8 flex flex-col flex-1">
-        <div className="flex items-center justify-between mb-8">
-          <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <ArrowLeft className="w-6 h-6 text-gray-700" />
-          </button>
-          <Logo />
-          <div className="w-10" />
-        </div>
-
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Personal Information</h1>
-          <p className="text-gray-600 mb-8">Please provide your accurate personal details</p>
-
-          <div className="space-y-4">
-            {/* First Name - Read Only */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                First Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.firstName}
-                readOnly
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
-              />
-              <p className="text-xs text-gray-500 mt-1">Auto-populated from your account</p>
-            </div>
-
-            {/* Last Name - Read Only */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.lastName}
-                readOnly
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
-              />
-              <p className="text-xs text-gray-500 mt-1">Auto-populated from your account</p>
-            </div>
-
-            {/* Middle Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
-              <input
-                type="text"
-                placeholder="Optional"
-                value={formData.middleName}
-                onChange={(e) => handleInputChange('middleName', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
-
-            {/* NIN with Verification */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                NIN <span className="text-red-500">*</span>
-              </label>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    placeholder="11 digit NIN"
-                    value={formData.nin}
-                    onChange={(e) => handleInputChange('nin', formatNIN(e.target.value))}
-                    maxLength={11}
-                    disabled={ninVerified}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                      ninVerified ? 'bg-green-50 border-green-500' : 'border-gray-300'
-                    } ${ninVerified ? 'cursor-not-allowed' : ''}`}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleVerifyNIN}
-                  disabled={ninVerifying || ninVerified || formData.nin.length !== 11}
-                  className={`px-6 py-3 rounded-lg font-medium whitespace-nowrap flex items-center gap-2 ${
-                    ninVerified
-                      ? 'bg-green-500 text-white cursor-default'
-                      : 'bg-teal-500 text-white hover:bg-teal-600 disabled:bg-gray-300 disabled:cursor-not-allowed'
-                  }`}
-                >
-                  {ninVerifying ? (
-                    'Verifying...'
-                  ) : ninVerified ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      Verified
-                    </>
-                  ) : (
-                    'Verify'
-                  )}
-                </button>
-              </div>
-              {verificationErrors.nin && (
-                <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
-                  <XCircle className="w-4 h-4" />
-                  {verificationErrors.nin}
-                </p>
-              )}
-              <p className="text-xs text-gray-500 mt-1">National Identity Number (Used for facial verification)</p>
-            </div>
-
-            {/* BVN with Verification */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                BVN <span className="text-red-500">*</span>
-              </label>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    placeholder="11 digit BVN"
-                    value={formData.bvn}
-                    onChange={(e) => handleInputChange('bvn', formatBVN(e.target.value))}
-                    maxLength={11}
-                    disabled={bvnVerified}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-                      bvnVerified ? 'bg-green-50 border-green-500' : 'border-gray-300'
-                    } ${bvnVerified ? 'cursor-not-allowed' : ''}`}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleVerifyBVN}
-                  disabled={bvnVerifying || bvnVerified || formData.bvn.length !== 11}
-                  className={`px-6 py-3 rounded-lg font-medium whitespace-nowrap flex items-center gap-2 ${
-                    bvnVerified
-                      ? 'bg-green-500 text-white cursor-default'
-                      : 'bg-teal-500 text-white hover:bg-teal-600 disabled:bg-gray-300 disabled:cursor-not-allowed'
-                  }`}
-                >
-                  {bvnVerifying ? (
-                    'Verifying...'
-                  ) : bvnVerified ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      Verified
-                    </>
-                  ) : (
-                    'Verify'
-                  )}
-                </button>
-              </div>
-              {verificationErrors.bvn && (
-                <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
-                  <XCircle className="w-4 h-4" />
-                  {verificationErrors.bvn}
-                </p>
-              )}
-              <p className="text-xs text-gray-500 mt-1">Bank Verification Number</p>
-            </div>
-
-            {/* Date of Birth */}
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date of Birth <span className="text-red-500">*</span>
-              </label>
-              <button
-                type="button"
-                onClick={() => toggleDropdown('calendar')}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between hover:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                <span className={formData.dateOfBirth ? 'text-gray-900' : 'text-gray-500'}>
-                  {formData.dateOfBirth || 'dd/mm/yyyy'}
-                </span>
-                <Calendar className="w-5 h-5 text-gray-400" />
-              </button>
-              <p className="text-xs text-gray-500 mt-1">
-                {ninVerified || bvnVerified ? 'Auto-populated from verification' : 'Must be above 18 years'}
-              </p>
-
-              {dropdownStates.calendar && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="relative">
-                      <button type="button" onClick={() => toggleDropdown('yearDropdown')} className="flex items-center space-x-1 px-3 py-1 hover:bg-gray-100 rounded-md">
-                        <span className="text-sm font-medium">{calendarDate.getFullYear()}</span>
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                      {dropdownStates.yearDropdown && (
-                        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-60 w-20 max-h-32 overflow-y-auto">
-                          {getYearOptions().map((year) => (
-                            <button key={year} type="button" onClick={() => navigateYear(year)} className="w-full px-3 py-1.5 text-left hover:bg-gray-50 text-sm">{year}</button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <button type="button" onClick={() => toggleDropdown('monthDropdown')} className="flex items-center space-x-1 px-3 py-1 hover:bg-gray-100 rounded-md">
-                        <span className="text-sm font-medium">{months[calendarDate.getMonth()]}</span>
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                      {dropdownStates.monthDropdown && (
-                        <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-60 w-32 max-h-40 overflow-y-auto">
-                          {months.map((month, index) => (
-                            <button key={month} type="button" onClick={() => navigateMonth(index)} className="w-full px-3 py-1.5 text-left hover:bg-gray-50 text-sm">{month}</button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-7 gap-1 mb-2">
-                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => <div key={day} className="w-8 h-8 flex items-center justify-center text-xs font-medium text-gray-500">{day}</div>)}
-                  </div>
-                  <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
-                </div>
-              )}
-            </div>
-
-            {/* Gender */}
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Gender <span className="text-red-500">*</span></label>
-              <button 
-                type="button" 
-                onClick={() => toggleDropdown('gender')} 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between"
-              >
-                <span className={formData.gender ? 'text-gray-900' : 'text-gray-500'}>
-                  {formData.gender ? getSelectedLabel('gender', genderOptions) : 'Select gender'}
-                </span>
-                <ChevronDown className="w-5 h-5 text-gray-400" />
-              </button>
-              {ninVerified || bvnVerified ? (
-                <p className="text-xs text-gray-500 mt-1">Auto-populated from verification</p>
-              ) : null}
-              {dropdownStates.gender && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                  {genderOptions.map((option) => (
-                    <button key={option.value} type="button" onClick={() => selectOption('gender', option.value)} className="w-full px-4 py-3 text-left hover:bg-gray-50">
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Occupation */}
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Occupation <span className="text-red-500">*</span></label>
-              <button type="button" onClick={() => toggleDropdown('occupation')} className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between">
-                <span className={formData.occupation ? 'text-gray-900' : 'text-gray-500'}>
-                  {formData.occupation ? getSelectedLabel('occupation', occupationOptions) : 'Select occupation'}
-                </span>
-                <ChevronDown className="w-5 h-5 text-gray-400" />
-              </button>
-              {dropdownStates.occupation && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-                  {occupationOptions.map((option) => (
-                    <button key={option.value} type="button" onClick={() => selectOption('occupation', option.value)} className="w-full px-4 py-3 text-left hover:bg-gray-50">
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Source of Funds */}
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Source of Funds <span className="text-red-500">*</span></label>
-              <button type="button" onClick={() => toggleDropdown('sourceOfFunds')} className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between">
-                <span className={formData.sourceOfFunds ? 'text-gray-900' : 'text-gray-500'}>
-                  {formData.sourceOfFunds ? getSelectedLabel('sourceOfFunds', sourceOfFundsOptions) : 'Select source'}
-                </span>
-                <ChevronDown className="w-5 h-5 text-gray-400" />
-              </button>
-              {dropdownStates.sourceOfFunds && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-                  {sourceOfFundsOptions.map((option) => (
-                    <button key={option.value} type="button" onClick={() => selectOption('sourceOfFunds', option.value)} className="w-full px-4 py-3 text-left hover:bg-gray-50">
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Verification Status Banner */}
-            {(ninVerified || bvnVerified) && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="font-medium text-blue-900 mb-2">Verification Status:</p>
-                <div className="space-y-1">
-                  <p className={`text-sm flex items-center gap-2 ${ninVerified ? 'text-green-600' : 'text-gray-600'}`}>
-                    {ninVerified ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                    NIN: {ninVerified ? 'Verified' : 'Not verified'}
-                  </p>
-                  <p className={`text-sm flex items-center gap-2 ${bvnVerified ? 'text-green-600' : 'text-gray-600'}`}>
-                    {bvnVerified ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                    BVN: {bvnVerified ? 'Verified' : 'Not verified'}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Error Message */}
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-
-            {/* Next Button */}
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={!isFormValid() || isSubmitting}
-              className={`w-full py-4 rounded-lg font-semibold text-white transition-all duration-200 ${
-                isFormValid() && !isSubmitting
-                  ? 'bg-teal-500 hover:bg-teal-600 active:bg-teal-700'
-                  : 'bg-gray-300 cursor-not-allowed'
-              }`}
-            >
-              {isSubmitting ? 'Submitting...' : 'Next'}
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="border-b bg-white">
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">Back</span>
             </button>
+            <Logo />
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-xs text-gray-500">Step 3/5</div>
+              <div className="text-xs font-medium text-gray-700">Personal Information</div>
+            </div>
+            <div className="relative w-12 h-12">
+              <svg className="w-12 h-12 transform -rotate-90">
+                <circle cx="24" cy="24" r="20" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                <circle cx="24" cy="24" r="20" fill="none" stroke="#14b8a6" strokeWidth="4" 
+                  strokeDasharray="125.6" strokeDashoffset={125.6 * (1 - 0.6)} />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xs font-bold text-teal-600">60%</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Overlay */}
-      {(dropdownStates.gender || dropdownStates.occupation || dropdownStates.sourceOfFunds || dropdownStates.calendar) && (
-        <div className="fixed inset-0 z-40" onClick={() => setDropdownStates({ gender: false, occupation: false, sourceOfFunds: false, calendar: false, yearDropdown: false, monthDropdown: false })} />
-      )}
+      {/* Content */}
+      <div className="max-w-xl mx-auto px-6 py-4">
+        <h1 className="text-xl font-bold text-center mb-5">Personal Information</h1>
+
+        <div className="space-y-3">
+          {/* First Name */}
+          <div>
+            <label className="block text-xs text-gray-700 mb-0.5">First Name</label>
+            <input
+              type="text"
+              value={formData.firstName}
+              readOnly
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl bg-gray-50"
+            />
+          </div>
+
+          {/* Middle Name */}
+          <div>
+            <label className="block text-xs text-gray-700 mb-0.5">Middle Name</label>
+            <input
+              type="text"
+              value={formData.middleName}
+              onChange={(e) => handleInputChange('middleName', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl"
+            />
+          </div>
+
+          {/* Last Name */}
+          <div>
+            <label className="block text-xs text-gray-700 mb-0.5">Last Name</label>
+            <input
+              type="text"
+              value={formData.lastName}
+              readOnly
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl bg-gray-50"
+            />
+          </div>
+
+          {/* Date of Birth */}
+          <div>
+            <label className="block text-xs text-gray-700 mb-0.5">
+              Date of Birth <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="dd/mm/yyyy"
+              value={formData.dateOfBirth}
+              onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl"
+            />
+            <p className="text-xs text-gray-500 mt-0.5">Must be above 18 years</p>
+          </div>
+
+          {/* NIN with auto-verify */}
+          <div>
+            <label className="block text-xs text-gray-700 mb-0.5">
+              NIN <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="11 digit number"
+                value={formData.nin}
+                onChange={(e) => handleInputChange('nin', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                maxLength={11}
+                disabled={ninStatus === 'success'}
+                className={`w-full px-3 py-2 pr-10 text-sm border rounded-xl ${
+                  ninStatus === 'success' ? 'bg-green-50 border-green-500' : 
+                  ninStatus === 'error' ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                {getStatusIcon(ninStatus)}
+              </div>
+            </div>
+          </div>
+
+          {/* BVN with auto-verify */}
+          <div>
+            <label className="block text-xs text-gray-700 mb-0.5">
+              BVN <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="11 digit number"
+                value={formData.bvn}
+                onChange={(e) => handleInputChange('bvn', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                maxLength={11}
+                disabled={bvnStatus === 'success'}
+                className={`w-full px-3 py-2 pr-10 text-sm border rounded-xl ${
+                  bvnStatus === 'success' ? 'bg-green-50 border-green-500' : 
+                  bvnStatus === 'error' ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                {getStatusIcon(bvnStatus)}
+              </div>
+            </div>
+          </div>
+
+          {/* Gender */}
+          <div>
+            <label className="block text-xs text-gray-700 mb-0.5">
+              Gender <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.gender}
+              onChange={(e) => handleInputChange('gender', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl"
+            >
+              <option value="">Select gender</option>
+              {genderOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {!isCorporate && (
+            <>
+              {/* Occupation */}
+              <div>
+                <label className="block text-xs text-gray-700 mb-0.5">
+                  Occupation <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.occupation}
+                  onChange={(e) => handleInputChange('occupation', e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl"
+                >
+                  <option value="">Enter your occupation</option>
+                  {occupationOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Source of Funds */}
+              <div>
+                <label className="block text-xs text-gray-700 mb-0.5">
+                  Source of Funds <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.sourceOfFunds}
+                  onChange={(e) => handleInputChange('sourceOfFunds', e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl"
+                >
+                  <option value="">Select source</option>
+                  {sourceOfFundsOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* Next Button */}
+          <button
+            onClick={handleNext}
+            disabled={!isFormValid() || isSubmitting}
+            className={`w-full py-2 rounded-lg font-semibold text-sm text-white ${
+              isFormValid() && !isSubmitting
+                ? 'bg-teal-500 hover:bg-teal-600'
+                : 'bg-gray-300 cursor-not-allowed'
+            }`}
+          >
+            {isSubmitting ? 'Submitting...' : 'Next'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
-
-export default PersonalInformation;

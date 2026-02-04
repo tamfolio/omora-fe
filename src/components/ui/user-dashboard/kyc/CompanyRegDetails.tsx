@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ArrowLeft, Upload, X, AlertCircle } from 'lucide-react';
 import Logo from '../../Logo';
+import { submitCompanyRegistration } from '@/lib/kyc-api-service';
 
 interface CompanyRegDetailsProps {
   onNext: () => void;
@@ -8,345 +9,386 @@ interface CompanyRegDetailsProps {
 }
 
 interface UploadedFile {
+  file: File;
   name: string;
   size: number;
   type: string;
-  status: 'uploading' | 'success' | 'error';
-  errorMessage?: string;
-}
-
-interface DocumentState {
-  certificateOfIncorporation: UploadedFile | null;
-  cacForm: UploadedFile | null;
-  boardResolution: UploadedFile | null;
-  directorId: UploadedFile | null;
-  utilityBill: UploadedFile | null;
 }
 
 function CompanyRegDetails({ onNext, onBack }: CompanyRegDetailsProps) {
-  const [documents, setDocuments] = useState<DocumentState>({
-    certificateOfIncorporation: null,
-    cacForm: null,
-    boardResolution: null,
-    directorId: null,
-    utilityBill: null
-  });
+  // State for single files
+  const [certOfIncorporation, setCertOfIncorporation] = useState<UploadedFile | null>(null);
+  const [statusOrLicense, setStatusOrLicense] = useState<UploadedFile | null>(null);
+  const [boardOrAuth, setBoardOrAuth] = useState<UploadedFile | null>(null);
+  
+  // State for multiple files (arrays)
+  const [directorDocs, setDirectorDocs] = useState<UploadedFile[]>([]);
+  const [proofOfAddress, setProofOfAddress] = useState<UploadedFile[]>([]);
 
-  const [dragStates, setDragStates] = useState({
-    certificateOfIncorporation: false,
-    cacForm: false,
-    boardResolution: false,
-    directorId: false,
-    utilityBill: false
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fileInputRefs = {
-    certificateOfIncorporation: useRef<HTMLInputElement>(null),
-    cacForm: useRef<HTMLInputElement>(null),
-    boardResolution: useRef<HTMLInputElement>(null),
-    directorId: useRef<HTMLInputElement>(null),
-    utilityBill: useRef<HTMLInputElement>(null)
+    cert: useRef<HTMLInputElement>(null),
+    status: useRef<HTMLInputElement>(null),
+    board: useRef<HTMLInputElement>(null),
+    directors: useRef<HTMLInputElement>(null),
+    address: useRef<HTMLInputElement>(null),
   };
 
-  const acceptedFileTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
-  const maxFileSize = 5 * 1024 * 1024; // 5MB
+  const validateFile = (file: File): boolean => {
+    const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
 
-  const validateFile = (file: File): { isValid: boolean; errorMessage?: string } => {
-    if (!acceptedFileTypes.includes(file.type)) {
-      return { isValid: false, errorMessage: 'Only PDF, PNG, JPG, GIF files are allowed' };
+    if (!validTypes.includes(file.type)) {
+      setError('Only PDF, PNG, and JPG files are allowed');
+      return false;
     }
-    if (file.size > maxFileSize) {
-      return { isValid: false, errorMessage: 'File size must be less than 5MB' };
+
+    if (file.size > maxSize) {
+      setError('File size must be less than 5MB');
+      return false;
     }
-    return { isValid: true };
+
+    return true;
   };
 
-  const handleFileUpload = (file: File, documentType: keyof DocumentState) => {
-    const validation = validateFile(file);
-    
-    if (!validation.isValid) {
-      setDocuments(prev => ({
-        ...prev,
-        [documentType]: {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          status: 'error',
-          errorMessage: validation.errorMessage
-        }
-      }));
-      return;
-    }
-
-    // Simulate upload process
-    setDocuments(prev => ({
-      ...prev,
-      [documentType]: {
+  const handleSingleFile = (
+    file: File,
+    setter: React.Dispatch<React.SetStateAction<UploadedFile | null>>
+  ) => {
+    if (validateFile(file)) {
+      setter({
+        file,
         name: file.name,
         size: file.size,
         type: file.type,
-        status: 'uploading'
-      }
-    }));
-
-    // Simulate upload completion after 2 seconds
-    setTimeout(() => {
-      setDocuments(prev => ({
-        ...prev,
-        [documentType]: prev[documentType] ? {
-          ...prev[documentType],
-          status: 'success'
-        } : null
-      }));
-    }, 2000);
-  };
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, documentType: keyof DocumentState) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleFileUpload(file, documentType);
+      });
+      setError(null);
     }
   };
 
-  const handleDragOver = (event: React.DragEvent, documentType: keyof DocumentState) => {
-    event.preventDefault();
-    setDragStates(prev => ({ ...prev, [documentType]: true }));
-  };
-
-  const handleDragLeave = (event: React.DragEvent, documentType: keyof DocumentState) => {
-    event.preventDefault();
-    setDragStates(prev => ({ ...prev, [documentType]: false }));
-  };
-
-  const handleDrop = (event: React.DragEvent, documentType: keyof DocumentState) => {
-    event.preventDefault();
-    setDragStates(prev => ({ ...prev, [documentType]: false }));
+  const handleMultipleFiles = (
+    files: FileList,
+    currentFiles: UploadedFile[],
+    setter: React.Dispatch<React.SetStateAction<UploadedFile[]>>
+  ) => {
+    const newFiles: UploadedFile[] = [];
     
-    const file = event.dataTransfer.files[0];
-    if (file) {
-      handleFileUpload(file, documentType);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (validateFile(file)) {
+        newFiles.push({
+          file,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        });
+      }
     }
+
+    setter([...currentFiles, ...newFiles]);
+    setError(null);
   };
 
-  const removeDocument = (documentType: keyof DocumentState) => {
-    setDocuments(prev => ({
-      ...prev,
-      [documentType]: null
-    }));
+  const removeArrayFile = (
+    index: number,
+    currentFiles: UploadedFile[],
+    setter: React.Dispatch<React.SetStateAction<UploadedFile[]>>
+  ) => {
+    const updated = currentFiles.filter((_, i) => i !== index);
+    setter(updated);
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  const handleSubmit = async () => {
+    setError(null);
 
-  const isFormValid = () => {
-    return documents.certificateOfIncorporation?.status === 'success' && 
-           documents.cacForm?.status === 'success' &&
-           documents.boardResolution?.status === 'success' &&
-           documents.directorId?.status === 'success' &&
-           documents.utilityBill?.status === 'success';
-  };
+    // Validation
+    if (!certOfIncorporation) {
+      setError('Certificate of Incorporation is required');
+      return;
+    }
 
-  const handleSubmit = () => {
-    if (isFormValid()) {
-      console.log('Documents uploaded successfully:', documents);
+    if (!statusOrLicense) {
+      setError('Status Extract or Operating License is required');
+      return;
+    }
+
+    if (!boardOrAuth) {
+      setError('Board Resolution or Authorization Letter is required');
+      return;
+    }
+
+    if (directorDocs.length === 0) {
+      setError('At least one Director ID is required');
+      return;
+    }
+
+    if (proofOfAddress.length === 0) {
+      setError('At least one Proof of Address is required');
+      return;
+    }
+
+    setIsSubmitting(true);
+  try {
+    const formData = new FormData();
+
+    // 1. Append Single Files
+    // Ensure these keys ("CertOfIncorporation", "StatusExtract") match the Backend DTO exactly
+    formData.append('CertOfIncorporation', certOfIncorporation.file);
+    formData.append('StatusExtract', statusOrLicense.file);
+    formData.append('AuthorizationLetter', boardOrAuth.file);
+
+    // 2. Append Arrays
+    directorDocs.forEach((doc) => {
+      formData.append('DirectorsIdentification', doc.file);
+    });
+
+    proofOfAddress.forEach((doc) => {
+      formData.append('ProofOfAddress', doc.file);
+    });
+
+// Log the FormData keys
+for (let pair of formData.entries()) {
+  console.log(pair[0], pair[1]);
+}
+    // 3. Call the 'Registration/Add-or-Update' Endpoint
+   const response = await fetch('/api/proxy/user/api/v1/onboarding/business/registration/add-or-update', {
+     method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        // Safe error handling
+        let errorMessage = 'Failed to submit documents';
+        try {
+          // Read raw text first
+          const errorText = await response.text(); 
+          try {
+             // Try to parse as JSON
+             const result = JSON.parse(errorText);
+             errorMessage = result.message || errorMessage;
+          } catch {
+             // If JSON parse fails, show the raw text (truncated) or status
+             console.error("Non-JSON Error Response:", errorText);
+             errorMessage = `Server Error (${response.status}): ${errorText.substring(0, 100) || response.statusText}`;
+          }
+        } catch (e) {
+          // If reading text fails
+          errorMessage = `Connection Error (${response.status})`;
+        }
+        throw new Error(errorMessage);
+      }
+
       onNext();
-    }
-  };
+  } catch (err: any) {
+    setError(err.message || 'Failed to submit documents');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
-  const UploadArea = ({ 
-    documentType, 
-    title, 
-    required = false 
-  }: { 
-    documentType: keyof DocumentState; 
-    title: string; 
-    required?: boolean;
-  }) => {
-    const document = documents[documentType];
-    const isDragging = dragStates[documentType];
-    const inputRef = fileInputRefs[documentType];
-
-    return (
-      <div className="mb-8">
-        <label className="block text-sm font-medium text-gray-700 mb-4">
-          {title} {required && <span className="text-red-500">*</span>}
-        </label>
-        
-        <div
-          className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            isDragging
-              ? 'border-cyan-400 bg-cyan-50'
-              : document?.status === 'error'
-              ? 'border-red-300 bg-red-50'
-              : 'border-gray-300 bg-gray-50 hover:border-cyan-400 hover:bg-cyan-50'
-          }`}
-          onDragOver={(e) => handleDragOver(e, documentType)}
-          onDragLeave={(e) => handleDragLeave(e, documentType)}
-          onDrop={(e) => handleDrop(e, documentType)}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".pdf,.png,.jpg,.jpeg,.gif"
-            onChange={(e) => handleFileSelect(e, documentType)}
-            className="hidden"
-          />
-          
-          {!document && (
-            <>
-              <Upload className="w-10 h-10 text-gray-400 mx-auto mb-4" />
-              <div className="text-sm text-gray-600 mb-2">
-                <button
-                  type="button"
-                  onClick={() => inputRef.current?.click()}
-                  className="text-cyan-600 hover:text-cyan-700 font-medium"
-                >
-                  Click to upload
-                </button>
-                <span> or drag and drop</span>
-              </div>
-              <div className="text-xs text-gray-500">
-                SVG, PNG, JPG or GIF (max. 800×400px)
-              </div>
-            </>
-          )}
-
-          {document && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  document.status === 'success' ? 'bg-green-100' :
-                  document.status === 'error' ? 'bg-red-100' : 'bg-gray-100'
-                }`}>
-                  {document.status === 'uploading' && (
-                    <div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-                  )}
-                  {document.status === 'success' && (
-                    <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                  )}
-                  {document.status === 'error' && (
-                    <AlertCircle className="w-4 h-4 text-red-500" />
-                  )}
-                </div>
-                <div className="text-left">
-                  <div className="text-sm font-medium text-gray-900">{document.name}</div>
-                  <div className="text-xs text-gray-500">{formatFileSize(document.size)}</div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => removeDocument(documentType)}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {document?.status === 'error' && document.errorMessage && (
-          <div className="mt-2 flex items-center space-x-2 text-red-600">
-            <AlertCircle className="w-4 h-4" />
-            <span className="text-sm">{document.errorMessage}</span>
-          </div>
-        )}
-      </div>
-    );
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-white px-4 py-4 flex items-center justify-between shadow-sm border-b border-gray-200">
-        <div className="flex items-center space-x-4">
-          <button 
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            onClick={onBack}
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <span className="text-sm text-gray-600 font-medium">Back</span>
-          <div className="flex items-center space-x-2">
-          <Logo width={150} height={40} />
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="text-right">
-            <div className="text-sm text-gray-500">Step 4/4</div>
-            <div className="text-sm font-medium text-gray-700">Upload Your Document</div>
-          </div>
-          <div className="w-12 h-12 rounded-full border-4 border-cyan-500 flex items-center justify-center relative">
-            <span className="text-sm font-semibold text-cyan-600">80%</span>
+      <div className="border-b bg-white">
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+            <Logo />
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Content */}
       <div className="max-w-2xl mx-auto px-6 py-8">
-        <h1 className="text-2xl font-semibold text-gray-800 text-center mb-12">
-          Company Registration Documents
-        </h1>
+        <h1 className="text-2xl font-bold text-center mb-2">Company Registration Documents</h1>
+        <p className="text-sm text-gray-600 text-center mb-8">
+          Upload the required documents (PDF, PNG, or JPG, max 5MB each)
+        </p>
 
-        <div className="space-y-8">
-          <UploadArea 
-            documentType="certificateOfIncorporation"
-            title="1. Certificate of Incorporation (CAC)"
-            required
-          />
+        <div className="space-y-6">
+          {/* 1. Certificate of Incorporation */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Certificate of Incorporation <span className="text-red-500">*</span>
+            </label>
+            <input
+              ref={fileInputRefs.cert}
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleSingleFile(e.target.files[0], setCertOfIncorporation)}
+            />
+            {certOfIncorporation ? (
+              <div className="flex items-center justify-between p-3 border border-green-300 bg-green-50 rounded-lg">
+                <span className="text-sm text-gray-700">{certOfIncorporation.name} ({formatFileSize(certOfIncorporation.size)})</span>
+                <button onClick={() => setCertOfIncorporation(null)} className="text-red-500 hover:text-red-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileInputRefs.cert.current?.click()}
+                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-teal-500 transition-colors"
+              >
+                <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm text-gray-600">Click to upload</p>
+              </button>
+            )}
+          </div>
 
-          <UploadArea 
-            documentType="cacForm"
-            title="2. CAC Form 2 & 7/ Status Extract"
-            required
-          />
+          {/* 2. Status Extract OR Operating License */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status Extract or Operating License <span className="text-red-500">*</span>
+            </label>
+            <input
+              ref={fileInputRefs.status}
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleSingleFile(e.target.files[0], setStatusOrLicense)}
+            />
+            {statusOrLicense ? (
+              <div className="flex items-center justify-between p-3 border border-green-300 bg-green-50 rounded-lg">
+                <span className="text-sm text-gray-700">{statusOrLicense.name} ({formatFileSize(statusOrLicense.size)})</span>
+                <button onClick={() => setStatusOrLicense(null)} className="text-red-500 hover:text-red-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileInputRefs.status.current?.click()}
+                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-teal-500 transition-colors"
+              >
+                <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm text-gray-600">Click to upload</p>
+              </button>
+            )}
+          </div>
 
-          <UploadArea 
-            documentType="boardResolution"
-            title="3. Board Resolution or Authorization Letter"
-            required
-          />
+          {/* 3. Board Resolution OR Authorization Letter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Board Resolution or Authorization Letter <span className="text-red-500">*</span>
+            </label>
+            <input
+              ref={fileInputRefs.board}
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleSingleFile(e.target.files[0], setBoardOrAuth)}
+            />
+            {boardOrAuth ? (
+              <div className="flex items-center justify-between p-3 border border-green-300 bg-green-50 rounded-lg">
+                <span className="text-sm text-gray-700">{boardOrAuth.name} ({formatFileSize(boardOrAuth.size)})</span>
+                <button onClick={() => setBoardOrAuth(null)} className="text-red-500 hover:text-red-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileInputRefs.board.current?.click()}
+                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-teal-500 transition-colors"
+              >
+                <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm text-gray-600">Click to upload</p>
+              </button>
+            )}
+          </div>
 
-          <UploadArea 
-            documentType="directorId"
-            title="4. Valid Government-Issued ID of Director"
-            required
-          />
+          {/* 4. Directors Identification (Multiple) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Directors Identification <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(Multiple files allowed)</span>
+            </label>
+            <input
+              ref={fileInputRefs.directors}
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg"
+              multiple
+              className="hidden"
+              onChange={(e) => e.target.files && handleMultipleFiles(e.target.files, directorDocs, setDirectorDocs)}
+            />
+            <div className="space-y-2">
+              {directorDocs.map((doc, index) => (
+                <div key={index} className="flex items-center justify-between p-3 border border-green-300 bg-green-50 rounded-lg">
+                  <span className="text-sm text-gray-700">{doc.name} ({formatFileSize(doc.size)})</span>
+                  <button onClick={() => removeArrayFile(index, directorDocs, setDirectorDocs)} className="text-red-500 hover:text-red-700">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => fileInputRefs.directors.current?.click()}
+                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-teal-500 transition-colors"
+              >
+                <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm text-gray-600">Click to upload (multiple files allowed)</p>
+              </button>
+            </div>
+          </div>
 
-          <UploadArea 
-            documentType="utilityBill"
-            title="5. Recent utility bill (Not more than 3 months old)"
-            required
-          />
+          {/* 5. Proof of Address (Multiple) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Proof of Address <span className="text-red-500">*</span> <span className="text-xs text-gray-500">(Multiple files allowed)</span>
+            </label>
+            <input
+              ref={fileInputRefs.address}
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg"
+              multiple
+              className="hidden"
+              onChange={(e) => e.target.files && handleMultipleFiles(e.target.files, proofOfAddress, setProofOfAddress)}
+            />
+            <div className="space-y-2">
+              {proofOfAddress.map((doc, index) => (
+                <div key={index} className="flex items-center justify-between p-3 border border-green-300 bg-green-50 rounded-lg">
+                  <span className="text-sm text-gray-700">{doc.name} ({formatFileSize(doc.size)})</span>
+                  <button onClick={() => removeArrayFile(index, proofOfAddress, setProofOfAddress)} className="text-red-500 hover:text-red-700">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => fileInputRefs.address.current?.click()}
+                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-teal-500 transition-colors"
+              >
+                <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm text-gray-600">Click to upload (multiple files allowed)</p>
+              </button>
+            </div>
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="flex items-start gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
 
           {/* Submit Button */}
-          <div className="pt-8">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!isFormValid()}
-              className={`w-full py-4 rounded-lg font-semibold text-white transition-all duration-200 ${
-                isFormValid()
-                  ? 'bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800'
-                  : 'bg-gray-300 cursor-not-allowed'
-              }`}
-            >
-              Submit
-            </button>
-          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit Documents'}
+          </button>
         </div>
       </div>
-
-      {/* Support Button */}
-      <button className="fixed bottom-6 right-6 w-12 h-12 bg-cyan-600 hover:bg-cyan-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </button>
     </div>
   );
 }
