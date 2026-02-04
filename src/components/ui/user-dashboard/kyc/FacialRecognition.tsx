@@ -61,68 +61,68 @@ function FacialRecognition({
     hasStartedRef.current = true;
 
     try {
-  const button = document.getElementById('QoreIDButton');
-  if (button) {
-    const newButton = button.cloneNode(true) as HTMLElement;
-    button.parentNode?.replaceChild(newButton, button);
+      const button = document.getElementById('QoreIDButton');
+      if (button) {
+        const newButton = button.cloneNode(true) as HTMLElement;
+        button.parentNode?.replaceChild(newButton, button);
 
-    // ✅ Success - proceed to next step (orchestrator handles individual vs corporate)
-    newButton.addEventListener('qoreid:verificationSubmitted', (() => {
-      console.log('QoreID verification submitted - proceeding to next step');
-      setVerificationComplete(true);
-      
-      setTimeout(() => {
-        onNext();
-      }, 1500);
-    }) as EventListener);
+        // ✅ Success - proceed to next step
+        newButton.addEventListener('qoreid:verificationSubmitted', (() => {
+          console.log('QoreID verification submitted - proceeding to next step');
+          setVerificationComplete(true);
+          
+          setTimeout(() => {
+            onNext();
+          }, 1500);
+        }) as EventListener);
 
-    // ✅ Error - redirect to dashboard
-    newButton.addEventListener('qoreid:verificationError', ((event: any) => {
-      console.log('QoreID verification error:', event.detail);
-      setIsVerifying(false);
-      setError('Verification process failed. Redirecting...');
+        // ✅ Error - redirect to dashboard
+        newButton.addEventListener('qoreid:verificationError', ((event: any) => {
+          console.log('QoreID verification error:', event.detail);
+          setIsVerifying(false);
+          setError('Verification process failed. Redirecting...');
+          hasStartedRef.current = false;
+          
+          setTimeout(() => {
+            console.log('Redirecting to dashboard with kyc=failed');
+            router.push('/dashboard?kyc=failed');
+          }, 2000);
+        }) as EventListener);
+
+        // ✅ FIXED: Closed - user cancelled, redirect to dashboard
+        newButton.addEventListener('qoreid:verificationClosed', () => {
+          console.log('QoreID verification closed by user - redirecting to dashboard');
+          setIsVerifying(false);
+          setShowManualButton(false);
+          hasStartedRef.current = false;
+          
+          // User cancelled - redirect to dashboard with pending status
+          setTimeout(() => {
+            router.push('/dashboard?kyc=pending');
+          }, 1000);
+        });
+      }
+
+      if (window.QoreIdRegenerateSDK) {
+        window.QoreIdRegenerateSDK();
+      }
+
+      if (window.QoreIDWebSdk) {
+        window.QoreIDWebSdk.start();
+        
+        setTimeout(() => {
+          if (isVerifying) setShowManualButton(true);
+        }, 5000);
+      } else {
+        setShowManualButton(true);
+        hasStartedRef.current = false;
+      }
+
+    } catch (err) {
+      console.error('Error triggering QoreID SDK:', err);
+      setShowManualButton(true);
       hasStartedRef.current = false;
-      
-      setTimeout(() => {
-        console.log('Redirecting to dashboard with kyc=failed');
-        router.push('/dashboard?kyc=failed');
-      }, 2000);
-    }) as EventListener);
-
-    // ✅ Closed - proceed to next step
-    newButton.addEventListener('qoreid:verificationClosed', () => {
-      console.log('QoreID verification closed by user');
-      setIsVerifying(false);
-      setShowManualButton(false);
-      hasStartedRef.current = false;
-      
-      // Proceed to next step to allow orchestrator to handle resumption
-      setTimeout(() => {
-        onNext();
-      }, 1000);
-    });
-  }
-
-  if (window.QoreIdRegenerateSDK) {
-    window.QoreIdRegenerateSDK();
-  }
-
-  if (window.QoreIDWebSdk) {
-    window.QoreIDWebSdk.start();
-    
-    setTimeout(() => {
-      if (isVerifying) setShowManualButton(true);
-    }, 5000);
-  } else {
-    setShowManualButton(true);
-    hasStartedRef.current = false;
-  }
-
-} catch (err) {
-  console.error('Error triggering QoreID SDK:', err);
-  setShowManualButton(true);
-  hasStartedRef.current = false;
-}
+    }
   };
 
   const handleContinue = async () => {

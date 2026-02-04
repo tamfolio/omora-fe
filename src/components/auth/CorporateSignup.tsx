@@ -598,7 +598,7 @@ export default function CorporateSignup({
           htmlFor="firstName"
           className="block text-xs font-medium text-gray-700 mb-1"
         >
-          First Name *
+          First Name <span className="text-red-500">*</span>
         </label>
         <input
           id="firstName"
@@ -618,7 +618,7 @@ export default function CorporateSignup({
           htmlFor="lastName"
           className="block text-xs font-medium text-gray-700 mb-1"
         >
-          Last Name *
+          Last Name <span className="text-red-500">*</span>
         </label>
         <input
           id="lastName"
@@ -638,7 +638,7 @@ export default function CorporateSignup({
           htmlFor="rcNumber"
           className="block text-xs font-medium text-gray-700 mb-1"
         >
-          RC Number *
+          RC Number <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           {/* Dropdown Button */}
@@ -735,7 +735,7 @@ export default function CorporateSignup({
           htmlFor="bvn"
           className="block text-xs font-medium text-gray-700 mb-1"
         >
-          BVN (11 digits) *
+          BVN (11 digits) <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <input
@@ -761,7 +761,7 @@ export default function CorporateSignup({
           htmlFor="nin"
           className="block text-xs font-medium text-gray-700 mb-1"
         >
-          NIN (11 digits) *
+          NIN (11 digits) <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <input
@@ -787,7 +787,7 @@ export default function CorporateSignup({
           htmlFor="email"
           className="block text-xs font-medium text-gray-700 mb-1"
         >
-          Email *
+          Email <span className="text-red-500">*</span>
         </label>
         <input
           id="email"
@@ -811,7 +811,7 @@ export default function CorporateSignup({
           htmlFor="password"
           className="block text-xs font-medium text-gray-700 mb-1"
         >
-          Password *
+          Password <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <input
@@ -848,7 +848,7 @@ export default function CorporateSignup({
           htmlFor="confirmPassword"
           className="block text-xs font-medium text-gray-700 mb-1"
         >
-          Confirm Password *
+          Confirm Password <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <input

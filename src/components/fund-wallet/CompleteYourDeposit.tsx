@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { FiCopy, FiCheck } from "react-icons/fi";
+import { FiCopy, FiCheck, FiHeadphones } from "react-icons/fi";
 import { CiBank } from "react-icons/ci";
 
 interface WalletDetails {
@@ -183,7 +183,7 @@ export default function CompleteYourDeposit() {
       {/* Floating Chat Button */}
       <div className="fixed bottom-6 right-6">
         <button className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:bg-green-700">
-          <span className="text-white font-bold text-lg">J</span>
+          <FiHeadphones className="text-white text-lg" />
         </button>
       </div>
     </div>

@@ -1,6 +1,4 @@
 // middleware.ts
-// Place this file at: src/middleware.ts
-
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
@@ -25,11 +23,6 @@ export default withAuth(
         url.searchParams.set("returnUrl", pathname);
         return NextResponse.redirect(url);
       }
-
-      // Optional: Add KYC/Risk Profile checks here
-      // if (!token.user?.kycCompleted && pathname !== "/dashboard/kyc-verification") {
-      //   return NextResponse.redirect(new URL("/dashboard/kyc-verification", req.url));
-      // }
 
       return NextResponse.next();
     }
@@ -79,14 +72,6 @@ export default withAuth(
 // Specify which routes to run middleware on
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     * - public folder (assets, images)
-     * - api routes
-     */
     "/((?!_next/static|_next/image|favicon.ico|assets|api).*)",
   ],
 };
