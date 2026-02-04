@@ -42,26 +42,29 @@ function useUserDeposits() {
 
     const fetchWalletBalance = async () => {
       try {
-        // Fetch from API
         const response = await fetch('/api/proxy/user/api/v1/me');
         const result = await response.json();
 
-        if (result.status === 'success' && result.data?.personalWallet) {
-          const { availableBalance } = result.data.personalWallet;
+        if (result.status === 'success' && result.data?.wallets) {
+          // ✅ NEW: Extract balances from wallets array
+          const wallets = result.data.wallets;
           
-          // Set real balance from API
+          const ngnWallet = wallets.find((w: any) => w.currency === 'NGN');
+          const usdcWallet = wallets.find((w: any) => w.currency === 'USDC');
+          const usdtWallet = wallets.find((w: any) => w.currency === 'USDT');
+          
           const balances = {
-            naira: availableBalance || 0,
-            usdt: 0, // TODO: Add USDT balance when available from API
-            usdc: 0, // TODO: Add USDC balance when available from API
+            naira: ngnWallet?.availableBalance || 0,
+            usdc: usdcWallet?.availableBalance || 0,
+            usdt: usdtWallet?.availableBalance || 0,
           };
 
           setUserBalances(balances);
-          setHasDeposits(availableBalance > 0);
+          setHasDeposits(balances.naira > 0 || balances.usdc > 0 || balances.usdt > 0);
 
           // Optional: Still save to localStorage for offline support
           if (typeof window !== "undefined") {
-            localStorage.setItem("userHasDeposits", availableBalance > 0 ? "true" : "false");
+            localStorage.setItem("userHasDeposits", (balances.naira > 0) ? "true" : "false");
             localStorage.setItem("userBalances", JSON.stringify(balances));
           }
         }
@@ -235,8 +238,6 @@ export default function FundWalletComponent() {
           <WalletHistory />
         </div>
       </div>
-
-     
 
       {/* Floating Chat Button */}
       <div className="fixed bottom-6 right-6">

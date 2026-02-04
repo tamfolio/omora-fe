@@ -59,6 +59,18 @@ export interface UserData {
     role: string;
     onboardingState: any;
   };
+  business?: {
+    businessId: number;
+    businessName: string | null;
+    registrationNumber: string | null;
+    taxNumber: string | null;
+    address: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    status: string | null;
+    statusId: number;
+  };
   verification: Array<{
     id: number;
     type: string;
@@ -206,18 +218,75 @@ export const submitDirectorInformation = async (
   return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/contact/information', 'POST', data);
 };
 
-export const uploadCompanyDocument = async (
-  file: File,
-  documentType: string
-): Promise<ApiResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 1500));
+export interface CompanyRegistrationData {
+  CertOfIncorporation?: File;                    // 1. Certificate of Incorporation
+  StatusExtract?: File;                          // 2. Status Extract
+  AuthorizationLetter?: File;                    // 3. Board Resolution/Authorization Letter
+  DirectorsIdentification?: File[];              // 4. Director's ID (can be multiple)
+  ProofOfAddress?: File[];                       // 5. Utility Bill/Proof of Address (can be multiple)
+}
 
-  return {
-    status: 'success',
-    statusCode: '200',
-    message: 'Company document uploaded successfully',
-    data: { reference: `CORP-DOC-${Date.now()}` }
+// Make multipart request for file uploads
+const makeMultipartRequest = async <T>(
+  endpoint: string,
+  formData: FormData
+): Promise<T> => {
+  const config: RequestInit = {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
   };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return data as T;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Submit Company Registration Documents (5 FIELDS ONLY)
+export const submitCompanyRegistration = async (
+  data: CompanyRegistrationData
+): Promise<ApiResponse> => {
+  const formData = new FormData();
+
+  // 1. Certificate of Incorporation
+  if (data.CertOfIncorporation) {
+    formData.append('CertOfIncorporation', data.CertOfIncorporation);
+  }
+
+  // 2. Status Extract
+  if (data.StatusExtract) {
+    formData.append('StatusExtract', data.StatusExtract);
+  }
+
+  // 3. Authorization Letter / Board Resolution
+  if (data.AuthorizationLetter) {
+    formData.append('AuthorizationLetter', data.AuthorizationLetter);
+  }
+
+  // 4. Director's Identification (array)
+  if (data.DirectorsIdentification && data.DirectorsIdentification.length > 0) {
+    data.DirectorsIdentification.forEach(file => {
+      formData.append('DirectorsIdentification', file);
+    });
+  }
+
+  // 5. Proof of Address (array)
+  if (data.ProofOfAddress && data.ProofOfAddress.length > 0) {
+    data.ProofOfAddress.forEach(file => {
+      formData.append('ProofOfAddress', file);
+    });
+  }
+
+  return makeMultipartRequest<ApiResponse>('/user/api/v1/onboarding/business/registration/add-or-update', formData);
 };
 
 export const acceptTerms = async (
@@ -287,6 +356,7 @@ export const handleAPIError = (error: any): string => {
   return error.message || 'An unexpected error occurred. Please try again.';
 };
 
+
 const kycApiService = {
   getUserKycStatus,
   verifyNIN,
@@ -296,7 +366,7 @@ const kycApiService = {
   initiateLivenessCheck,
   submitBusinessInformation,
   submitDirectorInformation,
-  uploadCompanyDocument,
+  submitCompanyRegistration,
   acceptTerms,
   getOnboardingPercentage,
   viewBusinessRegistration,

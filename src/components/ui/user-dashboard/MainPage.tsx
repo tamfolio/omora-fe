@@ -38,51 +38,55 @@ function MainPage() {
   const [showKycFailureModal, setShowKycFailureModal] = useState(false);
 
   // NEW: Check for KYC completion status from URL params
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const searchParams = new URLSearchParams(window.location.search);
-      const kycStatus = searchParams.get('kyc');
-      
-      if (kycStatus === 'complete') {
-        // Verify liveness completion with backend
-        const verifyKycCompletion = async () => {
-          try {
-            const response = await fetch("/api/proxy/user/api/v1/me", {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-            });
+ useEffect(() => {
+  if (typeof window !== 'undefined') {
+    const searchParams = new URLSearchParams(window.location.search);
+    const kycStatus = searchParams.get('kyc');
+    
+    if (kycStatus === 'complete') {
+      // Verify liveness completion with backend
+      const verifyKycCompletion = async () => {
+        try {
+          const response = await fetch("/api/proxy/user/api/v1/me", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
 
-            if (response.ok) {
-              const result = await response.json();
-              if (result.status === "success") {
-                const livenessRecord = result.data.verification?.find(
-                  (v: any) => v.type === 'LIVENESS'
-                );
-                
-                // Show success if liveness is complete, otherwise show failure
-                if (livenessRecord?.status === 'C') {
-                  setShowKycSuccessModal(true);
-                } else {
-                  // Still processing, show success anyway (backend will update)
-                  setShowKycSuccessModal(true);
-                }
+          if (response.ok) {
+            const result = await response.json();
+            if (result.status === "success") {
+              const livenessRecord = result.data.verification?.find(
+                (v: any) => v.type === 'LIVENESS'
+              );
+              
+              // Show success if liveness is complete, otherwise show failure
+              if (livenessRecord?.status === 'C') {
+                setShowKycSuccessModal(true);
+              } else {
+                // Still processing, show success anyway (backend will update)
+                setShowKycSuccessModal(true);
               }
             }
-          } catch (error) {
-            console.error('Error verifying KYC completion:', error);
           }
-          
-          // Clear URL params
-          window.history.replaceState({}, '', '/dashboard');
-        };
+        } catch (error) {
+          console.error('Error verifying KYC completion:', error);
+        }
         
-        verifyKycCompletion();
-      } else if (kycStatus === 'failed') {
-        setShowKycFailureModal(true);
+        // Clear URL params
         window.history.replaceState({}, '', '/dashboard');
-      }
+      };
+      
+      verifyKycCompletion();
+    } else if (kycStatus === 'failed') {
+      setShowKycFailureModal(true);
+      window.history.replaceState({}, '', '/dashboard');
+    } else if (kycStatus === 'pending') {
+      // ADD THIS: User closed verification early - just clear params, no modal
+      console.log('User closed verification early - no modal shown');
+      window.history.replaceState({}, '', '/dashboard');
     }
-  }, []);
+  }
+}, []);
 
   useEffect(() => {
     if (status === "authenticated" && session?.accessToken) {
@@ -217,7 +221,7 @@ function MainPage() {
   const handleStepAction = (stepId: number) => {
     if (stepId === 1) router.push("/dashboard/kyc-verification");
     if (stepId === 2) router.push("/dashboard/risk-profile");
-    if (stepId === 3) router.push("/dashboard/wallet/deposit");
+    if (stepId === 3) router.push("/dashboard/fund-wallet");
   };
 
   const handleReadPost = (postId: string) => {

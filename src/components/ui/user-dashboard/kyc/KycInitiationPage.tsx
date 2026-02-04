@@ -1,22 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import Logo from "../../Logo";
 
 interface KYCInitiationProps {
-  onContinue: () => void;
+  onContinue: (userType: 'individual' | 'corporate') => void;
   onBack?: () => void;
 }
 
 function KYCInitiation({ onContinue, onBack }: KYCInitiationProps) {
+  const [userType, setUserType] = useState<'individual' | 'corporate'>('individual');
+
   const handleBack = () => {
     if (onBack) {
       onBack();
-    } else {
     }
   };
 
   const handleContinue = () => {
-    onContinue();
+    onContinue(userType);
   };
 
   const handleGoBack = () => {
@@ -43,7 +44,9 @@ function KYCInitiation({ onContinue, onBack }: KYCInitiationProps) {
           </div>
 
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-500">Step 1/7</span>
+            <span className="text-sm text-gray-500">
+              Step 1/{userType === 'individual' ? '5' : '7'}
+            </span>
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-gray-700">
                 KYC Verification
@@ -64,11 +67,13 @@ function KYCInitiation({ onContinue, onBack }: KYCInitiationProps) {
                     fill="none"
                     stroke="#06b6d4"
                     strokeWidth="3"
-                    strokeDasharray="14, 100"
+                    strokeDasharray={userType === 'individual' ? '14, 100' : '10, 100'}
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-bold text-cyan-600">14%</span>
+                  <span className="text-xs font-bold text-cyan-600">
+                    {userType === 'individual' ? '14%' : '10%'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -91,21 +96,60 @@ function KYCInitiation({ onContinue, onBack }: KYCInitiationProps) {
               feugiat sapien varius id.
             </p>
 
+            {/* Account Type Selector */}
+            <div className="flex bg-gray-100 rounded-lg p-1 mb-8">
+              <button
+                type="button"
+                onClick={() => setUserType('individual')}
+                className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
+                  userType === 'individual'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Individual
+              </button>
+              <button
+                type="button"
+                onClick={() => setUserType('corporate')}
+                className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
+                  userType === 'corporate'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Corporate
+              </button>
+            </div>
+
             {/* Requirements List */}
             <div className="text-left mb-8">
+              <p className="text-sm font-medium text-gray-700 mb-3">You will need:</p>
               <ul className="space-y-3">
                 <li className="flex items-center space-x-3 text-gray-700">
                   <div className="w-2 h-2 bg-cyan-600 rounded-full flex-shrink-0"></div>
-                  <span>NIN Number</span>
+                  <span>Valid Government ID (NIN or BVN)</span>
                 </li>
                 <li className="flex items-center space-x-3 text-gray-700">
                   <div className="w-2 h-2 bg-cyan-600 rounded-full flex-shrink-0"></div>
-                  <span>Means of ID</span>
+                  <span>Contact Information & Address</span>
                 </li>
                 <li className="flex items-center space-x-3 text-gray-700">
                   <div className="w-2 h-2 bg-cyan-600 rounded-full flex-shrink-0"></div>
-                  <span>Utility Bill</span>
+                  <span>Facial Recognition (Selfie)</span>
                 </li>
+                {userType === 'corporate' && (
+                  <>
+                    <li className="flex items-center space-x-3 text-gray-700">
+                      <div className="w-2 h-2 bg-cyan-600 rounded-full flex-shrink-0"></div>
+                      <span>Company Registration Number (RC/BN)</span>
+                    </li>
+                    <li className="flex items-center space-x-3 text-gray-700">
+                      <div className="w-2 h-2 bg-cyan-600 rounded-full flex-shrink-0"></div>
+                      <span>Company Registration Documents</span>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
@@ -116,7 +160,7 @@ function KYCInitiation({ onContinue, onBack }: KYCInitiationProps) {
               onClick={handleContinue}
               className="w-full py-3 px-4 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium transition-colors"
             >
-              Continue
+              Continue as {userType === 'individual' ? 'Individual' : 'Corporate'}
             </button>
 
             <button

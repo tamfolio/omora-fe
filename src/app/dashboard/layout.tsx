@@ -16,6 +16,9 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
 
+  // Check if current route is KYC verification
+  const isKycRoute = pathname?.includes('/kyc-verification');
+
   useEffect(() => {
     // Wait for session to be checked
     if (status === "loading") {
@@ -61,9 +64,11 @@ export default function DashboardLayout({
   if (status === "authenticated") {
     return (
       <>
-        <Navbar />
+        {/* Hide Navbar on KYC routes */}
+        {!isKycRoute && <Navbar />}
         {children}
-        <Footer />
+        {/* Hide Footer on KYC routes */}
+        {!isKycRoute && <Footer />}
       </>
     );
   }

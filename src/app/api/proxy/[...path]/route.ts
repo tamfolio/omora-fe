@@ -10,45 +10,44 @@ type RouteProps = {
 
 async function forward(request: Request, params: { path: string[] }) {
   const url = new URL(request.url);
-  // Now params.path is safe to use because we awaited it in the handlers below
   const path = (params.path || []).join('/');
-  
-  // Remove trailing slash from TARGET and construct destination
   const targetUrl = `${TARGET.replace(/\/$/, '')}/${path}${url.search}`;
 
-  // Obtain token from next-auth cookie
   const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET });
 
   const headers: Record<string, string> = {};
   for (const [key, value] of (request.headers as any).entries()) {
-    // Filter out headers that confuse the upstream server
     if (['host', 'cookie', 'authorization', 'content-length'].includes(key.toLowerCase())) continue;
     headers[key] = value;
   }
 
-  // Attach API Key and Bearer Token
+
+
   if (API_KEY) headers['x-api-key'] = API_KEY;
   if (token?.accessToken) headers['authorization'] = `Bearer ${token.accessToken}`;
 
-  // Read body only if not GET/HEAD
-  const body = ['GET', 'HEAD'].includes(request.method) ? undefined : await request.arrayBuffer();
+  const body = ['GET', 'HEAD'].includes(request.method) ? undefined : request.body;
 
   try {
     const res = await fetch(targetUrl, {
       method: request.method,
       headers,
       body,
+      // @ts-ignore
+      duplex: 'half', 
     });
+
+
 
     const responseHeaders = new Headers(res.headers);
     responseHeaders.delete('transfer-encoding');
 
-    return new Response(await res.arrayBuffer(), {
+    return new Response(res.body, {
       status: res.status,
       headers: responseHeaders,
     });
   } catch (error) {
-    console.error("Proxy Error:", error);
+    console.error("❌ Proxy Error:", error);
     return new Response(JSON.stringify({ message: "Proxy failed", error: String(error) }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }

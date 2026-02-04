@@ -65,45 +65,56 @@ interface WalletCardProps {
   tooltipContent: string;
 }
 
-interface WalletAccountDetails {
-  accountNumber: string;
-  bankName: string;
-  accountName: string;
+interface WalletDetails {
+  accountNumber?: string;
+  bankName?: string;
+  accountName?: string;
+  walletAddress?: string;
+  network?: string;
 }
 
 const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }) => {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
-  const [accountDetails, setAccountDetails] = useState<WalletAccountDetails | null>(null);
+  const [walletDetails, setWalletDetails] = useState<WalletDetails>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAccountDetails = async () => {
+    const fetchWalletDetails = async () => {
       try {
         const response = await fetch('/api/proxy/user/api/v1/me');
         const result = await response.json();
 
         if (result.status === 'success' && result.data) {
-          const { personalWallet, user } = result.data;
+          const { wallets, user } = result.data;
           
-          setAccountDetails({
-            accountNumber: personalWallet?.accountNumber || '',
-            bankName: personalWallet?.bankName || '',
-            accountName: `${user.firstName} ${user.lastName}` || ''
-          });
+          // ✅ NEW: Find wallet by currency
+          let wallet;
+          if (type === 'naira') {
+            wallet = wallets?.find((w: any) => w.currency === 'NGN');
+          } else if (type === 'usdt') {
+            wallet = wallets?.find((w: any) => w.currency === 'USDT');
+          } else if (type === 'usdc') {
+            wallet = wallets?.find((w: any) => w.currency === 'USDC');
+          }
+          
+          if (wallet) {
+            setWalletDetails({
+              accountNumber: wallet.accountNumber,
+              bankName: wallet.bankName,
+              walletAddress: wallet.walletAddress,
+              network: wallet.network,
+              accountName: `${user.firstName} ${user.lastName}`
+            });
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch account details:', error);
+        console.error('Failed to fetch wallet details:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    // Only fetch for naira wallet type
-    if (type === 'naira') {
-      fetchAccountDetails();
-    } else {
-      setLoading(false);
-    }
+    fetchWalletDetails();
   }, [type]);
 
   const getCardContent = () => {
@@ -114,15 +125,15 @@ const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }
           balanceDisplay: `NGN ${balance?.toLocaleString() || "0"}`,
           details: loading ? (
             <div className="text-sm text-gray-500">Loading account details...</div>
-          ) : accountDetails ? (
+          ) : walletDetails.accountNumber ? (
             <div className="space-y-2 text-sm text-gray-600">
-              <div className="font-medium">{accountDetails.bankName}</div>
+              <div className="font-medium">{walletDetails.bankName}</div>
               <div className="flex items-center justify-between">
-                <span>Account Name: <span className="font-medium">{accountDetails.accountName}</span></span>
+                <span>Account Name: <span className="font-medium">{walletDetails.accountName}</span></span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Account Number: <span className="font-medium">{accountDetails.accountNumber}</span></span>
-                <CopyButton text={accountDetails.accountNumber} />
+                <span>Account Number: <span className="font-medium">{walletDetails.accountNumber}</span></span>
+                <CopyButton text={walletDetails.accountNumber} />
               </div>
             </div>
           ) : (
@@ -141,17 +152,17 @@ const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }
               </div>
             </div>
           ),
-          details: (
+          details: loading ? (
+            <div className="text-sm text-gray-500">Loading wallet details...</div>
+          ) : walletDetails.walletAddress ? (
             <div className="space-y-2 text-sm text-gray-600">
               <div className="flex items-center justify-between">
-                <span>Network: <span className="font-medium">TRC20</span> - <span className="font-mono text-xs">97d029797d60534a7d029797</span></span>
-                <CopyButton text="97d029797d60534a7d029797" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Network: <span className="font-medium">BEP20</span> - <span className="font-mono text-xs">97d029797d60534a7d029797</span></span>
-                <CopyButton text="97d029797d60534a7d029797" />
+                <span>Network: <span className="font-medium">{walletDetails.network?.toUpperCase()}</span> - <span className="font-mono text-xs">{walletDetails.walletAddress}</span></span>
+                <CopyButton text={walletDetails.walletAddress} />
               </div>
             </div>
+          ) : (
+            <div className="text-sm text-gray-500">Wallet address unavailable</div>
           )
         };
       
@@ -166,17 +177,17 @@ const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }
               </div>
             </div>
           ),
-          details: (
+          details: loading ? (
+            <div className="text-sm text-gray-500">Loading wallet details...</div>
+          ) : walletDetails.walletAddress ? (
             <div className="space-y-2 text-sm text-gray-600">
               <div className="flex items-center justify-between">
-                <span>Network: <span className="font-medium">TRC20</span> - <span className="font-mono text-xs">97d029797d60534a7d029797</span></span>
-                <CopyButton text="97d029797d60534a7d029797" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Network: <span className="font-medium">BEP20</span> - <span className="font-mono text-xs">97d029797d60534a7d029797</span></span>
-                <CopyButton text="97d029797d60534a7d029797" />
+                <span>Network: <span className="font-medium">{walletDetails.network?.toUpperCase()}</span> - <span className="font-mono text-xs">{walletDetails.walletAddress}</span></span>
+                <CopyButton text={walletDetails.walletAddress} />
               </div>
             </div>
+          ) : (
+            <div className="text-sm text-gray-500">Wallet address unavailable</div>
           )
         };
     }
