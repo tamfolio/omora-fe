@@ -1,7 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-// Define custom types without extending JWT to avoid conflicts
 interface CustomUser {
   id: string;
   email: string;
@@ -14,7 +13,7 @@ interface CustomUser {
 interface CustomToken {
   accessToken?: string;
   refreshToken?: string;
-  accessTokenExpires?: number;
+  sessionExpires?: number;
   user?: {
     id: string;
     email: string;
@@ -22,7 +21,6 @@ interface CustomToken {
     role: string;
   };
   error?: string;
-  // Include standard JWT properties without extending
   sub?: string;
   name?: string | null;
   email?: string | null;
@@ -30,39 +28,6 @@ interface CustomToken {
   iat?: number;
   exp?: number;
   jti?: string;
-}
-
-interface RefreshResponse {
-  accessToken: string;
-  refreshToken?: string;
-}
-
-async function refreshAccessToken(token: CustomToken): Promise<CustomToken> {
-  try {
-    const response = await fetch(`${process.env.API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token: token.refreshToken,
-      }),
-    });
-
-    const refreshedTokens: RefreshResponse = await response.json();
-
-    if (!response.ok) throw refreshedTokens;
-
-    return {
-      ...token,
-      accessToken: refreshedTokens.accessToken,
-      accessTokenExpires: Date.now() + 60 * 60 * 1000,
-      refreshToken: refreshedTokens.refreshToken ?? token.refreshToken,
-    };
-  } catch {
-    return {
-      ...token,
-      error: "RefreshAccessTokenError",
-    };
-  }
 }
 
 declare module "next-auth" {
@@ -78,21 +43,6 @@ declare module "next-auth" {
   }
 }
 
-// Extend NextAuth types
-// declare module "next-auth" {
-//   interface Session {
-//     user: {
-//       id: string
-//       email: string
-//       name: string
-//       role: string
-//     }
-//     accessToken: string
-//     error?: string
-//   }
-// }
-
-// ---- Auth Options ---- //
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -117,7 +67,6 @@ export const authOptions: NextAuthOptions = {
 
           const user = await response.json();
 
-          // Return user object that will be stored in JWT
           if (user && user.id) {
             return {
               id: user.id,
@@ -140,23 +89,22 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60, // 1 hour
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   },
 
   jwt: {
-    maxAge: 60 * 60, // 1 hour
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   },
 
   callbacks: {
     async jwt({ token, user, account }) {
-      // Initial sign in
       if (account && user) {
         const customUser = user as CustomUser;
         const customToken: CustomToken = {
           ...token,
           accessToken: customUser.accessToken,
           refreshToken: customUser.refreshToken,
-          accessTokenExpires: Date.now() + 60 * 60 * 1000,
+          sessionExpires: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
           user: {
             id: customUser.id,
             email: customUser.email,
@@ -164,20 +112,21 @@ export const authOptions: NextAuthOptions = {
             role: customUser.role,
           },
         };
-        // Use unknown instead of any for ESLint compliance
         return customToken as unknown as typeof token;
       }
 
       const customToken = token as CustomToken;
 
-      // Return previous token if the access token has not expired yet
-      if (Date.now() < (customToken.accessTokenExpires || 0)) {
-        return customToken as unknown as typeof token;
+      // ✅ FIXED: No token refresh - just check if session expired
+      if (customToken.sessionExpires && Date.now() > customToken.sessionExpires) {
+        return {
+          ...customToken,
+          error: 'SessionExpired'
+        } as unknown as typeof token;
       }
 
-      // Access token has expired, try to update it
-      const refreshedToken = await refreshAccessToken(customToken);
-      return refreshedToken as unknown as typeof token;
+      // ✅ Return token as-is (no refresh)
+      return customToken as unknown as typeof token;
     },
 
     async session({ session, token }) {
@@ -187,6 +136,8 @@ export const authOptions: NextAuthOptions = {
         session.user = customToken.user;
       }
       session.accessToken = customToken.accessToken || "";
+      
+      // ✅ Only set error if session actually expired
       if (customToken.error) {
         session.error = customToken.error;
       }
