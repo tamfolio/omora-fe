@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/website/NavBar";
@@ -16,7 +16,6 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
 
-  // Check if current route is KYC verification
   const isKycRoute = pathname?.includes('/kyc-verification');
 
   useEffect(() => {
@@ -25,7 +24,7 @@ export default function DashboardLayout({
     }
     
     setIsChecking(false);
-// 
+
     if (status === "unauthenticated") {
       const returnUrl = encodeURIComponent(pathname || "/dashboard");
       router.push(`/auth/login?returnUrl=${returnUrl}`);
@@ -33,7 +32,6 @@ export default function DashboardLayout({
     }
   }, [status, router, pathname]);
 
-  // Show loading state while checking authentication
   if (isChecking || status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -45,7 +43,6 @@ export default function DashboardLayout({
     );
   }
 
-  // Show loading state while redirecting
   if (status === "unauthenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -57,14 +54,11 @@ export default function DashboardLayout({
     );
   }
 
-  // Only render with Navbar and Footer if authenticated
   if (status === "authenticated") {
     return (
       <>
-        {/* Hide Navbar on KYC routes */}
         {!isKycRoute && <Navbar />}
         {children}
-        {/* Hide Footer on KYC routes */}
         {!isKycRoute && <Footer />}
       </>
     );
