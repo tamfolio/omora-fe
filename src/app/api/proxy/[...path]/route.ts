@@ -3,7 +3,6 @@ import { getToken } from 'next-auth/jwt';
 const TARGET = process.env.OMORA_API_BASE_URL || process.env.API_BASE_URL || 'http://localhost:8000';
 const API_KEY = process.env.OMORA_API_KEY || '';
 
-// 1. Define the type for Next.js 15 params
 type RouteProps = {
   params: Promise<{ path: string[] }>;
 };
@@ -13,7 +12,21 @@ async function forward(request: Request, params: { path: string[] }) {
   const path = (params.path || []).join('/');
   const targetUrl = `${TARGET.replace(/\/$/, '')}/${path}${url.search}`;
 
-  const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET });
+  // ✅ CRITICAL FIX: Use correct secret and cookie name
+  const token = await getToken({ 
+    req: request as any, 
+    secret: process.env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === 'production', // Important for Netlify
+  });
+
+  console.log('🔐 Proxy Debug:', {
+    path,
+    hasToken: !!token,
+    hasAccessToken: !!token?.accessToken,
+    tokenPreview: token?.accessToken?.substring(0, 30),
+    env: process.env.NODE_ENV,
+    hasSecret: !!process.env.NEXTAUTH_SECRET
+  });
 
   const headers: Record<string, string> = {};
   for (const [key, value] of (request.headers as any).entries()) {
@@ -21,14 +34,26 @@ async function forward(request: Request, params: { path: string[] }) {
     headers[key] = value;
   }
 
+  // Add API key
+  if (API_KEY) {
+    headers['x-api-key'] = API_KEY;
+  }
 
-
-  if (API_KEY) headers['x-api-key'] = API_KEY;
-  if (token?.accessToken) headers['authorization'] = `Bearer ${token.accessToken}`;
+  // Add authorization if token exists
+  if (token?.accessToken) {
+    headers['authorization'] = `Bearer ${token.accessToken}`;
+    console.log('✅ Added Authorization header');
+  } else {
+    console.error('❌ No access token in session!', {
+      tokenKeys: token ? Object.keys(token) : 'no token'
+    });
+  }
 
   const body = ['GET', 'HEAD'].includes(request.method) ? undefined : request.body;
 
   try {
+    console.log('📡 Forwarding to:', targetUrl);
+    
     const res = await fetch(targetUrl, {
       method: request.method,
       headers,
@@ -37,7 +62,10 @@ async function forward(request: Request, params: { path: string[] }) {
       duplex: 'half', 
     });
 
-
+    console.log('📥 API Response:', {
+      status: res.status,
+      ok: res.ok
+    });
 
     const responseHeaders = new Headers(res.headers);
     responseHeaders.delete('transfer-encoding');
@@ -55,7 +83,6 @@ async function forward(request: Request, params: { path: string[] }) {
   }
 }
 
-// 2. Update all exports to await the params object
 export async function GET(request: Request, props: RouteProps) {
   const params = await props.params;
   return forward(request, params);
