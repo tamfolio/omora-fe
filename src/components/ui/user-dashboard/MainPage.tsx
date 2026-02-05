@@ -132,7 +132,9 @@ function MainPage() {
             const currentStep = data.onboardingState?.currentStep;
             
             // KYC is done ONLY when currentStep is 'dashboard'
-            const isKycDone = currentStep === 'dashboard';
+           const isKycDone = 
+  data.onboardingState?.nextStep === 'dashboard' ||
+  data.onboardingState?.currentStep === 'dashboard';
             
             setIsKycCompleted(isKycDone);
             setIsRiskProfileCompleted(data.user?.isRiskProfile === true);
