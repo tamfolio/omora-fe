@@ -14,10 +14,10 @@ async function forward(request: Request, params: { path: string[] }) {
 
   // ✅ CRITICAL FIX: Use correct secret and cookie name
   const token = await getToken({ 
-    req: request as any, 
-    secret: process.env.NEXTAUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === 'production', // Important for Netlify
-  });
+  req: request as any, 
+  secret: process.env.NEXTAUTH_SECRET,
+  secureCookie: process.env.NODE_ENV === "production", // Forces looking for __Secure- prefix
+});
 
   console.log('🔐 Proxy Debug:', {
     path,
