@@ -12,12 +12,25 @@ async function forward(request: Request, params: { path: string[] }) {
   const path = (params.path || []).join('/');
   const targetUrl = `${TARGET.replace(/\/$/, '')}/${path}${url.search}`;
 
-  // ✅ CRITICAL FIX: Use correct secret and cookie name
-  const token = await getToken({ 
+const isProd = process.env.NODE_ENV === "production";
+
+const token = await getToken({ 
   req: request as any, 
   secret: process.env.NEXTAUTH_SECRET,
-  secureCookie: process.env.NODE_ENV === "production", // Forces looking for __Secure- prefix
+  secureCookie: isProd,
 });
+
+// 🔍 PRODUCTION DEBUG LOGS
+if (!token) {
+  const allCookies = request.headers.get('cookie') || 'no cookies found';
+  console.log('🔐 Proxy Debug - Detailed Failure:', {
+    env: process.env.NODE_ENV,
+    expectedSecure: isProd,
+    hasSecret: !!process.env.NEXTAUTH_SECRET,
+    rawCookieHeader: allCookies.substring(0, 50) + '...', // Check for __Secure- prefix
+    nextAuthUrl: process.env.NEXTAUTH_URL
+  });
+}
 
   console.log('🔐 Proxy Debug:', {
     path,
