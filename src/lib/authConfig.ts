@@ -9,6 +9,47 @@ const API_KEY = process.env.OMORA_API_KEY || '';
 // Store temporary auth state for OTP verification
 export const tempAuthStore = new Map<string, { email: string; timestamp: number }>();
 
+// Extend NextAuth types - don't redeclare, just extend
+declare module "next-auth" {
+  interface User {
+    accessToken: string;
+    refreshToken?: string;
+    isFirstLogin?: boolean;
+    rememberMe?: boolean;
+    role: string;
+  }
+
+  interface Session {
+    accessToken: string;
+    refreshToken?: string;
+    error?: string;
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      isFirstLogin?: boolean;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    accessToken?: string;
+    refreshToken?: string;
+    sessionExpires?: number;
+    rememberMe?: boolean;
+    user?: {
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      isFirstLogin?: boolean;
+    };
+    error?: string;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     // Provider 1: Two-step OTP flow
@@ -114,7 +155,7 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     
-    // Provider 2: Direct credentials
+    // Provider 2: Direct credentials (used by custom login flow)
     CredentialsProvider({
       id: "credentials",
       name: "credentials",
@@ -129,7 +170,16 @@ export const authOptions: NextAuthOptions = {
         rememberMe: { label: "Remember Me", type: "text" },
       },
       async authorize(credentials): Promise<User | null> {
-        if (!credentials || !credentials.accessToken) return null;
+        if (!credentials || !credentials.accessToken) {
+          console.error("❌ No credentials or accessToken provided");
+          return null;
+        }
+
+        console.log("✅ Credentials provider received:", {
+          email: credentials.email,
+          hasAccessToken: !!credentials.accessToken,
+          tokenLength: credentials.accessToken?.length
+        });
 
         return {
           id: credentials.userId || credentials.email,
@@ -156,6 +206,7 @@ export const authOptions: NextAuthOptions = {
   
   callbacks: {
     async jwt({ token, user, account }): Promise<JWT> {
+      // Initial sign in
       if (account && user) {
         if (user.id === 'temp') {
           return {
@@ -163,6 +214,12 @@ export const authOptions: NextAuthOptions = {
             error: 'OTP_REQUIRED'
           }
         }
+
+        console.log("✅ JWT Callback - Storing tokens:", {
+          hasAccessToken: !!user.accessToken,
+          tokenLength: user.accessToken?.length,
+          userId: user.id
+        });
 
         // Calculate expiry based on remember me preference
         const expiryDuration = user.rememberMe 
@@ -187,13 +244,14 @@ export const authOptions: NextAuthOptions = {
 
       // Check if session has expired
       if (token.sessionExpires && Date.now() > (token.sessionExpires as number)) {
+        console.log("⚠️ Session expired");
         return {
           ...token,
           error: 'SessionExpired'
         };
       }
 
-      // NO TOKEN REFRESH - just return the token as-is
+      // Return existing token
       return token;
     },
     
@@ -205,8 +263,15 @@ export const authOptions: NextAuthOptions = {
         }
       }
       
-      session.accessToken = token.accessToken as string || ''
+      // CRITICAL: Ensure accessToken is always set
+      session.accessToken = (token.accessToken as string) || '';
       session.refreshToken = (token.refreshToken as string) || '';
+      
+      console.log("🔐 Session Callback:", {
+        hasAccessToken: !!session.accessToken,
+        tokenLength: session.accessToken?.length,
+        userEmail: session.user?.email
+      });
       
       if (token.error) {
         session.error = token.error as string

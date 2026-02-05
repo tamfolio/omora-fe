@@ -23,7 +23,7 @@ declare module "next-auth" {
       role: string
       isFirstLogin?: boolean
     }
-    accessToken?: string
+    accessToken: string  // ✅ CHANGED: Required, not optional
     refreshToken?: string
     error?: string
   }
