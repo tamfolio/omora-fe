@@ -1,7 +1,7 @@
 import './globals.css'
 import AuthProvider from "@/components/SessionProvider"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/authConfig"
 import CookiesPopUp from '@/components/website/CookiesPopUp'
 
 export default async function RootLayout({

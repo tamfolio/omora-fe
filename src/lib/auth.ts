@@ -1,7 +1,7 @@
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/authConfig";
 
 // Hook for protected pages (CLIENT COMPONENTS ONLY)
 export function useAuthSession() {
