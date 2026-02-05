@@ -182,7 +182,7 @@ export default function CompleteYourDeposit() {
 
       {/* Floating Chat Button */}
       <div className="fixed bottom-6 right-6">
-        <button className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg hover:bg-green-700">
+        <button className="w-12 h-12 bg-teal-600 rounded-full flex items-center justify-center shadow-lg hover:bg-green-700">
           <FiHeadphones className="text-white text-lg" />
         </button>
       </div>
