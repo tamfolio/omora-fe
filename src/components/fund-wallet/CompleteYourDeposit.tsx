@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FiCopy, FiCheck, FiHeadphones } from "react-icons/fi";
 import { CiBank } from "react-icons/ci";
+import { apiFetch } from "@/lib/apiService";
 
 interface WalletDetails {
   accountNumber: string;
@@ -20,7 +21,7 @@ export default function CompleteYourDeposit() {
   useEffect(() => {
     const fetchWalletDetails = async () => {
       try {
-        const response = await fetch('/api/proxy/user/api/v1/me');
+        const response = await apiFetch('/user/api/v1/me');
         const result = await response.json();
 
         if (result.status === 'success' && result.data) {

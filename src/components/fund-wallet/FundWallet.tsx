@@ -8,6 +8,7 @@ import WalletCard from "./WalletCard";
 import ToggleSwitch from "./ToggleSwitch";
 import WalletVerificationModal from "./WalletVerificationModal";
 import { FiHeadphones } from "react-icons/fi";
+import { apiFetch } from "@/lib/apiService";
 
 // Types
 interface UserBalances {
@@ -41,7 +42,7 @@ function useWalletVerification() {
   useEffect(() => {
     const checkWalletStatus = async () => {
       try {
-        const response = await fetch('/api/proxy/user/api/v1/me');
+        const response = await apiFetch('/user/api/v1/me');
         const result = await response.json();
 
         if (result.status === 'success' && result.data) {

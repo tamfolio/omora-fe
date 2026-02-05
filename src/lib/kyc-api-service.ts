@@ -1,4 +1,5 @@
 // KYC API Service Module
+import { apiFetch } from './apiService';
 
 export interface ApiResponse<T = any> {
   status?: 'success' | 'failed' | 'fail' | 'error' | string;
@@ -128,127 +129,99 @@ export interface AcceptTermsData {
   accepted: boolean;
 }
 
-const API_BASE_URL = '/api/proxy';
-
-const makeAuthenticatedRequest = async <T>(
-  endpoint: string,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'POST',
-  body?: any
-): Promise<T> => {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-
-  const config: RequestInit = {
-    method,
-    headers,
-    credentials: 'include',
-  };
-
-  if (body && method !== 'GET') {
-    config.body = JSON.stringify(body);
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return data as T;
-  } catch (error) {
-    throw error;
-  }
-};
-
 // NEW: Get User Data
 export const getUserKycStatus = async (): Promise<ApiResponse<UserData>> => {
-  return makeAuthenticatedRequest<ApiResponse<UserData>>('/user/api/v1/me', 'GET');
+  const response = await apiFetch('/user/api/v1/me', { method: 'GET' });
+  return response.json();
 };
 
 // NEW: Verify NIN
 export const verifyNIN = async (idNumber: string): Promise<VerificationResponse> => {
-  return makeAuthenticatedRequest<VerificationResponse>(
-    '/user/verification/verify/nin',
-    'POST',
-    { idNumber }
-  );
+  const response = await apiFetch('/user/verification/verify/nin', {
+    method: 'POST',
+    body: JSON.stringify({ idNumber }),
+  });
+  return response.json();
 };
 
 // NEW: Verify BVN
 export const verifyBVN = async (idNumber: string): Promise<VerificationResponse> => {
-  return makeAuthenticatedRequest<VerificationResponse>(
-    '/user/verification/verify/bvn',
-    'POST',
-    { idNumber }
-  );
+  const response = await apiFetch('/user/verification/verify/bvn', {
+    method: 'POST',
+    body: JSON.stringify({ idNumber }),
+  });
+  return response.json();
 };
 
 export const submitPersonalInformation = async (
   data: PersonalInformationData
 ): Promise<ApiResponse> => {
-  return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/personal/information', 'POST', data);
+  const response = await apiFetch('/user/api/v1/onboarding/personal/information', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return response.json();
 };
 
 export const submitPersonalContactInformation = async (
   data: PersonalContactInformationData
 ): Promise<ApiResponse> => {
-  return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/personal/contact/information', 'POST', data);
+  const response = await apiFetch('/user/api/v1/onboarding/personal/contact/information', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return response.json();
 };
-
-
 
 export const initiateLivenessCheck = async (
   data: LivenessCheckInitiateRequest
 ): Promise<LivenessCheckInitiateResponse> => {
-  return makeAuthenticatedRequest<LivenessCheckInitiateResponse>('/user/verification/initiate/liveness', 'POST', data);
+  const response = await apiFetch('/user/verification/initiate/liveness', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return response.json();
 };
 
 export const submitBusinessInformation = async (
   data: BusinessInformationData
 ): Promise<ApiResponse> => {
-  return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/business/information', 'POST', data);
+  const response = await apiFetch('/user/api/v1/onboarding/business/information', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return response.json();
 };
 
 export const submitDirectorInformation = async (
   data: DirectorInformationData
 ): Promise<ApiResponse> => {
-  return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/contact/information', 'POST', data);
+  const response = await apiFetch('/user/api/v1/onboarding/contact/information', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return response.json();
 };
 
 export interface CompanyRegistrationData {
-  CertOfIncorporation?: File;                    // 1. Certificate of Incorporation
-  StatusExtract?: File;                          // 2. Status Extract
-  AuthorizationLetter?: File;                    // 3. Board Resolution/Authorization Letter
-  DirectorsIdentification?: File[];              // 4. Director's ID (can be multiple)
-  ProofOfAddress?: File[];                       // 5. Utility Bill/Proof of Address (can be multiple)
+  CertOfIncorporation?: File;
+  StatusExtract?: File;
+  AuthorizationLetter?: File;
+  DirectorsIdentification?: File[];
+  ProofOfAddress?: File[];
 }
 
 // Make multipart request for file uploads
-const makeMultipartRequest = async <T>(
+const makeMultipartRequest = async (
   endpoint: string,
   formData: FormData
-): Promise<T> => {
-  const config: RequestInit = {
+): Promise<ApiResponse> => {
+  const response = await apiFetch(endpoint, {
     method: 'POST',
-    credentials: 'include',
     body: formData,
-  };
-
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return data as T;
-  } catch (error) {
-    throw error;
-  }
+    headers: {}, // Let browser set Content-Type with boundary for multipart
+  });
+  return response.json();
 };
 
 // Submit Company Registration Documents (5 FIELDS ONLY)
@@ -257,62 +230,76 @@ export const submitCompanyRegistration = async (
 ): Promise<ApiResponse> => {
   const formData = new FormData();
 
-  // 1. Certificate of Incorporation
   if (data.CertOfIncorporation) {
     formData.append('CertOfIncorporation', data.CertOfIncorporation);
   }
 
-  // 2. Status Extract
   if (data.StatusExtract) {
     formData.append('StatusExtract', data.StatusExtract);
   }
 
-  // 3. Authorization Letter / Board Resolution
   if (data.AuthorizationLetter) {
     formData.append('AuthorizationLetter', data.AuthorizationLetter);
   }
 
-  // 4. Director's Identification (array)
   if (data.DirectorsIdentification && data.DirectorsIdentification.length > 0) {
     data.DirectorsIdentification.forEach(file => {
       formData.append('DirectorsIdentification', file);
     });
   }
 
-  // 5. Proof of Address (array)
   if (data.ProofOfAddress && data.ProofOfAddress.length > 0) {
     data.ProofOfAddress.forEach(file => {
       formData.append('ProofOfAddress', file);
     });
   }
 
-  return makeMultipartRequest<ApiResponse>('/user/api/v1/onboarding/business/registration/add-or-update', formData);
+  return makeMultipartRequest('/user/api/v1/onboarding/business/registration/add-or-update', formData);
 };
 
 export const acceptTerms = async (
   data: AcceptTermsData
 ): Promise<ApiResponse> => {
-  return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/accept/terms', 'POST', data);
+  const response = await apiFetch('/user/api/v1/onboarding/accept/terms', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return response.json();
 };
 
 export const getOnboardingPercentage = async (): Promise<ApiResponse> => {
-  return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/percentage', 'GET');
+  const response = await apiFetch('/user/api/v1/onboarding/percentage', {
+    method: 'GET',
+  });
+  return response.json();
 };
 
 export const viewBusinessRegistration = async (): Promise<ApiResponse> => {
-  return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/business/registration/view', 'GET');
+  const response = await apiFetch('/user/api/v1/onboarding/business/registration/view', {
+    method: 'GET',
+  });
+  return response.json();
 };
 
 export const viewBusinessInformation = async (): Promise<ApiResponse> => {
-  return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/business/information/view', 'GET');
+  const response = await apiFetch('/user/api/v1/onboarding/business/information/view', {
+    method: 'GET',
+  });
+  return response.json();
 };
 
 export const viewPersonalInformation = async (): Promise<ApiResponse> => {
-  return makeAuthenticatedRequest<ApiResponse>('/user/api/v1/onboarding/personal/information/view', 'GET');
+  const response = await apiFetch('/user/api/v1/onboarding/personal/information/view', {
+    method: 'GET',
+  });
+  return response.json();
 };
 
 export const verificationPing = async (): Promise<ApiResponse> => {
-  return makeAuthenticatedRequest<ApiResponse>('/user/verification/ping', 'GET');
+  const response = await apiFetch('/user/verification/ping', {
+    method: 'GET',
+  });
+  return response.json();
 };
 
 export const formatDateForAPI = (date: Date | string): string => {
@@ -355,7 +342,6 @@ export const handleAPIError = (error: any): string => {
   if (error instanceof KYCAPIError) return error.message;
   return error.message || 'An unexpected error occurred. Please try again.';
 };
-
 
 const kycApiService = {
   getUserKycStatus,

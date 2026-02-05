@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { CiCircleQuestion } from "react-icons/ci";
 import { IoCopyOutline } from "react-icons/io5";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { apiFetch } from "@/lib/apiService"
 
 // Tooltip Component
 interface TooltipProps {
@@ -81,13 +82,13 @@ const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }
   useEffect(() => {
     const fetchWalletDetails = async () => {
       try {
-        const response = await fetch('/api/proxy/user/api/v1/me');
+        const response = await apiFetch('/user/api/v1/me');
         const result = await response.json();
 
         if (result.status === 'success' && result.data) {
           const { wallets, user } = result.data;
           
-          // ✅ NEW: Find wallet by currency
+          // Find wallet by currency
           let wallet;
           if (type === 'naira') {
             wallet = wallets?.find((w: any) => w.currency === 'NGN');
