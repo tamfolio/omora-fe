@@ -10,7 +10,7 @@ const API_KEY = process.env.OMORA_API_KEY || '';
 // Store temporary auth state for OTP verification
 const tempAuthStore = new Map<string, { email: string; timestamp: number }>();
 
-const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     // Provider 1: Two-step OTP flow
     CredentialsProvider({
@@ -186,7 +186,7 @@ const authOptions: NextAuthOptions = {
         }
       }
 
-      // ✅ Check if session has expired
+      // Check if session has expired
       if (token.sessionExpires && Date.now() > (token.sessionExpires as number)) {
         return {
           ...token,
@@ -194,7 +194,7 @@ const authOptions: NextAuthOptions = {
         };
       }
 
-      // ✅ NO TOKEN REFRESH - just return the token as-is
+      // NO TOKEN REFRESH - just return the token as-is
       return token;
     },
     
@@ -220,6 +220,18 @@ const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/auth/login",
     error: "/auth/error",
+  },
+  
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: true,
+      },
+    },
   },
 }
 
