@@ -22,7 +22,7 @@ interface FormData {
   city: string;
   state: string;
   businessType: string;
-  businessAddress: string;
+  address: string;
   taxIdentificationNumber: string;
   businessDescription: string;
   website: string;
@@ -46,7 +46,7 @@ function BusinessInformation({ onNext, onBack }: BusinessInformationProps) {
     city: "",
     state: "",
     businessType: "",
-    businessAddress: "",
+    address: "",
     taxIdentificationNumber: "",
     businessDescription: "",
     website: "",
@@ -92,7 +92,7 @@ function BusinessInformation({ onNext, onBack }: BusinessInformationProps) {
   const isFormValid = () => {
     return (
       formData.businessType !== "" &&
-      formData.businessAddress.trim() !== "" &&
+      formData.address.trim() !== "" &&
       formData.city.trim() !== "" &&
       formData.state.trim() !== "" &&
       formData.taxIdentificationNumber.trim() !== "" &&
@@ -104,14 +104,13 @@ function BusinessInformation({ onNext, onBack }: BusinessInformationProps) {
     setIsSubmitting(true);
     setError(null);
     try {
-      // ✅ FIX 3: Construct the Complete JSON Payload
       // This now includes ALL fields collected in the form
       const payload = {
         businessName: formData.businessName,
         rcNumber: formData.rcNumber,
         rcType: formData.rcType,
         businessType: formData.businessType,
-        businessAddress: formData.businessAddress,
+        address: formData.address,
         city: formData.city,
         state: formData.state,
         taxIdentificationNumber: formData.taxIdentificationNumber,
@@ -288,9 +287,9 @@ function BusinessInformation({ onNext, onBack }: BusinessInformationProps) {
             </label>
             <textarea
               placeholder="Enter your business address"
-              value={formData.businessAddress}
+              value={formData.address}
               onChange={(e) =>
-                handleInputChange("businessAddress", e.target.value)
+                handleInputChange("address", e.target.value)
               }
               rows={3}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors resize-none"
