@@ -3,7 +3,7 @@ import { ArrowLeft, ChevronDown, Info } from "lucide-react";
 import Logo from "../../Logo";
 import kycApiService from "@/lib/kyc-api-service";
 
-// ✅ FIX 1: Allow onNext to accept data (payload)
+
 interface BusinessInformationProps {
   onNext: (data?: any) => void;
   onBack: () => void;
