@@ -59,84 +59,90 @@ export default function KycVerification() {
   // Track if user has verified NIN/BVN
   const [isPersonalInfoVerified, setIsPersonalInfoVerified] = useState(false);
 
- useEffect(() => {
-  const checkKycStatus = async () => {
-    try {
-      const result = await getUserKycStatus();
+  useEffect(() => {
+    const checkKycStatus = async () => {
+      try {
+        const result = await getUserKycStatus();
 
-      if (result.status === 'success' && result.data) {
-        const { user, verification, onboardingState, business } = result.data;
+        if (result.status === "success" && result.data) {
+          const { user, verification, onboardingState, business } = result.data;
 
-        // 1. Populate User Data
-        updateFormData({
-          firstName: user.firstName,
-          lastName: user.lastName,
-          middleName: user.middleName || undefined,
-          dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString('en-GB') : undefined,
-          phone: user.mobileNumber,
-          mobileNumber: user.mobileNumber,
-          address: user.address,
-          city: user.city,
-          state: user.state,
-          country: user.country || undefined,
-          gender: user.gender as 'MALE' | 'FEMALE' | undefined,
-        });
+          // 1. Populate User Data
+          updateFormData({
+            firstName: user.firstName,
+            lastName: user.lastName,
+            middleName: user.middleName || undefined,
+            dateOfBirth: user.dateOfBirth
+              ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
+              : undefined,
+            phone: user.mobileNumber,
+            mobileNumber: user.mobileNumber,
+            address: user.address,
+            city: user.city,
+            state: user.state,
+            country: user.country || undefined,
+            gender: user.gender as "MALE" | "FEMALE" | undefined,
+          });
 
-        // 2. Handle Verification Status
-        if (verification) {
-          const { bothVerified } = checkVerificationStatus(verification);
-          setIsPersonalInfoVerified(bothVerified);
-          
-          const ninRecord = verification.find(v => v.type === 'NIN' && v.status === 'C');
-          const bvnRecord = verification.find(v => v.type === 'BVN' && v.status === 'C');
-          if (ninRecord) updateFormData({ nin: ninRecord.value });
-          if (bvnRecord) updateFormData({ bvn: bvnRecord.value });
-        }
+          // 2. Handle Verification Status
+          if (verification) {
+            const { bothVerified } = checkVerificationStatus(verification);
+            setIsPersonalInfoVerified(bothVerified);
 
-        // 3. Navigation Logic
-        if (onboardingState) {
-          const currentStep = onboardingState.currentStep;
-          const currentStepStatus = onboardingState.currentStepStatus;
-          const nextStep = onboardingState.nextStep;
-          
-          setApiNextStep(currentStep);
-
-          // Calculate target step based on currentStep (what user needs to complete)
-          const targetStep = getStepNumberFromApiStatus(currentStep);
-
-          // Force corporate mode if needed
-          if (targetStep >= 6 || business?.businessId) {
-             setUserType('corporate');
+            const ninRecord = verification.find(
+              (v) => v.type === "NIN" && v.status === "C",
+            );
+            const bvnRecord = verification.find(
+              (v) => v.type === "BVN" && v.status === "C",
+            );
+            if (ninRecord) updateFormData({ nin: ninRecord.value });
+            if (bvnRecord) updateFormData({ bvn: bvnRecord.value });
           }
 
-          // 4. ✅ CORRECT SUCCESS/FAILURE LOGIC
-          // Success: currentStepStatus is 'C' (complete) AND nextStep is 'dashboard'
-          const isKycComplete = 
-            currentStepStatus === 'C' && 
-            nextStep === 'dashboard';
-          
-          if (isKycComplete) {
-             setShowSuccessModal(true);
-          } 
-          // Failed verification
-          else if (currentStepStatus === 'NVP') {
-             setShowUnsuccessfulModal(true);
-          } 
-          // In progress or pending - go to currentStep
-          else {
-             setPageProgress(targetStep);
+          // 3. Navigation Logic
+          if (onboardingState) {
+            const currentStep = onboardingState.currentStep;
+            const currentStepStatus = onboardingState.currentStepStatus;
+            const nextStep = onboardingState.nextStep;
+
+            setApiNextStep(currentStep);
+
+            const targetStep = getStepNumberFromApiStatus(currentStep);
+
+            //  Detect corporate by checking business object OR next step
+            const nextStepNumber = getStepNumberFromApiStatus(nextStep);
+            const isCorporate =
+              business?.businessId || targetStep >= 6 || nextStepNumber >= 6;
+
+            if (isCorporate) {
+              setUserType("corporate");
+            }
+
+            // 4. SUCCESS/FAILURE LOGIC
+            const isKycComplete =
+              currentStepStatus === "C" && nextStep === "dashboard";
+
+            if (isKycComplete) {
+              setShowSuccessModal(true);
+            } else if (currentStepStatus === "NVP") {
+              setShowUnsuccessfulModal(true);
+            } else {
+              // If current step is complete ('C'), go to nextStep instead
+              const stepToShow =
+                currentStepStatus === "C" ? nextStepNumber : targetStep;
+              setPageProgress(stepToShow);
+            }
           }
         }
+      } catch (error) {
+        console.error("Failed to check KYC status", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to check KYC status', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  checkKycStatus();
-}, []);
+    checkKycStatus();
+  }, []);
 
   const handleRetry = () => {
     setShowUnsuccessfulModal(false);
@@ -170,11 +176,13 @@ export default function KycVerification() {
         return 5;
 
       case "upload-business-details":
+      case "update-business-details":
       case "business-information":
       case "business-info":
         return 6;
 
       case "upload-business-docs":
+      case "update-business-docs":
       case "company-documents":
         return 7;
 

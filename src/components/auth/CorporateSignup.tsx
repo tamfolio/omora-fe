@@ -32,29 +32,20 @@ export default function CorporateSignup({
   const [rcVerificationStatus, setRcVerificationStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
   const [rcVerificationError, setRcVerificationError] = useState('');
   
-  // BVN / NIN verification states
-  const [bvnStatus, setBvnStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
-  const [bvnError, setBvnError] = useState('');
-  const [ninStatus, setNinStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
-  const [ninError, setNinError] = useState('');
-  
   // Debounce timer ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const router = useRouter();
 
-  const [formData, setFormData] = useState({
-    rcNumber: "",
-    businessName: "",
-    firstName: "",
-    lastName: "",
-    bvn: "",
-    nin: "",
-    dateOfBirth: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+ const [formData, setFormData] = useState({
+  rcNumber: "",
+  businessName: "",
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+});
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
@@ -65,59 +56,6 @@ export default function CorporateSignup({
     };
   }, []);
 
-  // Check /me for existing verified NIN/BVN on mount
-  useEffect(() => {
-    let mounted = true;
-    const checkVerified = async () => {
-      try {
-        const response = await fetch('/api/proxy/user/api/v1/me', {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-        });
-        
-        if (!response.ok) return;
-        
-        const result = await response.json();
-        const data = (result as any)?.data;
-        if (!mounted || !data?.verification || !Array.isArray(data.verification)) return;
-        
-        // Check if NIN/BVN already verified
-        const ninRecord = data.verification.find((v: any) => v.type === 'NIN' && v.status === 'C');
-        const bvnRecord = data.verification.find((v: any) => v.type === 'BVN' && v.status === 'C');
-        
-        // Auto-populate verified NIN
-        if (ninRecord && mounted) {
-          setFormData(prev => ({ ...prev, nin: ninRecord.value }));
-          setNinStatus('success');
-        }
-        
-        // Auto-populate verified BVN
-        if (bvnRecord && mounted) {
-          setFormData(prev => ({ ...prev, bvn: bvnRecord.value }));
-          setBvnStatus('success');
-        }
-        
-        // Auto-populate dateOfBirth and gender from user object
-        if ((ninRecord || bvnRecord) && data.user && mounted) {
-          if (data.user.dateOfBirth) {
-            const [year, month, day] = data.user.dateOfBirth.split('-');
-            setFormData(prev => ({ ...prev, dateOfBirth: `${year}-${month}-${day}` }));
-          }
-          if (data.user.firstName && !formData.firstName) {
-            setFormData(prev => ({ ...prev, firstName: data.user.firstName }));
-          }
-          if (data.user.lastName && !formData.lastName) {
-            setFormData(prev => ({ ...prev, lastName: data.user.lastName }));
-          }
-        }
-      } catch (err) {
-        // ignore - user will manually verify
-      }
-    };
-    checkVerified();
-    return () => { mounted = false; };
-  }, []);
 
   // Verify RC Number with backend
   const verifyRCNumber = async (rcNumber: string, type: 'RC' | 'BN') => {
@@ -199,15 +137,6 @@ export default function CorporateSignup({
       setEmailError("");
     }
 
-    // If user edits BVN/NIN fields, reset statuses
-    if (field === 'bvn') {
-      setBvnStatus('idle');
-      setBvnError('');
-    }
-    if (field === 'nin') {
-      setNinStatus('idle');
-      setNinError('');
-    }
   };
 
   const handleRcTypeChange = (newType: 'RC' | 'BN') => {
@@ -232,19 +161,7 @@ export default function CorporateSignup({
     return null;
   };
 
-  const getBVNIcon = () => {
-    if (bvnStatus === 'verifying') return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
-    if (bvnStatus === 'success') return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-    if (bvnStatus === 'error') return <XCircle className="w-4 h-4 text-red-500" />;
-    return null;
-  };
 
-  const getNINIcon = () => {
-    if (ninStatus === 'verifying') return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
-    if (ninStatus === 'success') return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-    if (ninStatus === 'error') return <XCircle className="w-4 h-4 text-red-500" />;
-    return null;
-  };
 
   const validatePassword = (password: string): boolean => {
     const minLength = 8;
@@ -290,80 +207,7 @@ export default function CorporateSignup({
     }
   };
 
-  // Verify BVN with backend and populate name/DOB on success
-  const verifyBVN = async (bvn: string) => {
-    if (bvn.length < 11) {
-      setBvnStatus('idle');
-      setBvnError('');
-      return;
-    }
 
-    setBvnStatus('verifying');
-    setBvnError('');
-
-    try {
-      const response = await fetch('/api/proxy/user/verification/verify/bvn', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idNumber: bvn }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && (result.status === 'VERIFIED' || result.verified)) {
-        setBvnStatus('success');
-        // Attempt to extract names and birthdate from response
-        const r: any = result;
-        const first = r.data?.firstName ?? r.firstName ?? r.first_name ?? '';
-        const last = r.data?.lastName ?? r.lastName ?? r.last_name ?? '';
-        const dob = r.data?.birthdate ?? r.birthdate ?? r.dateOfBirth ?? r.dob ?? '';
-        setFormData((prev) => ({ ...prev, firstName: first || prev.firstName, lastName: last || prev.lastName, dateOfBirth: dob || prev.dateOfBirth }));
-      } else {
-        setBvnStatus('error');
-        setBvnError(result.message || 'BVN verification failed');
-      }
-    } catch (err) {
-      console.error('BVN verification error:', err);
-      setBvnStatus('error');
-      setBvnError('BVN verification failed');
-    }
-  };
-
-  // Verify NIN with backend and populate DOB on success
-  const verifyNIN = async (nin: string) => {
-    if (nin.length < 11) {
-      setNinStatus('idle');
-      setNinError('');
-      return;
-    }
-
-    setNinStatus('verifying');
-    setNinError('');
-
-    try {
-      const response = await fetch('/api/proxy/user/verification/verify/nin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idNumber: nin }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && (result.status === 'VERIFIED' || result.verified)) {
-        setNinStatus('success');
-        const r: any = result;
-        const dob = r.data?.birthdate ?? r.birthdate ?? r.dateOfBirth ?? r.dob ?? '';
-        setFormData((prev) => ({ ...prev, dateOfBirth: dob || prev.dateOfBirth }));
-      } else {
-        setNinStatus('error');
-        setNinError(result.message || 'NIN verification failed');
-      }
-    } catch (err) {
-      console.error('NIN verification error:', err);
-      setNinStatus('error');
-      setNinError('NIN verification failed');
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -389,17 +233,6 @@ export default function CorporateSignup({
       return;
     }
 
-    if (bvnStatus !== 'success') {
-      onError('Please verify BVN before continuing');
-      setLoading(false);
-      return;
-    }
-
-    if (ninStatus !== 'success') {
-      onError('Please verify NIN before continuing');
-      setLoading(false);
-      return;
-    }
 
     if (formData.password !== formData.confirmPassword) {
       onError("Passwords do not match");
@@ -422,16 +255,13 @@ export default function CorporateSignup({
     }
 
     try {
-      const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        dateOfBirth: formData.dateOfBirth,
-        bvn: formData.bvn,
-        nin: formData.nin,
-        emailAddress: formData.email,
-        password: formData.password,
-        rcNumber: `${rcType}${formData.rcNumber}`,
-      };
+     const payload = {
+  firstName: formData.firstName,
+  lastName: formData.lastName,
+  emailAddress: formData.email,
+  password: formData.password,
+  rcNumber: `${rcType}${formData.rcNumber}`,
+};
 
       console.log('Corporate Signup Payload:', { ...payload, password: '***' });
 
@@ -508,9 +338,6 @@ export default function CorporateSignup({
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
-          dateOfBirth: formData.dateOfBirth,
-          bvn: formData.bvn,
-          nin: formData.nin,
           emailAddress: formData.email,
           password: formData.password,
           rcNumber: `${rcType}${formData.rcNumber}`,
@@ -729,57 +556,6 @@ export default function CorporateSignup({
         </p>
       </div>
 
-      {/* BVN */}
-      <div>
-        <label
-          htmlFor="bvn"
-          className="block text-xs font-medium text-gray-700 mb-1"
-        >
-          BVN (11 digits) <span className="text-red-500">*</span>
-        </label>
-        <div className="relative">
-          <input
-            id="bvn"
-            type="text"
-            maxLength={11}
-            required
-            className={`w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs ${bvnStatus === 'success' ? 'bg-green-50' : ''}`}
-            placeholder="00000000000"
-            value={formData.bvn}
-            onChange={(e) => handleChange('bvn', e.target.value.replace(/\D/g, '').slice(0, 11))}
-            onBlur={() => { if (formData.bvn.length === 11) verifyBVN(formData.bvn); }}
-            disabled={loading}
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">{getBVNIcon()}</div>
-        </div>
-        {bvnError && <p className="text-xs text-red-500 mt-1">{bvnError}</p>}
-      </div>
-
-      {/* NIN */}
-      <div>
-        <label
-          htmlFor="nin"
-          className="block text-xs font-medium text-gray-700 mb-1"
-        >
-          NIN (11 digits) <span className="text-red-500">*</span>
-        </label>
-        <div className="relative">
-          <input
-            id="nin"
-            type="text"
-            maxLength={11}
-            required
-            className={`w-full px-2 py-1.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 text-xs ${ninStatus === 'success' ? 'bg-green-50' : ''}`}
-            placeholder="00000000000"
-            value={formData.nin}
-            onChange={(e) => handleChange('nin', e.target.value.replace(/\D/g, '').slice(0, 11))}
-            onBlur={() => { if (formData.nin.length === 11) verifyNIN(formData.nin); }}
-            disabled={loading}
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">{getNINIcon()}</div>
-        </div>
-        {ninError && <p className="text-xs text-red-500 mt-1">{ninError}</p>}
-      </div>
 
       {/* Email */}
       <div>
@@ -900,7 +676,7 @@ export default function CorporateSignup({
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={loading || !acceptTerms || !!emailError || rcVerificationStatus !== 'success' || bvnStatus !== 'success' || ninStatus !== 'success'}
+        disabled={loading || !acceptTerms || !!emailError || rcVerificationStatus !== 'success' }
         className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
       >
         {loading ? "Creating account..." : "Get started"}
