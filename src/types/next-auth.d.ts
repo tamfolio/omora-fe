@@ -1,20 +1,8 @@
-// types/next-auth.d.ts
+// In your /src/types/next-auth.d.ts (create this file if it doesn't exist)
 
-import "next-auth"
-import "next-auth/jwt"
+import NextAuth, { DefaultSession } from "next-auth"
 
 declare module "next-auth" {
-  interface User {
-    id: string
-    email: string
-    name: string
-    role: string
-    accessToken: string
-    refreshToken?: string
-    isFirstLogin?: boolean
-    rememberMe?: boolean 
-  }
-
   interface Session {
     user: {
       id: string
@@ -22,10 +10,23 @@ declare module "next-auth" {
       name: string
       role: string
       isFirstLogin?: boolean
+      image?: string  // ✅ Add this
     }
-    accessToken: string  // ✅ CHANGED: Required, not optional
+    accessToken?: string
     refreshToken?: string
     error?: string
+  }
+
+  interface User {
+    id: string
+    email: string
+    name: string
+    role: string
+    accessToken: string
+    refreshToken: string
+    isFirstLogin?: boolean
+    rememberMe?: boolean
+    image?: string  // ✅ Add this
   }
 }
 
@@ -33,16 +34,16 @@ declare module "next-auth/jwt" {
   interface JWT {
     accessToken?: string
     refreshToken?: string
-    accessTokenExpires?: number
-    sessionExpires?: number 
-    rememberMe?: boolean 
-    error?: string
+    sessionExpires?: number
+    rememberMe?: boolean
     user?: {
       id: string
       email: string
       name: string
       role: string
       isFirstLogin?: boolean
+      image?: string  // ✅ Add this
     }
+    error?: string
   }
 }

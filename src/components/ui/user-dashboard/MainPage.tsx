@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import SetupDashboard from "./SetupDashoard";
 import CompletedDashboard from "./CompletedDashboard";
-import { useSession } from "next-auth/react";
+import { useUserData } from "@/contexts/UserDataContext";
 
 interface SetupStep {
   id: number;
@@ -25,10 +25,10 @@ interface Post {
 
 function MainPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+const { userData, loading } = useUserData()
 
   const [userName, setUserName] = useState("User");
-  const [isLoading, setIsLoading] = useState(true);
+ 
   const [isKycCompleted, setIsKycCompleted] = useState(false);
   const [isRiskProfileCompleted, setIsRiskProfileCompleted] = useState(false);
   const [isAccountFunded, setIsAccountFunded] = useState(false);
@@ -38,121 +38,50 @@ function MainPage() {
   const [showKycFailureModal, setShowKycFailureModal] = useState(false);
 
   // NEW: Check for KYC completion status from URL params
-  useEffect(() => {
-    if (typeof window !== "undefined") {
+useEffect(() => {
+    if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
-      const kycStatus = searchParams.get("kyc");
-
-      if (kycStatus === "complete") {
-        // Verify liveness completion with backend
-        const verifyKycCompletion = async () => {
-          try {
-            const response = await fetch("/api/proxy/user/api/v1/me", {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-            });
-
-            if (response.ok) {
-              const result = await response.json();
-              if (result.status === "success") {
-                const livenessRecord = result.data.verification?.find(
-                  (v: any) => v.type === "LIVENESS",
-                );
-
-                // Show success if liveness is complete, otherwise show failure
-                if (livenessRecord?.status === "C") {
-                  setShowKycSuccessModal(true);
-                } else {
-                  // Still processing, show success anyway (backend will update)
-                  setShowKycSuccessModal(true);
-                }
-              }
-            }
-          } catch (error) {
-            console.error("Error verifying KYC completion:", error);
-          }
-
-          // Clear URL params
-          window.history.replaceState({}, "", "/dashboard");
-        };
-
-        verifyKycCompletion();
-      } else if (kycStatus === "failed") {
+      const kycStatus = searchParams.get('kyc');
+      
+      if (kycStatus === 'complete') {
+        setShowKycSuccessModal(true);
+        window.history.replaceState({}, '', '/dashboard');
+      } else if (kycStatus === 'failed') {
         setShowKycFailureModal(true);
-        window.history.replaceState({}, "", "/dashboard");
-      } else if (kycStatus === "pending") {
-        // ADD THIS: User closed verification early - just clear params, no modal
-        console.log("User closed verification early - no modal shown");
-        window.history.replaceState({}, "", "/dashboard");
+        window.history.replaceState({}, '', '/dashboard');
+      } else if (kycStatus === 'pending') {
+        window.history.replaceState({}, '', '/dashboard');
       }
     }
   }, []);
 
+  // ✅ Process userData when it changes
   useEffect(() => {
-    if (status === "authenticated" && session?.accessToken) {
-      const fetchUserStatus = async () => {
-        try {
-          const response = await fetch("/api/proxy/user/api/v1/me", {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
+    if (userData) {
+      const { user, business, onboardingState, wallets } = userData;
 
-          if (!response.ok) {
-            console.error("Dashboard Status Error:", response.status);
-            return;
-          }
+      // Set user name - prioritize business name for corporate
+      if (business?.businessName) {
+        setUserName(business.businessName);
+      } else if (user?.firstName) {
+        const rawName = user.firstName;
+        const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+        setUserName(formattedName);
+      }
 
-          const result = await response.json();
-
-          if (result.status === "success") {
-            const { data } = result;
-
-            // Set user name - prioritize business name for corporate accounts
-            if (data.business?.businessName) {
-              setUserName(data.business.businessName);
-            } else if (data.user?.firstName) {
-              const rawName = data.user.firstName;
-              const formattedName =
-                rawName.charAt(0).toUpperCase() +
-                rawName.slice(1).toLowerCase();
-              setUserName(formattedName);
-            }
-            // KYC is only complete when currentStep is 'dashboard' or nextStep is 'dashboard'
-            const kycSteps = [
-              "verify-email",
-              "create-pin",
-              "verify-country",
-              "personal-info",
-              "contact-info",
-              "document-upload",
-              "facial-recognition",
-              "verify-liveness",
-            ];
-            const currentStep = data.onboardingState?.currentStep;
-
-            // KYC is done ONLY when currentStep is 'dashboard'
-            const isKycDone =
-              data.onboardingState?.nextStep === "dashboard" ||
-              data.onboardingState?.currentStep === "dashboard";
-
-            setIsKycCompleted(isKycDone);
-            setIsRiskProfileCompleted(data.user?.isRiskProfile === true);
-            setIsAccountFunded(data.personalWallet?.availableBalance > 0);
-          }
-        } catch (error) {
-          console.error("Failed to fetch user status", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      fetchUserStatus();
-    } else if (status === "unauthenticated") {
-      setIsLoading(false);
+      // Check KYC completion
+      const isKycDone = 
+        onboardingState?.nextStep === 'dashboard' ||
+        onboardingState?.currentStep === 'dashboard';
+      
+      setIsKycCompleted(isKycDone);
+      setIsRiskProfileCompleted(user?.isRiskProfile === true);
+      
+      // Check if account is funded (any wallet has balance)
+      const ngnWallet = wallets?.find((w: any) => w.currency === 'NGN');
+      setIsAccountFunded(ngnWallet?.availableBalance > 0);
     }
-  }, [status, session]);
+  }, [userData]);
 
   const setupSteps: SetupStep[] = [
     {
@@ -234,7 +163,7 @@ function MainPage() {
     console.log(`Reading post: ${postId}`);
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-gray-500">Loading your dashboard...</div>

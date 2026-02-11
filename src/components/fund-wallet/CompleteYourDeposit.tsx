@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FiCopy, FiCheck, FiHeadphones } from "react-icons/fi";
 import { CiBank } from "react-icons/ci";
-import { apiFetch } from "@/lib/apiService";
+import { useUserData } from "@/contexts/UserDataContext";
 
 interface WalletDetails {
   accountNumber: string;
@@ -16,32 +16,29 @@ export default function CompleteYourDeposit() {
   const amount = searchParams.get("amount") || "1,000,000";
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [walletDetails, setWalletDetails] = useState<WalletDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+  
+  // ✅ Get data from context instead of fetching
+  const { userData, loading } = useUserData();
 
   useEffect(() => {
-    const fetchWalletDetails = async () => {
-      try {
-        const response = await apiFetch('/user/api/v1/me');
-        const result = await response.json();
-
-        if (result.status === 'success' && result.data) {
-          const { personalWallet, user } = result.data;
-          
-          setWalletDetails({
-            accountNumber: personalWallet?.accountNumber || '',
-            bankName: personalWallet?.bankName || '',
-            accountName: `${user.firstName} ${user.lastName}` || ''
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch wallet details:', error);
-      } finally {
-        setLoading(false);
+    if (userData) {
+      const { wallets, user, business } = userData;
+      
+      // Find NGN wallet
+      const ngnWallet = wallets?.find((w: any) => w.currency === 'NGN');
+      
+      if (ngnWallet) {
+        // ✅ Use business name for corporate accounts
+        const accountName = business?.businessName || `${user.firstName} ${user.lastName}`;
+        
+        setWalletDetails({
+          accountNumber: ngnWallet.accountNumber || '',
+          bankName: ngnWallet.bankName || '',
+          accountName: accountName
+        });
       }
-    };
-
-    fetchWalletDetails();
-  }, []);
+    }
+  }, [userData]);
 
   const handleCopy = async (text: string, field: string) => {
     await navigator.clipboard.writeText(text);

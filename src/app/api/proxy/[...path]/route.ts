@@ -1,126 +1,108 @@
-import { getToken } from 'next-auth/jwt';
+// src/app/api/proxy/[...path]/route.ts - FIXED FOR NEXT.JS 15
 
-const TARGET = process.env.OMORA_API_BASE_URL || process.env.API_BASE_URL || 'http://localhost:8000';
+import { getToken } from 'next-auth/jwt';
+import { NextRequest, NextResponse } from 'next/server';
+
+// 🔒 SECURITY: Use Server-Side Env Vars only
+const TARGET = process.env.OMORA_API_BASE_URL || 'http://localhost:8000';
 const API_KEY = process.env.OMORA_API_KEY || '';
 
-type RouteProps = {
-  params: Promise<{ path: string[] }>;
-};
+// Whitelist of public routes that don't require a user session
+const PUBLIC_PATHS = [
+  'user/api/v1/sign-in',
+  'user/api/v1/sign-in/complete',
+  'user/api/v1/sign-up',
+  'user/api/v1/sign-up/complete',
+  'user/api/v1/forgot-password',
+  'user/api/v1/reset-password'
+];
 
-async function forward(request: Request, params: { path: string[] }) {
-  const url = new URL(request.url);
-  const path = (params.path || []).join('/');
-  const targetUrl = `${TARGET.replace(/\/$/, '')}/${path}${url.search}`;
+// ✅ FIX: Properly handle Next.js 15 async params
+async function handleProxy(
+  req: NextRequest, 
+  context: { params: Promise<{ path: string[] }> }
+) {
+  // ✅ Await the params object first
+  const params = await context.params;
+  const pathArray = params.path;
+  const pathStr = pathArray.join('/');
+  const url = new URL(req.url);
+  const targetUrl = `${TARGET.replace(/\/$/, '')}/${pathStr}${url.search}`;
 
-const isProd = process.env.NODE_ENV === "production";
-
-const token = await getToken({ 
-  req: request as any, 
-  secret: process.env.NEXTAUTH_SECRET,
-  secureCookie: isProd,
-});
-
-// 🔍 PRODUCTION DEBUG LOGS
-if (!token) {
-  const allCookies = request.headers.get('cookie') || 'no cookies found';
-  console.log('🔐 Proxy Debug - Detailed Failure:', {
-    env: process.env.NODE_ENV,
-    expectedSecure: isProd,
-    hasSecret: !!process.env.NEXTAUTH_SECRET,
-    rawCookieHeader: allCookies.substring(0, 50) + '...', // Check for __Secure- prefix
-    nextAuthUrl: process.env.NEXTAUTH_URL
-  });
-}
-
-  console.log('🔐 Proxy Debug:', {
-    path,
-    hasToken: !!token,
-    hasAccessToken: !!token?.accessToken,
-    tokenPreview: token?.accessToken?.substring(0, 30),
-    env: process.env.NODE_ENV,
-    hasSecret: !!process.env.NEXTAUTH_SECRET
+  // 1. 🔒 AUTH CHECK
+  const isPublic = PUBLIC_PATHS.some((p) => pathStr.includes(p));
+  
+  const token = await getToken({ 
+    req, 
+    secret: process.env.NEXTAUTH_SECRET 
   });
 
-  const headers: Record<string, string> = {};
-  for (const [key, value] of (request.headers as any).entries()) {
-    if (['host', 'cookie', 'authorization', 'content-length'].includes(key.toLowerCase())) continue;
-    headers[key] = value;
+  if (!isPublic && !token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Add API key
+  // 2. 🔒 HEADER SANITIZATION
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json');
+  headers.set('Accept', 'application/json');
+  
+  // Inject the API Key (Server-side only)
   if (API_KEY) {
-    headers['x-api-key'] = API_KEY;
+    headers.set('x-api-key', API_KEY);
   }
 
-  // Add authorization if token exists
+  // Inject the User Token (from the session)
   if (token?.accessToken) {
-    headers['authorization'] = `Bearer ${token.accessToken}`;
-    console.log('✅ Added Authorization header');
-  } else {
-    console.error('❌ No access token in session!', {
-      tokenKeys: token ? Object.keys(token) : 'no token'
-    });
+    headers.set('Authorization', `Bearer ${token.accessToken}`);
   }
 
-  const body = ['GET', 'HEAD'].includes(request.method) ? undefined : request.body;
+  // 3. BODY HANDLING
+  const body = ['GET', 'HEAD'].includes(req.method) ? undefined : await req.text();
 
   try {
-    console.log('📡 Forwarding to:', targetUrl);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`📡 Proxying ${req.method} -> ${pathStr}`);
+    }
+
+    const backendResponse = await fetch(targetUrl, {
+      method: req.method,
+      headers: headers,
+      body: body,
+    });
+
+    // 4. RESPONSE HANDLING
+    const responseHeaders = new Headers(backendResponse.headers);
+    responseHeaders.delete('www-authenticate');
     
-    const res = await fetch(targetUrl, {
-      method: request.method,
-      headers,
-      body,
-      // @ts-ignore
-      duplex: 'half', 
-    });
-
-    console.log('📥 API Response:', {
-      status: res.status,
-      ok: res.ok
-    });
-
-    const responseHeaders = new Headers(res.headers);
-    responseHeaders.delete('transfer-encoding');
-
-    return new Response(res.body, {
-      status: res.status,
+    return new Response(backendResponse.body, {
+      status: backendResponse.status,
+      statusText: backendResponse.statusText,
       headers: responseHeaders,
     });
+
   } catch (error) {
     console.error("❌ Proxy Error:", error);
-    return new Response(JSON.stringify({ message: "Proxy failed", error: String(error) }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return NextResponse.json({ error: "Service Unavailable" }, { status: 502 });
   }
 }
 
-export async function GET(request: Request, props: RouteProps) {
-  const params = await props.params;
-  return forward(request, params);
+// ✅ Export handlers with proper typing
+export async function GET(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+  return handleProxy(req, context);
 }
 
-export async function POST(request: Request, props: RouteProps) {
-  const params = await props.params;
-  return forward(request, params);
+export async function POST(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+  return handleProxy(req, context);
 }
 
-export async function PUT(request: Request, props: RouteProps) {
-  const params = await props.params;
-  return forward(request, params);
+export async function PUT(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+  return handleProxy(req, context);
 }
 
-export async function DELETE(request: Request, props: RouteProps) {
-  const params = await props.params;
-  return forward(request, params);
+export async function DELETE(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+  return handleProxy(req, context);
 }
 
-export async function PATCH(request: Request, props: RouteProps) {
-  const params = await props.params;
-  return forward(request, params);
-}
-
-export async function OPTIONS() {
-  return new Response(null, { status: 204 });
+export async function PATCH(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+  return handleProxy(req, context);
 }

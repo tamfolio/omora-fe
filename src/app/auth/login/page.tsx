@@ -45,6 +45,7 @@ export default function Login() {
     }
   };
 
+  // ✅ FIXED: Use NextAuth directly
   const handleInitialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -60,24 +61,20 @@ export default function Login() {
     }
 
     try {
-      // Step 1: Call custom API route for initial sign-in
-      const response = await fetch("/api/auth/omora-signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          identifier: email,
-          password: password,
-          rememberMe: rememberMe, // Send remember me preference to backend
-        }),
+      // ✅ Call NextAuth directly with mode='signin'
+      const result = await signIn("credentials-with-otp", {
+        redirect: false,
+        email,
+        password,
+        mode: "signin",
+        rememberMe: rememberMe.toString(),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Invalid email or password");
+      if (result?.error) {
+        setError("Invalid email or password");
         setLoading(false);
-      } else if (data.requiresOtp) {
-        // Show OTP modal
+      } else if (result?.ok) {
+        // Success - show OTP modal
         setShowOtpModal(true);
         setLoading(false);
       }
@@ -87,96 +84,67 @@ export default function Login() {
     }
   };
 
-  const handleOtpSubmit = async () => {
-    if (otp.length !== 6) {
-      setError("Please enter a 6-digit code");
-      return;
-    }
 
-    setLoading(true);
-    setError("");
 
-    try {
-      // Step 2: Verify OTP
-      const response = await fetch("/api/auth/omora-verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          identifier: email,
-          otp: otp,
-          rememberMe: rememberMe, // Include remember me in verification
-        }),
-      });
+// Replace handleOtpSubmit function in your login page.tsx
 
-      const data = await response.json();
+const handleOtpSubmit = async () => {
+  if (otp.length !== 6) {
+    setError("Please enter a 6-digit code");
+    return;
+  }
 
-      if (!response.ok) {
-        setError(data.error || "Invalid verification code");
-        setLoading(false);
-      } else if (data.success && data.user) {
-        // Step 3: Sign in with NextAuth using the verified user data
-        const result = await signIn("credentials", {
-          email: data.user.email,
-          password: "", // Not needed, we're using the token
-          accessToken: data.user.accessToken,
-          refreshToken: data.user.refreshToken || "",
-          userId: data.user.id,
-          userName: data.user.name,
-          userRole: data.user.role,
-          isFirstLogin: data.user.isFirstLogin?.toString() || "false",
-          rememberMe: rememberMe.toString(), // Pass to NextAuth for session duration
-          redirect: false,
-        });
+  setLoading(true);
+  setError("");
 
-        if (result?.ok) {
-          // Set a long-term cookie if remember me is checked
-          if (rememberMe) {
-            // Set a cookie that expires in 30 days
-            const expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + 30);
-            document.cookie = `omora-session-extended=true; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
-          }
+  try {
+    const result = await signIn("credentials-with-otp", {
+      redirect: false,
+      email,
+      otp,
+      mode: "verify",
+      rememberMe: rememberMe.toString(),
+    });
 
-          // Check if first-time login
-          if (data.user.isFirstLogin) {
-            router.push("/firsttimelogin");
-          } else {
-            router.push("/dashboard");
-          }
-        } else {
-          setError("Failed to establish session");
-          setLoading(false);
-        }
+    if (result?.ok) {
+      // Set long-term cookie if remember me checked
+      if (rememberMe) {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 30);
+        document.cookie = `omora-session-extended=true; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
       }
-    } catch (error) {
-      setError("An error occurred during verification");
+
+      // ✅ SIMPLIFIED: Just go to dashboard, no isFirstLogin checks
+      router.push("/dashboard");
+    } else {
+      setError(result?.error || "Invalid verification code");
       setLoading(false);
     }
-  };
-
+  } catch (error) {
+    setError("An error occurred during verification");
+    setLoading(false);
+  }
+};
+  // ✅ FIXED: Use NextAuth directly
   const handleResendOtp = async () => {
     setLoading(true);
     setError("");
 
     try {
-      // Resend OTP by calling sign-in again
-      const response = await fetch("/api/auth/omora-signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          identifier: email,
-          password: password,
-          rememberMe: rememberMe,
-        }),
+      // Re-trigger signin to resend OTP
+      const result = await signIn("credentials-with-otp", {
+        redirect: false,
+        email,
+        password,
+        mode: "signin",
+        rememberMe: rememberMe.toString(),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Failed to resend code");
-      } else {
+      if (result?.ok) {
         setOtp("");
         setError("");
+      } else {
+        setError("Failed to resend code");
       }
     } catch (error) {
       setError("Failed to resend code");
@@ -211,10 +179,8 @@ export default function Login() {
                     Two-factor authentication
                   </h2>
                   <p className="text-gray-600 text-sm">
-                    Enter the 6-digit code sent to
-                  </p>
-                  <p className="text-gray-900 text-sm font-medium mt-1">
-                    {email}
+                    Enter the 6-digit code sent to{" "}
+                    <span className="font-medium text-gray-900">{email}</span>
                   </p>
                 </div>
 
@@ -226,17 +192,24 @@ export default function Login() {
                   )}
 
                   <div>
+                    <label
+                      htmlFor="otp"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Enter Code
+                    </label>
                     <input
+                      id="otp"
                       type="text"
+                      inputMode="numeric"
                       maxLength={6}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-center tracking-widest text-lg font-semibold"
+                      placeholder="000000"
                       value={otp}
                       onChange={(e) => {
                         const value = e.target.value.replace(/\D/g, "");
                         setOtp(value);
-                        setError("");
                       }}
-                      placeholder="000000"
-                      className="w-full px-3 py-3 text-center text-2xl font-mono tracking-[0.5em] border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       disabled={loading}
                       autoFocus
                     />
@@ -245,16 +218,9 @@ export default function Login() {
                   <button
                     onClick={handleOtpSubmit}
                     disabled={loading || otp.length !== 6}
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {loading ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Verifying...
-                      </div>
-                    ) : (
-                      "Verify"
-                    )}
+                    {loading ? "Verifying..." : "Verify"}
                   </button>
 
                   <div className="text-center space-y-3">

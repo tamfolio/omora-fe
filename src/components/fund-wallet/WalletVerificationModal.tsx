@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock, CheckCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface WalletVerificationModalProps {
   isOpen: boolean;
@@ -7,6 +8,8 @@ interface WalletVerificationModalProps {
 }
 
 export default function WalletVerificationModal({ isOpen, verificationType }: WalletVerificationModalProps) {
+  const router = useRouter();
+  
   if (!isOpen) return null;
 
   return (
@@ -40,9 +43,17 @@ export default function WalletVerificationModal({ isOpen, verificationType }: Wa
           </div>
         </div>
 
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 mb-6">
           <p>⏱️ Verification usually takes 24-48 hours</p>
         </div>
+
+        {/* Back to Dashboard Button */}
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
+        >
+          Back to Dashboard
+        </button>
       </div>
     </div>
   );

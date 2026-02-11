@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useUserData } from "@/contexts/UserDataContext";
 import DepositModal from "./DepositModal";
 import WalletHistory from "./WalletHistory";
 import WithdrawModal from "./withdraw-modal/WithdrawModal";
@@ -8,15 +9,8 @@ import WalletCard from "./WalletCard";
 import ToggleSwitch from "./ToggleSwitch";
 import WalletVerificationModal from "./WalletVerificationModal";
 import { FiHeadphones } from "react-icons/fi";
-import { apiFetch } from "@/lib/apiService";
 
 // Types
-interface UserBalances {
-  usdc: number;
-  naira: number;
-  usdt: number;
-}
-
 interface WithdrawData {
   currency: "NGN" | "USDT";
   amount: number;
@@ -29,77 +23,26 @@ interface WithdrawData {
   description: string;
 }
 
-function useWalletVerification() {
-  const [isVerified, setIsVerified] = useState(false);
-  const [verificationType, setVerificationType] = useState<'individual' | 'corporate'>('individual');
-  const [isPolling, setIsPolling] = useState(true);
-  const [userBalances, setUserBalances] = useState<UserBalances>({
-    usdc: 0,
-    naira: 0,
-    usdt: 0,
-  });
-
-  useEffect(() => {
-    const checkWalletStatus = async () => {
-      try {
-        const response = await apiFetch('/user/api/v1/me');
-        const result = await response.json();
-
-        if (result.status === 'success' && result.data) {
-          const { wallets, business } = result.data;
-
-          // Determine if corporate based on business object
-          if (business && business.businessId) {
-            setVerificationType('corporate');
-          }
-
-          // Check if NGN wallet has account number (verification complete)
-          const ngnWallet = wallets?.find((w: any) => w.currency === 'NGN');
-          
-          if (ngnWallet?.accountNumber) {
-            setIsVerified(true);
-            setIsPolling(false);
-
-            // Set balances
-            const usdcWallet = wallets.find((w: any) => w.currency === 'USDC');
-            const usdtWallet = wallets.find((w: any) => w.currency === 'USDT');
-            
-            setUserBalances({
-              naira: ngnWallet.availableBalance || 0,
-              usdc: usdcWallet?.availableBalance || 0,
-              usdt: usdtWallet?.availableBalance || 0,
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error checking wallet status:', error);
-      }
-    };
-
-    // Initial check
-    checkWalletStatus();
-
-    // Poll every 30 seconds if not verified
-    let pollInterval: NodeJS.Timeout;
-    if (isPolling && !isVerified) {
-      pollInterval = setInterval(checkWalletStatus, 30000);
-    }
-
-    return () => {
-      if (pollInterval) clearInterval(pollInterval);
-    };
-  }, [isPolling, isVerified]);
-
-  return { isVerified, verificationType, userBalances };
-}
-
 export default function FundWalletComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [withdrawCurrency, setWithdrawCurrency] = useState<"NGN" | "USDT">("NGN");
   const [autoConvert, setAutoConvert] = useState(false);
-  const { isVerified, verificationType, userBalances } = useWalletVerification();
+  
+  // ✅ Get data from context - NO POLLING NEEDED!
+  const { userData, loading } = useUserData();
   const router = useRouter();
+
+  // ✅ Check verification instantly from context data
+  const ngnWallet = userData?.wallets?.find((w: any) => w.currency === 'NGN');
+  const isVerified = !!ngnWallet?.accountNumber;
+  const verificationType = userData?.business?.businessId ? 'corporate' : 'individual';
+
+  const userBalances = {
+    naira: ngnWallet?.availableBalance || 0,
+    usdc: userData?.wallets?.find((w: any) => w.currency === 'USDC')?.availableBalance || 0,
+    usdt: userData?.wallets?.find((w: any) => w.currency === 'USDT')?.availableBalance || 0,
+  };
 
   const handleConvert = (currency: string) => {
     if (!isVerified) return;
@@ -129,6 +72,17 @@ export default function FundWalletComponent() {
     if (!isVerified) return;
     setAutoConvert(!autoConvert);
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading wallet...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
