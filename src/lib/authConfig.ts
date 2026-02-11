@@ -1,60 +1,38 @@
-// lib/authConfig.ts
-import type { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import type { User } from "next-auth"
-import type { JWT } from "next-auth/jwt"
+import type { NextAuthOptions, User } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 
-// 1. TYPE DECLARATIONS (Required for TS to recognize accessToken)
-declare module "next-auth" {
-  interface User {
-    accessToken: string;
-    refreshToken?: string;
-    isFirstLogin?: boolean;
-    rememberMe?: boolean;
-    role: string;
-  }
-  interface Session {
-    accessToken: string;
-    refreshToken?: string;
-    error?: string;
-    user: {
-      id: string;
-      email: string;
-      name: string;
-      role: string;
-      isFirstLogin?: boolean;
-    };
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    accessToken?: string;
-    refreshToken?: string;
-    sessionExpires?: number;
-    rememberMe?: boolean;
-    user?: {
-      id: string;
-      email: string;
-      name: string;
-      role: string;
-      isFirstLogin?: boolean;
-    };
-    error?: string;
-  }
-}
-
-// 2. ENVIRONMENT LOGIC
-const useSecureCookies = process.env.NODE_ENV === "production";
-const cookiePrefix = useSecureCookies ? "__Secure-" : "";
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/proxy'
+// 🔒 SECURITY: Use direct backend URL
+const BACKEND_URL = process.env.OMORA_API_BASE_URL || 'api.omora.app'; 
 const API_KEY = process.env.OMORA_API_KEY || '';
 
+// Temporary store for OTP flow
 export const tempAuthStore = new Map<string, { email: string; timestamp: number }>();
 
+// Determine if we are in production to set cookie security
+const useSecureCookies = process.env.NODE_ENV === "production";
+
 export const authOptions: NextAuthOptions = {
+  debug: false, 
+  
+  session: { 
+    strategy: "jwt", 
+    maxAge: 7 * 24 * 60 * 60 // 7 days
+  },
+
+  
+  cookies: {
+    sessionToken: {
+      name: useSecureCookies ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies, 
+      },
+    },
+  },
+
   providers: [
-    // OTP FLOW PROVIDER
     CredentialsProvider({
       id: "credentials-with-otp",
       name: "credentials-otp",
@@ -62,128 +40,106 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
         otp: { label: "OTP", type: "text" },
-        mode: { label: "Mode", type: "text" },
-        rememberMe: { label: "Remember Me", type: "text" }, 
-      },
-      async authorize(credentials): Promise<User | null> {
-        if (!credentials) return null;
-        try {
-          if (credentials.mode === 'signin') {
-            const response = await fetch(`${API_BASE_URL}/user/api/v1/sign-in`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
-              body: JSON.stringify({ identifier: credentials.email, password: credentials.password }),
-            });
-            if (!response.ok) return null;
-            tempAuthStore.set(credentials.email, { email: credentials.email, timestamp: Date.now() });
-            return { id: 'temp', email: credentials.email, name: 'pending_otp', role: 'pending', accessToken: '', refreshToken: '' } as User
-          }
-
-          if (credentials.mode === 'verify' && credentials.otp) {
-            const tempAuth = tempAuthStore.get(credentials.email);
-            if (!tempAuth || Date.now() - tempAuth.timestamp > 5 * 60 * 1000) return null;
-
-            const response = await fetch(`${API_BASE_URL}/user/api/v1/sign-in/complete`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
-              body: JSON.stringify({ identifier: credentials.email, otp: credentials.otp }),
-            });
-            if (!response.ok) return null;
-            
-            const data = await response.json();
-            const accessToken = data.token?.accessToken || data.accessToken;
-
-            const profileResponse = await fetch(`${API_BASE_URL}/user/api/v1/me`, {
-              method: "GET",
-              headers: { "x-api-key": API_KEY, "Authorization": `Bearer ${accessToken}` },
-            });
-            const profile = profileResponse.ok ? await profileResponse.json() : {};
-            
-            return {
-              id: data.data?.id || data.userId || profile.data?.user?.id || credentials.email,
-              email: credentials.email,
-              name: profile.data?.user?.firstName ? `${profile.data.user.firstName} ${profile.data.user.lastName}` : credentials.email,
-              role: data.data?.role || 'user',
-              accessToken: accessToken,
-              refreshToken: data.token?.refreshToken || data.refreshToken,
-              isFirstLogin: profile.data?.user?.hasSetPin === false,
-              rememberMe: credentials.rememberMe === 'true',
-            } as User
-          }
-          return null
-        } catch (error) { return null; }
-      },
-    }),
-    // DIRECT CREDENTIALS PROVIDER
-   CredentialsProvider({
-      id: "credentials",
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        accessToken: { label: "Access Token", type: "text" },
-        refreshToken: { label: "Refresh Token", type: "text" }, // ✅ ADD THIS LINE
-        userId: { label: "User ID", type: "text" },
-        userName: { label: "User Name", type: "text" },
-        userRole: { label: "User Role", type: "text" },
-        isFirstLogin: { label: "First Login", type: "text" },
+        mode: { label: "Mode", type: "text" }, // 'signin' or 'verify'
         rememberMe: { label: "Remember Me", type: "text" },
       },
-      async authorize(credentials): Promise<User | null> {
-        // Now credentials.refreshToken will be recognized by TS
-        if (!credentials || !credentials.accessToken) return null;
-        
-        return {
-          id: credentials.userId || credentials.email,
-          email: credentials.email,
-          name: credentials.userName || credentials.email,
-          role: credentials.userRole || 'user',
-          accessToken: credentials.accessToken,
-          refreshToken: credentials.refreshToken, // ✅ Error ts(2339) is now gone
-          isFirstLogin: credentials.isFirstLogin === 'true',
-          rememberMe: credentials.rememberMe === 'true',
-        } as User;
+      async authorize(credentials) {
+        if (!credentials) return null;
+
+        const headers = { 
+          "Content-Type": "application/json", 
+          "x-api-key": API_KEY 
+        };
+
+        try {
+          // --- STEP 1: INITIAL SIGN IN (Password) ---
+          if (credentials.mode === 'signin') {
+            const res = await fetch(`${BACKEND_URL}/user/api/v1/sign-in`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({ identifier: credentials.email, password: credentials.password }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+              console.error("❌ [Auth] Backend rejected login:", data);
+              return null; 
+            }
+
+            // Store timestamp for OTP expiry check
+            tempAuthStore.set(credentials.email, { email: credentials.email, timestamp: Date.now() });
+            
+            // Return temp user to signal OTP is needed
+            return { 
+              id: 'temp', 
+              email: credentials.email, 
+              role: 'pending_otp' 
+            } as User;
+          }
+
+          // --- STEP 2: VERIFY OTP ---
+          if (credentials.mode === 'verify' && credentials.otp) {
+            
+            const res = await fetch(`${BACKEND_URL}/user/api/v1/sign-in/complete`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({ identifier: credentials.email, otp: credentials.otp }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+              console.error("❌ [Auth] Invalid OTP:", data);
+              return null;
+            }
+            
+            // Extract access token (checking multiple possible locations)
+            const accessToken = data.token?.accessToken || data.accessToken || data.data?.token?.accessToken;
+
+            if (!accessToken) {
+                console.error("❌ [Auth] LOGIN FAILED: No access token found in response!");
+                return null;
+            }
+
+            // Fetch Profile using the new token
+            const profileRes = await fetch(`${BACKEND_URL}/user/api/v1/me`, {
+              headers: { ...headers, "Authorization": `Bearer ${accessToken}` },
+            });
+            
+            const profile = await profileRes.json();
+            const userData = profile.data?.user || {};
+
+            return {
+              id: userData.id || 'unknown',
+              email: credentials.email,
+              name: userData.firstName ? `${userData.firstName} ${userData.lastName}` : 'User',
+              role: 'user', // Adjust based on your API
+              accessToken: accessToken,
+            } as User;
+          }
+          return null;
+        } catch (error) {
+          console.error("❌ [Auth] CRITICAL ERROR:", error);
+          return null;
+        }
       },
     }),
   ],
   
-  session: { strategy: "jwt", maxAge: 7 * 24 * 60 * 60 },
-  
-  cookies: {
-    sessionToken: {
-      name: `${cookiePrefix}next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: useSecureCookies,
-      },
-    },
-  },
-  
   callbacks: {
-    async jwt({ token, user, account }): Promise<JWT> {
-      if (account && user) {
-        return {
-          ...token,
-          accessToken: user.accessToken,
-          refreshToken: user.refreshToken,
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            isFirstLogin: user.isFirstLogin,
-          }
-        }
+    async jwt({ token, user }) {
+      if (user) {
+        token.accessToken = user.accessToken;
+        token.user = user;
       }
       return token;
     },
     async session({ session, token }) {
       if (token.user) {
-        session.user = { ...session.user, ...token.user };
+        session.user = token.user as any;
       }
-      session.accessToken = (token.accessToken as string) || '';
-      session.refreshToken = (token.refreshToken as string) || '';
+      session.accessToken = token.accessToken as string;
       return session;
     },
   },

@@ -1,14 +1,24 @@
-"use client"
+"use client";
 import React, { useState } from "react";
-import { useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Search, Settings, Bell, User, LogOut, PiggyBank, Wallet, Briefcase, HelpCircle } from "lucide-react";
+import {
+  Search,
+  Settings,
+  Bell,
+  User,
+  LogOut,
+  PiggyBank,
+  Wallet,
+  Briefcase,
+  HelpCircle,
+} from "lucide-react";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { IoCloseOutline } from "react-icons/io5";
 import { FaLinkedin, FaWhatsapp } from "react-icons/fa";
 import Logo from "@/components/ui/Logo";
-import Logout from "@/components/ui/user-dashboard/settings/Logout"
+import Logout from "@/components/ui/user-dashboard/settings/Logout";
+import { useUserData } from "@/contexts/UserDataContext";
 
 type ExtendedUser = {
   id: string;
@@ -24,53 +34,44 @@ type ExtendedUser = {
 function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
-  
+
   const { data: session, status } = useSession();
-  
+  const { userData } = useUserData();
+
   const isAuthenticated = status === "authenticated";
   const isLoading = status === "loading";
-  
+
   const user = session?.user as ExtendedUser | undefined;
 
+  // ✅ SINGLE getDisplayName function with business name support
   const getDisplayName = () => {
-    if (!user) return "User";
-    
-    if (user.name && !user.name.includes("@")) {
+    // First priority: business name for corporate accounts
+    if (userData?.business?.businessName) {
+      return userData.business.businessName;
+    }
+
+    // Second priority: user's first name from context
+    if (userData?.user?.firstName) {
+      const rawName = userData.user.firstName;
+      return rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+    }
+
+    // Third priority: session user name
+    if (user?.name && !user.name.includes("@")) {
       return user.name;
     }
-    
-    if (user.email) {
+
+    // Last resort: extract from email
+    if (user?.email) {
       const emailName = user.email.split("@")[0];
       const formatted = emailName
         .replace(/[^a-zA-Z0-9]/g, "")
         .replace(/\d+/g, "");
       return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     }
-    
+
     return "User";
   };
-
-const [userName, setUserName] = useState("User");
-
-
-useEffect(() => {
-  const fetchUserName = async () => {
-    try {
-      const response = await fetch("/api/proxy/user/api/v1/me");
-      const result = await response.json();
-      
-      if (result.status === "success" && result.data.user?.firstName) {
-        const rawName = result.data.user.firstName;
-        const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
-        setUserName(formattedName);
-      }
-    } catch (error) {
-      console.error("Failed to fetch user name", error);
-    }
-  };
-
-  fetchUserName();
-}, []);
 
   const authenticatedNavItems = [
     { name: "Dashboard", href: "/dashboard" },
@@ -172,7 +173,7 @@ useEffect(() => {
                             )}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-gray-900 truncate">
-                                {userName}
+                                {getDisplayName()}
                               </p>
                               <p className="text-xs text-gray-500 truncate">
                                 {user?.email}
@@ -190,7 +191,7 @@ useEffect(() => {
                             <User className="h-4 w-4 text-gray-400" />
                             <span>View profile</span>
                           </Link>
-                          
+
                           <Link
                             href="/dashboard/settings"
                             className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -198,8 +199,8 @@ useEffect(() => {
                             <Settings className="h-4 w-4 text-gray-400" />
                             <span>Settings</span>
                           </Link>
-                          
-                            <div className="border-t border-gray-100 my-2"></div>
+
+                          <div className="border-t border-gray-100 my-2"></div>
 
                           <Link
                             href="/dashboard/wallet"
@@ -208,7 +209,7 @@ useEffect(() => {
                             <Wallet className="h-4 w-4 text-gray-400" />
                             <span>Wallet</span>
                           </Link>
-                          
+
                           <Link
                             href="/dashboard/portfolio"
                             className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -218,7 +219,7 @@ useEffect(() => {
                           </Link>
 
                           <div className="border-t border-gray-100 my-2"></div>
-                          
+
                           <Link
                             href="https://linkedin.com/company/omora"
                             target="_blank"
@@ -227,7 +228,7 @@ useEffect(() => {
                             <FaLinkedin className="h-4 w-4 text-[#0077B5]" />
                             <span>LinkedIn Community</span>
                           </Link>
-                          
+
                           <Link
                             href="https://wa.me/your-whatsapp-link"
                             target="_blank"
@@ -236,7 +237,7 @@ useEffect(() => {
                             <FaWhatsapp className="h-4 w-4 text-[#25D366]" />
                             <span>WhatsApp Community</span>
                           </Link>
-                          
+
                           <Link
                             href="/help"
                             className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -246,7 +247,7 @@ useEffect(() => {
                           </Link>
 
                           <div className="border-t border-gray-100 my-2"></div>
-                          
+
                           <button
                             onClick={() => setShowLogout(true)}
                             className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -257,8 +258,6 @@ useEffect(() => {
                         </div>
                       </div>
                     </div>
-
-                    {/* <div className="w-2 h-2 bg-green-500 rounded-full"></div> */}
                   </div>
                 </>
               ) : (
@@ -266,13 +265,13 @@ useEffect(() => {
                   {!isLoading && (
                     <div className="flex items-center space-x-4">
                       <Link
-                        href="/"
+                        href="/auth/login"
                         className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200"
                       >
                         Login
                       </Link>
                       <Link
-                        href="/"
+                        href="/auth/signup"
                         className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
                       >
                         Sign Up
@@ -325,7 +324,7 @@ useEffect(() => {
                       <PiggyBank size={20} />
                       Begin Investment
                     </Link>
-                    
+
                     <div className="flex items-center justify-between px-3 py-3 bg-teal-600 rounded-lg">
                       <div className="flex items-center space-x-3">
                         {user?.image ? (
@@ -343,9 +342,7 @@ useEffect(() => {
                           <p className="text-sm font-semibold text-white">
                             {getDisplayName()}
                           </p>
-                          <p className="text-xs text-teal-100">
-                            {user?.email}
-                          </p>
+                          <p className="text-xs text-teal-100">{user?.email}</p>
                         </div>
                       </div>
                     </div>
@@ -385,10 +382,7 @@ useEffect(() => {
         </div>
       </nav>
 
-      <Logout 
-        isOpen={showLogout} 
-        onClose={() => setShowLogout(false)} 
-      />
+      <Logout isOpen={showLogout} onClose={() => setShowLogout(false)} />
     </>
   );
 }

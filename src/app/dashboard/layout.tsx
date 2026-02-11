@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/website/NavBar";
 import Footer from "@/components/ui/Footer";
+import { UserDataProvider } from "@/contexts/UserDataContext";
 
 export default function DashboardLayout({
   children,
@@ -56,11 +57,11 @@ export default function DashboardLayout({
 
   if (status === "authenticated") {
     return (
-      <>
+      <UserDataProvider>
         {!isKycRoute && <Navbar />}
         {children}
         {!isKycRoute && <Footer />}
-      </>
+      </UserDataProvider>
     );
   }
 

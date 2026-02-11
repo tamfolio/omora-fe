@@ -3,6 +3,7 @@ import { CiCircleQuestion } from "react-icons/ci";
 import { IoCopyOutline } from "react-icons/io5";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { apiFetch } from "@/lib/apiService"
+import { useUserData } from "@/contexts/UserDataContext";
 
 // Tooltip Component
 interface TooltipProps {
@@ -77,46 +78,40 @@ interface WalletDetails {
 const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }) => {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const [walletDetails, setWalletDetails] = useState<WalletDetails>({});
-  const [loading, setLoading] = useState(true);
+const { userData, loading: contextLoading } = useUserData();
+const [localLoading, setLocalLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchWalletDetails = async () => {
-      try {
-        const response = await apiFetch('/user/api/v1/me');
-        const result = await response.json();
+useEffect(() => {
+  if (userData) {
+    const { wallets, user, business } = userData;
+    
+    // Find wallet by currency
+    let wallet;
+    if (type === 'naira') {
+      wallet = wallets?.find((w: any) => w.currency === 'NGN');
+    } else if (type === 'usdt') {
+      wallet = wallets?.find((w: any) => w.currency === 'USDT');
+    } else if (type === 'usdc') {
+      wallet = wallets?.find((w: any) => w.currency === 'USDC');
+    }
+    
+    if (wallet) {
+      // ✅ Use business name for corporate accounts
+      const accountName = business?.businessName || `${user.firstName} ${user.lastName}`;
+      
+      setWalletDetails({
+        accountNumber: wallet.accountNumber,
+        bankName: wallet.bankName,
+        walletAddress: wallet.walletAddress,
+        network: wallet.network,
+        accountName: accountName
+      });
+    }
+    
+    setLocalLoading(false);
 
-        if (result.status === 'success' && result.data) {
-          const { wallets, user } = result.data;
-          
-          // Find wallet by currency
-          let wallet;
-          if (type === 'naira') {
-            wallet = wallets?.find((w: any) => w.currency === 'NGN');
-          } else if (type === 'usdt') {
-            wallet = wallets?.find((w: any) => w.currency === 'USDT');
-          } else if (type === 'usdc') {
-            wallet = wallets?.find((w: any) => w.currency === 'USDC');
-          }
-          
-          if (wallet) {
-            setWalletDetails({
-              accountNumber: wallet.accountNumber,
-              bankName: wallet.bankName,
-              walletAddress: wallet.walletAddress,
-              network: wallet.network,
-              accountName: `${user.firstName} ${user.lastName}`
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch wallet details:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWalletDetails();
-  }, [type]);
+  }
+}, [userData, type]);
 
   const getCardContent = () => {
     switch (type) {
@@ -124,7 +119,7 @@ const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }
         return {
           title: 'Naira Balance',
           balanceDisplay: `NGN ${balance?.toLocaleString() || "0"}`,
-          details: loading ? (
+         details: contextLoading ?  (
             <div className="text-sm text-gray-500">Loading account details...</div>
           ) : walletDetails.accountNumber ? (
             <div className="space-y-2 text-sm text-gray-600">
@@ -153,7 +148,7 @@ const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }
               </div>
             </div>
           ),
-          details: loading ? (
+         details: contextLoading ? (
             <div className="text-sm text-gray-500">Loading wallet details...</div>
           ) : walletDetails.walletAddress ? (
             <div className="space-y-2 text-sm text-gray-600">
@@ -178,7 +173,7 @@ const WalletCard: React.FC<WalletCardProps> = ({ type, balance, tooltipContent }
               </div>
             </div>
           ),
-          details: loading ? (
+          details: contextLoading ? (
             <div className="text-sm text-gray-500">Loading wallet details...</div>
           ) : walletDetails.walletAddress ? (
             <div className="space-y-2 text-sm text-gray-600">
