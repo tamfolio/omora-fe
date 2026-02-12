@@ -317,12 +317,11 @@ export default function KycVerification() {
       return <CountrySelect onNext={handleCountryNext} onBack={prevStep} />;
     }
 
-    if (pageProgress === 3) {
+     if (pageProgress === 3) {
       return (
         <PersonalInformation
           onNext={handlePersonalInfoNext}
           onBack={prevStep}
-          initialData={formData}
         />
       );
     }
