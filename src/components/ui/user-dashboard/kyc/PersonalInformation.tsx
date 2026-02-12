@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Logo from '../../Logo';
 import { useUserData } from '@/contexts/UserDataContext';
 import { verifyNIN, verifyBVN } from '@/lib/kyc-api-service';
+import { FiHeadphones } from 'react-icons/fi';
 
 interface PersonalInformationProps {
   onNext: (data?: any) => void;
@@ -10,11 +11,13 @@ interface PersonalInformationProps {
 }
 
 const genderOptions = [
+  { value: '', label: 'Select gender' },
   { value: 'MALE', label: 'Male' },
   { value: 'FEMALE', label: 'Female' },
 ];
 
 const occupationOptions = [
+  { value: '', label: 'Enter your occupation' },
   { value: 'student', label: 'Student' },
   { value: 'employed', label: 'Employed' },
   { value: 'self-employed', label: 'Self Employed' },
@@ -24,6 +27,7 @@ const occupationOptions = [
 ];
 
 const sourceOfFundsOptions = [
+  { value: '', label: 'Select source' },
   { value: 'salary', label: 'Salary/Employment Income' },
   { value: 'business', label: 'Business Income' },
   { value: 'investment', label: 'Investment Returns' },
@@ -31,7 +35,6 @@ const sourceOfFundsOptions = [
 ];
 
 export default function PersonalInformation({ onNext, onBack }: PersonalInformationProps) {
-  // ✅ Get data from context
   const { userData, refreshUserData } = useUserData();
 
   const [formData, setFormData] = useState({
@@ -48,245 +51,189 @@ export default function PersonalInformation({ onNext, onBack }: PersonalInformat
 
   const [bvnStatus, setBvnStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
   const [ninStatus, setNinStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
+  const [bvnError, setBvnError] = useState<string | null>(null);
+  const [ninError, setNinError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isCorporate, setIsCorporate] = useState(false);
 
-  // ✅ Initialize from context on mount
+  // Initialize from context
   useEffect(() => {
     if (!userData) return;
 
-    const { user, business, verification } = userData;
+    const { user, verification } = userData;
 
-    // 1. Check if corporate
-    if (business?.businessId) {
-      setIsCorporate(true);
-    }
-
-    // 2. Pull name from context
     setFormData(prev => ({
       ...prev,
       firstName: user?.firstName || '',
       middleName: user?.middleName || '',
       lastName: user?.lastName || '',
+      dateOfBirth: user?.dateOfBirth || '',
+      gender: user?.gender || '',
     }));
 
-    // 3. Pull DOB and gender from database (will be overwritten by BVN if verified)
-    if (user?.dateOfBirth) {
-      setFormData(prev => ({
-        ...prev,
-        dateOfBirth: user.dateOfBirth,
-      }));
-    }
-
-    if (user?.gender) {
-      setFormData(prev => ({
-        ...prev,
-        gender: user.gender,
-      }));
-    }
-
-    // 4. Check for already verified BVN/NIN in verification array
     if (Array.isArray(verification)) {
       const bvnRecord = verification.find((v: any) => v.type === 'BVN' && v.status === 'C');
       const ninRecord = verification.find((v: any) => v.type === 'NIN' && v.status === 'C');
 
       if (bvnRecord) {
         setFormData(prev => ({ ...prev, bvn: bvnRecord.value }));
-        setBvnStatus('success');
       }
 
       if (ninRecord) {
         setFormData(prev => ({ ...prev, nin: ninRecord.value }));
-        setNinStatus('success');
       }
     }
   }, [userData]);
 
-  // ✅ BVN Verification (happens FIRST)
-  const handleVerifyBVN = async () => {
-    if (!formData.bvn || formData.bvn.length !== 11) {
-      setError('BVN must be exactly 11 digits');
-      return;
+  // Auto-verify BVN when 11 digits entered
+  useEffect(() => {
+    if (formData.bvn.length === 11 && bvnStatus === 'idle') {
+      handleVerifyBVN();
     }
+  }, [formData.bvn]);
 
+  // Auto-verify NIN when 11 digits entered
+  useEffect(() => {
+    if (formData.nin.length === 11 && ninStatus === 'idle') {
+      handleVerifyNIN();
+    }
+  }, [formData.nin]);
+
+  const handleVerifyBVN = async () => {
     setBvnStatus('verifying');
+    setBvnError(null);
     setError(null);
 
     try {
-      const response = await verifyBVN(formData.bvn); // ✅ Only pass BVN number
+      const response = await verifyBVN(formData.bvn);
 
-      // ✅ Check for success based on backend response
       if (response.status === 'VERIFIED') {
         setBvnStatus('success');
 
-        // ✅ BVN response takes PRIORITY - always overwrite gender and DOB
+        // Auto-populate from BVN
         if (response.gender) {
-          setFormData(prev => ({
-            ...prev,
-            gender: response.gender!.toUpperCase(), // "Male" -> "MALE"
-          }));
+          setFormData(prev => ({ ...prev, gender: response.gender!.toUpperCase() }));
         }
 
         if (response.birthdate) {
-          // Convert "09-xx-19xx" format to YYYY-MM-DD
           const dob = convertBirthdate(response.birthdate);
           if (dob) {
-            setFormData(prev => ({
-              ...prev,
-              dateOfBirth: dob,
-            }));
+            setFormData(prev => ({ ...prev, dateOfBirth: dob }));
           }
         }
 
-        // Refresh context to get updated verification
         await refreshUserData();
       } else {
-        // ✅ Verification failed - check if data exists in /me
+        // Check database as fallback
         const bvnFromDb = userData?.verification?.find((v: any) => v.type === 'BVN' && v.status === 'C');
         
         if (bvnFromDb) {
-          // Found verified BVN in database - auto-populate
           setBvnStatus('success');
-          setFormData(prev => ({ ...prev, bvn: bvnFromDb.value }));
-          
-          // Use database DOB and gender if available
           if (userData?.user?.dateOfBirth) {
             setFormData(prev => ({ ...prev, dateOfBirth: userData.user.dateOfBirth }));
           }
           if (userData?.user?.gender) {
             setFormData(prev => ({ ...prev, gender: userData.user.gender }));
           }
-          
-          setError(null); // Clear error since we found it in DB
         } else {
+          // ✅ Show error with message
           setBvnStatus('error');
-          setError(response.message || 'BVN verification failed');
+          setBvnError(response.message || 'BVN verification failed');
         }
       }
     } catch (err: any) {
-      // ✅ Error occurred - check if data exists in /me
+      // Check database as fallback
       const bvnFromDb = userData?.verification?.find((v: any) => v.type === 'BVN' && v.status === 'C');
       
       if (bvnFromDb) {
         setBvnStatus('success');
-        setFormData(prev => ({ ...prev, bvn: bvnFromDb.value }));
-        
-        // Use database DOB and gender if available
         if (userData?.user?.dateOfBirth) {
           setFormData(prev => ({ ...prev, dateOfBirth: userData.user.dateOfBirth }));
         }
         if (userData?.user?.gender) {
           setFormData(prev => ({ ...prev, gender: userData.user.gender }));
         }
-        
-        setError(null);
       } else {
+        // ✅ Show error with message
         setBvnStatus('error');
-        setError(err.message || 'BVN verification failed');
+        setBvnError(err.message || 'BVN verification failed');
       }
     }
   };
 
-  // ✅ NIN Verification (happens AFTER BVN)
   const handleVerifyNIN = async () => {
-    if (!formData.nin || formData.nin.length !== 11) {
-      setError('NIN must be exactly 11 digits');
-      return;
-    }
-
     setNinStatus('verifying');
+    setNinError(null);
     setError(null);
 
     try {
-      const response = await verifyNIN(formData.nin); // ✅ Only pass NIN number
+      const response = await verifyNIN(formData.nin);
 
-      // ✅ Check for success based on backend response
       if (response.status === 'VERIFIED') {
         setNinStatus('success');
 
-        // ✅ Auto-populate gender and DOB from NIN response (if not already set)
         if (!formData.gender && response.gender) {
-          setFormData(prev => ({
-            ...prev,
-            gender: response.gender!.toUpperCase(),
-          }));
+          setFormData(prev => ({ ...prev, gender: response.gender!.toUpperCase() }));
         }
 
         if (!formData.dateOfBirth && response.birthdate) {
           const dob = convertBirthdate(response.birthdate);
           if (dob) {
-            setFormData(prev => ({
-              ...prev,
-              dateOfBirth: dob,
-            }));
+            setFormData(prev => ({ ...prev, dateOfBirth: dob }));
           }
         }
 
-        // Refresh context
         await refreshUserData();
       } else {
-        // ✅ Verification failed - check if data exists in /me
+        // Check database as fallback
         const ninFromDb = userData?.verification?.find((v: any) => v.type === 'NIN' && v.status === 'C');
         
         if (ninFromDb) {
-          // Found verified NIN in database - auto-populate
           setNinStatus('success');
-          setFormData(prev => ({ ...prev, nin: ninFromDb.value }));
-          
-          // Use database DOB and gender if not already set
           if (!formData.dateOfBirth && userData?.user?.dateOfBirth) {
             setFormData(prev => ({ ...prev, dateOfBirth: userData.user.dateOfBirth }));
           }
           if (!formData.gender && userData?.user?.gender) {
             setFormData(prev => ({ ...prev, gender: userData.user.gender }));
           }
-          
-          setError(null); // Clear error since we found it in DB
         } else {
+          // ✅ Show error with message
           setNinStatus('error');
-          setError(response.message || 'NIN verification failed');
+          setNinError(response.message || 'NIN verification failed');
         }
       }
     } catch (err: any) {
-      // ✅ Error occurred - check if data exists in /me
+      // Check database as fallback
       const ninFromDb = userData?.verification?.find((v: any) => v.type === 'NIN' && v.status === 'C');
       
       if (ninFromDb) {
         setNinStatus('success');
-        setFormData(prev => ({ ...prev, nin: ninFromDb.value }));
-        
-        // Use database DOB and gender if not already set
         if (!formData.dateOfBirth && userData?.user?.dateOfBirth) {
           setFormData(prev => ({ ...prev, dateOfBirth: userData.user.dateOfBirth }));
         }
         if (!formData.gender && userData?.user?.gender) {
           setFormData(prev => ({ ...prev, gender: userData.user.gender }));
         }
-        
-        setError(null);
       } else {
+        // ✅ Show error with message
         setNinStatus('error');
-        setError(err.message || 'NIN verification failed');
+        setNinError(err.message || 'NIN verification failed');
       }
     }
   };
 
-  // Helper function to convert birthdate "09-xx-19xx" to "YYYY-MM-DD"
   const convertBirthdate = (birthdate: string): string | null => {
     try {
-      // Example: "09-xx-19xx" or "09-15-1990"
       const parts = birthdate.split('-');
       if (parts.length !== 3) return null;
 
-      const day = parts[0].replace('x', '01'); // Replace xx with 01
+      const day = parts[0].replace('x', '01');
       const month = parts[1].replace('x', '01');
-      const year = parts[2].replace(/x/g, '0'); // Replace xxxx with 0000
+      const year = parts[2].replace(/x/g, '0');
 
-      // If year is partial, try to estimate (e.g., 19xx -> 1990)
       let fullYear = year;
       if (year.includes('0')) {
-        fullYear = year.replace(/0/g, '9'); // Estimate: 19xx -> 1999
+        fullYear = year.replace(/0/g, '9');
       }
 
       return `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
@@ -298,26 +245,29 @@ export default function PersonalInformation({ onNext, onBack }: PersonalInformat
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setError(null);
+    
+    // ✅ Reset status when user edits after error - allows retry
+    if (field === 'bvn' && bvnStatus === 'error') {
+      setBvnStatus('idle');
+      setBvnError(null);
+    }
+    if (field === 'nin' && ninStatus === 'error') {
+      setNinStatus('idle');
+      setNinError(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // ✅ Validation: BVN must be verified first, then NIN
-    if (bvnStatus !== 'success') {
-      setError('Please verify your BVN first');
-      return;
-    }
-
-    if (ninStatus !== 'success') {
-      setError('Please verify your NIN');
-      return;
-    }
-
-    // ✅ Validate required fields
     if (!formData.firstName || !formData.lastName) {
       setError('First name and last name are required');
+      return;
+    }
+
+    if (!formData.bvn || formData.bvn.length !== 11) {
+      setError('Valid BVN is required');
       return;
     }
 
@@ -344,7 +294,6 @@ export default function PersonalInformation({ onNext, onBack }: PersonalInformat
     setIsSubmitting(true);
 
     try {
-      // Submit to backend
       const response = await fetch('/api/proxy/user/api/v1/onboarding/personal-information', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -367,10 +316,7 @@ export default function PersonalInformation({ onNext, onBack }: PersonalInformat
         throw new Error(result.message || 'Failed to save personal information');
       }
 
-      // Refresh context with updated data
       await refreshUserData();
-
-      // Move to next step
       onNext(formData);
     } catch (err: any) {
       setError(err.message || 'An error occurred');
@@ -380,251 +326,257 @@ export default function PersonalInformation({ onNext, onBack }: PersonalInformat
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="p-6">
-        <Logo width={150} height={40} />
-      </div>
-
-      <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-2xl">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back</span>
-          </button>
-
-          <div className="bg-white rounded-xl shadow-sm p-8">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Personal Information
-              </h2>
-              <p className="text-gray-600">
-                Please provide your personal details for verification
-              </p>
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="border-b bg-white">
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+            <Logo />
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-xs text-gray-500">Step 3/5</div>
+              <div className="text-xs font-medium text-gray-700">Personal Information</div>
             </div>
-
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{error}</p>
+            <div className="relative w-12 h-12">
+              <svg className="w-12 h-12 transform -rotate-90">
+                <circle cx="24" cy="24" r="20" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                <circle cx="24" cy="24" r="20" fill="none" stroke="#14b8a6" strokeWidth="4"
+                   strokeDasharray="125.6" strokeDashoffset={125.6 * (1 - 0.6)} />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xs font-bold text-teal-600">60%</span>
               </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Name Fields - Auto-populated from context */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    required
-                    disabled
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Middle Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.middleName}
-                    onChange={(e) => handleInputChange('middleName', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    required
-                    disabled
-                  />
-                </div>
-              </div>
-
-              {/* BVN Verification - FIRST */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  BVN (Bank Verification Number) *
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={formData.bvn}
-                    onChange={(e) => handleInputChange('bvn', e.target.value.replace(/\D/g, '').slice(0, 11))}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    placeholder="Enter 11-digit BVN"
-                    maxLength={11}
-                    required
-                    disabled={bvnStatus === 'success'}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleVerifyBVN}
-                    disabled={bvnStatus === 'verifying' || bvnStatus === 'success' || formData.bvn.length !== 11}
-                    className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {bvnStatus === 'verifying' && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {bvnStatus === 'success' && <CheckCircle2 className="w-4 h-4" />}
-                    {bvnStatus === 'error' && <XCircle className="w-4 h-4" />}
-                    {bvnStatus === 'success' ? 'Verified' : bvnStatus === 'verifying' ? 'Verifying...' : 'Verify'}
-                  </button>
-                </div>
-                {bvnStatus === 'success' && (
-                  <p className="text-xs text-green-600 mt-1">✓ BVN verified successfully</p>
-                )}
-                {bvnStatus === 'error' && (
-                  <p className="text-xs text-red-600 mt-1">✗ Verification failed</p>
-                )}
-              </div>
-
-              {/* NIN Verification - SECOND (only enabled after BVN success) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  NIN (National Identification Number) *
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={formData.nin}
-                    onChange={(e) => handleInputChange('nin', e.target.value.replace(/\D/g, '').slice(0, 11))}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-100"
-                    placeholder="Enter 11-digit NIN"
-                    maxLength={11}
-                    required
-                    disabled={bvnStatus !== 'success' || ninStatus === 'success'}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleVerifyNIN}
-                    disabled={bvnStatus !== 'success' || ninStatus === 'verifying' || ninStatus === 'success' || formData.nin.length !== 11}
-                    className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {ninStatus === 'verifying' && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {ninStatus === 'success' && <CheckCircle2 className="w-4 h-4" />}
-                    {ninStatus === 'error' && <XCircle className="w-4 h-4" />}
-                    {ninStatus === 'success' ? 'Verified' : ninStatus === 'verifying' ? 'Verifying...' : 'Verify'}
-                  </button>
-                </div>
-                {bvnStatus !== 'success' && (
-                  <p className="text-xs text-gray-500 mt-1">⚠ Please verify BVN first</p>
-                )}
-                {ninStatus === 'success' && (
-                  <p className="text-xs text-green-600 mt-1">✓ NIN verified successfully</p>
-                )}
-                {ninStatus === 'error' && (
-                  <p className="text-xs text-red-600 mt-1">✗ Verification failed</p>
-                )}
-              </div>
-
-              {/* Date of Birth - Auto-populated from BVN/NIN or database */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date of Birth *
-                </label>
-                <input
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  required
-                />
-              </div>
-
-              {/* Gender - Auto-populated from BVN/NIN or database */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gender *
-                </label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  required
-                >
-                  <option value="">Select gender</option>
-                  {genderOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Occupation - Always enabled */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Occupation *
-                </label>
-                <select
-                  value={formData.occupation}
-                  onChange={(e) => handleInputChange('occupation', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  required
-                >
-                  <option value="">Select occupation</option>
-                  {occupationOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Source of Funds - Always enabled */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Source of Funds *
-                </label>
-                <select
-                  value={formData.sourceOfFunds}
-                  onChange={(e) => handleInputChange('sourceOfFunds', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  required
-                >
-                  <option value="">Select source of funds</option>
-                  {sourceOfFundsOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={onBack}
-                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || bvnStatus !== 'success' || ninStatus !== 'success'}
-                  className="flex-1 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
-                >
-                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isSubmitting ? 'Saving...' : 'Continue'}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Form */}
+      <div className="max-w-md mx-auto px-6 py-12">
+        <h2 className="text-2xl font-semibold text-center mb-8">Personal Information</h2>
+
+        {error && (
+          <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* First Name */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5">First Name</label>
+            <input
+              type="text"
+              value={formData.firstName}
+              onChange={(e) => handleInputChange('firstName', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+              placeholder="Jane"
+              disabled
+            />
+          </div>
+
+          {/* Middle Name */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5">Middle Name</label>
+            <input
+              type="text"
+              value={formData.middleName}
+              onChange={(e) => handleInputChange('middleName', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+              placeholder="Racheal"
+            />
+          </div>
+
+          {/* Last Name */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5">Last Name</label>
+            <input
+              type="text"
+              value={formData.lastName}
+              onChange={(e) => handleInputChange('lastName', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+              placeholder="Oblote"
+              disabled
+            />
+          </div>
+
+          {/* Date of Birth */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5">
+              Date of Birth <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.dateOfBirth}
+              onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              placeholder="dd/mm/yy"
+              onFocus={(e) => e.target.type = 'date'}
+              onBlur={(e) => e.target.type = 'text'}
+            />
+            <p className="text-xs text-gray-500 mt-1">Must be above 18 years</p>
+          </div>
+
+          {/* BVN */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5">
+              BVN <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.bvn}
+                onChange={(e) => handleInputChange('bvn', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                className={`w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 ${
+                  bvnStatus === 'error' ? 'border-red-500' : 'border-gray-300'
+                } ${bvnStatus === 'success' ? 'text-gray-900' : 'text-gray-400'}`}
+                placeholder="11 digit number"
+                maxLength={11}
+              />
+              {/* Status Icons */}
+              {bvnStatus === 'verifying' && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+              {bvnStatus === 'success' && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+              {bvnStatus === 'error' && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              )}
+            </div>
+            {/* Error Message */}
+            {bvnError && (
+              <p className="text-xs text-red-500 mt-1">{bvnError}</p>
+            )}
+          </div>
+
+          {/* NIN */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5">
+              NIN
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.nin}
+                onChange={(e) => handleInputChange('nin', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                className={`w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 ${
+                  ninStatus === 'error' ? 'border-red-500' : 'border-gray-300'
+                } ${ninStatus === 'success' ? 'text-gray-900' : 'text-gray-400'}`}
+                placeholder="11 digit number"
+                maxLength={11}
+              />
+              {/* Status Icons */}
+              {ninStatus === 'verifying' && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+              {ninStatus === 'success' && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+              {ninStatus === 'error' && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              )}
+            </div>
+            {/* Error Message */}
+            {ninError && (
+              <p className="text-xs text-red-500 mt-1">{ninError}</p>
+            )}
+          </div>
+
+          {/* Gender */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5">
+              Gender <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.gender}
+              onChange={(e) => handleInputChange('gender', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              {genderOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Occupation */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5">
+              Occupation <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.occupation}
+              onChange={(e) => handleInputChange('occupation', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              {occupationOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Source of Funds */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1.5">
+              Source of Funds <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.sourceOfFunds}
+              onChange={(e) => handleInputChange('sourceOfFunds', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              {sourceOfFundsOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-teal-500 hover:bg-teal-600 text-white py-3 rounded-xl font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Saving...' : 'Next'}
+          </button>
+        </form>
+
+        {/* Help Button */}
+        <button className="fixed bottom-6 right-6 w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center shadow-lg text-white">
+          <FiHeadphones className="w-6 h-6" />
+        </button>
       </div>
     </div>
   );
