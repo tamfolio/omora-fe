@@ -14,7 +14,7 @@ interface FacialRecognitionProps {
   dateOfBirth?: string;
   gender?: 'MALE' | 'FEMALE';
   phone?: string;
-  status?: string; // ✅ Added to detect 'F' or 'BVP' from backend
+  status?: string; 
 }
 
 declare global {
@@ -56,7 +56,7 @@ function FacialRecognition({
     document.body.appendChild(script);
   }, []);
 
-  // ✅ Added handleRetry to reset state for failures (Status F)
+  // ✅ Clean Reset Logic for Retries (Status F)
   const handleRetry = () => {
     setCustomerReference(''); 
     hasStartedRef.current = false;
@@ -75,6 +75,7 @@ function FacialRecognition({
         const newButton = button.cloneNode(true) as HTMLElement;
         button.parentNode?.replaceChild(newButton, button);
 
+        // ✅ Listening for events via addEventListener avoids the "is not a function" error
         newButton.addEventListener('qoreid:verificationSubmitted', (() => {
           setVerificationComplete(true);
           setTimeout(() => onNext(), 1500);
@@ -119,38 +120,36 @@ function FacialRecognition({
     }
   };
 
-const initiateVerification = async () => {
-  setIsVerifying(true);
-  try {
-    // 1. Extract parts and ensure we always have a string fallback
-    const dobString = dateOfBirth || ''; 
-    const parts = dobString.split(/[-/]/); 
+  const initiateVerification = async () => {
+    setIsVerifying(true);
+    try {
+      // ✅ Stick to the Working Format: DD/MM/YYYY
+      const dobString = dateOfBirth || '';
+      const parts = dobString.split(/[-/]/);
+      const formattedDob: string = parts.length === 3 
+        ? `${parts[0]}/${parts[1]}/${parts[2]}` 
+        : dobString;
 
-    // 2. Format the date, ensuring the result is definitely a string
-    const formattedDob: string = parts.length === 3 
-      ? `${parts[0]}/${parts[1]}/${parts[2]}` 
-      : dobString;
+      const verificationData: LivenessCheckInitiateRequest = {
+        dob: formattedDob,
+        gender: (gender || 'MALE') as 'MALE' | 'FEMALE',
+        idNumber: bvn || '',
+        employmentStatus: 'Employed',
+        pep: 'salary'
+      };
 
-    const verificationData: LivenessCheckInitiateRequest = {
-      dob: formattedDob, // ✅ TypeScript is happy because formattedDob is strictly 'string'
-      gender: (gender || 'MALE') as 'MALE' | 'FEMALE',
-      idNumber: bvn || '',
-      employmentStatus: 'Employed',
-      pep: 'salary'
-    };
+      const response = await kycApiService.initiateLivenessCheck(verificationData);
+      const custRef = response.data?.reference || (response as any).reference;
 
-    const response = await kycApiService.initiateLivenessCheck(verificationData);
-    const custRef = response.data?.reference || (response as any).reference;
+      if (!custRef) throw new Error('No reference returned');
 
-    if (!custRef) throw new Error('No reference returned');
-
-    setCustomerReference(custRef);
-    setTimeout(() => triggerQoreIDSDK(), 1000);
-  } catch (err: any) {
-    setIsVerifying(false);
-    setError(err.message);
-  }
-};
+      setCustomerReference(custRef);
+      setTimeout(() => triggerQoreIDSDK(), 1000);
+    } catch (err: any) {
+      setIsVerifying(false);
+      setError(err.message || 'Failed to initialize session');
+    }
+  };
 
   const clientId = process.env.NEXT_PUBLIC_QOREID_CLIENT_ID || '';
   const applicantData = JSON.stringify({ 
@@ -178,6 +177,7 @@ const initiateVerification = async () => {
               productCode="liveness"
               customerReference="${customerReference}"
               applicantData='${applicantData}'
+              /* ✅ Removed event attributes that caused the TypeError */
             ></qoreid-button>
           `}} />
         </div>
@@ -186,7 +186,6 @@ const initiateVerification = async () => {
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-6">
         <div className="w-full max-w-md text-center">
           <h1 className="text-2xl font-semibold mb-4">Facial Recognition</h1>
-          
           
           {!isVerifying && status !== 'BVP' ? (
             <div className="space-y-6">
