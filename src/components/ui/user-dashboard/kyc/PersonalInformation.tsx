@@ -96,15 +96,15 @@ export default function PersonalInformation({ onNext, onBack }: PersonalInformat
     if (formData.nin.length === 11 && ninStatus === 'idle') handleVerifyNIN();
   }, [formData.nin]);
 
- const handleVerifyBVN = async () => {
+const handleVerifyBVN = async () => {
   setBvnStatus('verifying');
   setBvnError(null);
   try {
-    const response = await fetch('/api/proxy/user/api/v1/onboarding/verification/verify/bvn', {
+    const response = await fetch('/api/proxy/user/verification/verify/bvn', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        idNumber: formData.bvn 
+        idNumber: formData.bvn
       }),
     });
     const result = await response.json();
@@ -132,11 +132,11 @@ const handleVerifyNIN = async () => {
   setNinStatus('verifying');
   setNinError(null);
   try {
-    const response = await fetch('/api/proxy/user/api/v1/onboarding/verification/verify/nin', {
+    const response = await fetch('/api/proxy/user/verification/verify/nin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        idNumber: formData.nin 
+        idNumber: formData.nin
       }),
     });
     const result = await response.json();
@@ -158,6 +158,7 @@ const handleVerifyNIN = async () => {
     setNinError('Verification failed');
   }
 };
+
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
