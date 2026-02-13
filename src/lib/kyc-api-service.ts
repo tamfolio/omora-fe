@@ -25,7 +25,7 @@ export interface LivenessCheckInitiateResponse {
   };
   status: string;
   statusCode: string;
-  message?: string;
+  message: string;
 }
 
 // NEW: Verification Response Types
@@ -207,17 +207,16 @@ export interface CompanyRegistrationData {
   ProofOfAddress?: File[];
 }
 
-// Make multipart request for file uploads
 const makeMultipartRequest = async (
   endpoint: string,
   formData: FormData
 ): Promise<ApiResponse> => {
- return await apiFetch(endpoint, {
+  return await apiFetch(endpoint, {
     method: 'POST',
     body: formData,
-    headers: {}, // Let browser set Content-Type with boundary for multipart
+    // ❌ DON'T pass headers: {} - it's not needed!
+    // apiFetch already checks if body instanceof FormData
   });
-  
 };
 
 // Submit Company Registration Documents (5 FIELDS ONLY)

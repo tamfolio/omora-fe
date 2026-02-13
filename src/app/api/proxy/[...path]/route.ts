@@ -1,35 +1,32 @@
-// src/app/api/proxy/[...path]/route.ts - FIXED FOR NEXT.JS 15
+// src/app/api/proxy/[...path]/route.ts - FIXED FOR FILE UPLOADS
 
 import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
 
-// 🔒 SECURITY: Use Server-Side Env Vars only
 const TARGET = process.env.OMORA_API_BASE_URL || 'http://localhost:8000';
 const API_KEY = process.env.OMORA_API_KEY || '';
 
-// Whitelist of public routes that don't require a user session
 const PUBLIC_PATHS = [
   'user/api/v1/sign-in',
   'user/api/v1/sign-in/complete',
   'user/api/v1/sign-up',
   'user/api/v1/sign-up/complete',
   'user/api/v1/forgot-password',
-  'user/api/v1/reset-password'
+  'user/api/v1/reset-password',
+  'user/verification/verify/reg-no'
 ];
 
-// ✅ FIX: Properly handle Next.js 15 async params
 async function handleProxy(
   req: NextRequest, 
   context: { params: Promise<{ path: string[] }> }
 ) {
-  // ✅ Await the params object first
   const params = await context.params;
   const pathArray = params.path;
   const pathStr = pathArray.join('/');
   const url = new URL(req.url);
   const targetUrl = `${TARGET.replace(/\/$/, '')}/${pathStr}${url.search}`;
 
-  // 1. 🔒 AUTH CHECK
+  // 1. AUTH CHECK
   const isPublic = PUBLIC_PATHS.some((p) => pathStr.includes(p));
   
   const token = await getToken({ 
@@ -41,27 +38,52 @@ async function handleProxy(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. 🔒 HEADER SANITIZATION
+  // 2. ✅ SMART HEADER HANDLING
   const headers = new Headers();
-  headers.set('Content-Type', 'application/json');
+  
+  // ✅ Get the original Content-Type from the request
+  const contentType = req.headers.get('content-type');
+  
+  // ✅ Only set Content-Type to JSON if it's not already set (and not multipart)
+  if (contentType) {
+    // Keep the original Content-Type (e.g., multipart/form-data with boundary)
+    headers.set('Content-Type', contentType);
+  } else {
+    // Default to JSON for requests without Content-Type
+    headers.set('Content-Type', 'application/json');
+  }
+  
   headers.set('Accept', 'application/json');
   
-  // Inject the API Key (Server-side only)
+  // Inject API Key
   if (API_KEY) {
     headers.set('x-api-key', API_KEY);
   }
 
-  // Inject the User Token (from the session)
+  // Inject User Token
   if (token?.accessToken) {
     headers.set('Authorization', `Bearer ${token.accessToken}`);
   }
 
-  // 3. BODY HANDLING
-  const body = ['GET', 'HEAD'].includes(req.method) ? undefined : await req.text();
+  // 3. ✅ BODY HANDLING - Preserve binary data for file uploads
+  let body: any = undefined;
+  
+  if (!['GET', 'HEAD'].includes(req.method)) {
+    if (contentType?.includes('multipart/form-data')) {
+      // ✅ For multipart, use arrayBuffer to preserve boundaries
+      body = await req.arrayBuffer();
+    } else {
+      // For JSON and other text formats
+      body = await req.text();
+    }
+  }
 
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`📡 Proxying ${req.method} -> ${pathStr}`);
+      console.log(`📡 Proxying ${req.method} -> ${pathStr}`, {
+        contentType,
+        bodyType: body instanceof ArrayBuffer ? 'ArrayBuffer' : typeof body,
+      });
     }
 
     const backendResponse = await fetch(targetUrl, {
@@ -86,7 +108,6 @@ async function handleProxy(
   }
 }
 
-// ✅ Export handlers with proper typing
 export async function GET(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   return handleProxy(req, context);
 }
