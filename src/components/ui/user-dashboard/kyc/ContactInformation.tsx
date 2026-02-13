@@ -78,9 +78,27 @@ function ContactInformation({ onNext, onBack }: ContactInformationProps) {
         state: formData.state.trim()
       };
 
-      await kycApiService.submitPersonalContactInformation(apiData);
+      // Direct fetch through the proxy to avoid any hidden issues in kycApiService
+      const response = await fetch('/api/proxy/user/api/v1/onboarding/personal/contact/information', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        // Specifically catch 404s to verify pathing
+        if (response.status === 404) {
+          throw new Error('Contact endpoint not found. Please verify the URL: /user/api/v1/onboarding/personal/contact/information');
+        }
+        throw new Error(errorData.message || 'Failed to submit contact information.');
+      }
+
       onNext(apiData);
     } catch (err: any) {
+      console.error('❌ Contact Save Error:', err);
       setError(err.message || 'Failed to submit contact information. Please try again.');
     } finally {
       setIsSubmitting(false);

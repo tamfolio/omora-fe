@@ -57,8 +57,8 @@ useEffect(() => {
 
   // ✅ Process userData when it changes
   useEffect(() => {
-    if (userData) {
-      const { user, business, onboardingState, wallets } = userData;
+  if (userData) {
+    const { user, business, onboardingState, wallets } = userData;
 
       // Set user name - prioritize business name for corporate
       if (business?.businessName) {
@@ -70,18 +70,15 @@ useEffect(() => {
       }
 
       // Check KYC completion
-      const isKycDone = 
-        onboardingState?.nextStep === 'dashboard' ||
-        onboardingState?.currentStep === 'dashboard';
-      
-      setIsKycCompleted(isKycDone);
-      setIsRiskProfileCompleted(user?.isRiskProfile === true);
-      
-      // Check if account is funded (any wallet has balance)
-      const ngnWallet = wallets?.find((w: any) => w.currency === 'NGN');
-      setIsAccountFunded(ngnWallet?.availableBalance > 0);
-    }
-  }, [userData]);
+      const isKycDone = onboardingState?.currentStepStatus === 'C';
+    
+    setIsKycCompleted(isKycDone);
+    setIsRiskProfileCompleted(user?.isRiskProfile === true);
+    
+    const ngnWallet = wallets?.find((w: any) => w.currency === 'NGN');
+    setIsAccountFunded(ngnWallet?.availableBalance > 0);
+  }
+}, [userData]);
 
   const setupSteps: SetupStep[] = [
     {

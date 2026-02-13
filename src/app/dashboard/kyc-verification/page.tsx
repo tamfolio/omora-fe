@@ -108,9 +108,7 @@ export default function KycVerification() {
             setApiNextStep(currentStep);
 
             const targetStep = getStepNumberFromApiStatus(currentStep);
-
-            //  Detect corporate by checking business object OR next step
-            const nextStepNumber = getStepNumberFromApiStatus(nextStep);
+const nextStepNumber = getStepNumberFromApiStatus(nextStep);
             const isCorporate =
               business?.businessId || targetStep >= 6 || nextStepNumber >= 6;
 
@@ -118,20 +116,17 @@ export default function KycVerification() {
               setUserType("corporate");
             }
 
-            // 4. SUCCESS/FAILURE LOGIC
-            const isKycComplete =
-              currentStepStatus === "C" && nextStep === "dashboard";
+           const isKycComplete = currentStepStatus === "C" && nextStep === "dashboard";
 
-            if (isKycComplete) {
-              setShowSuccessModal(true);
-            } else if (currentStepStatus === "NVP") {
-              setShowUnsuccessfulModal(true);
-            } else {
-              // If current step is complete ('C'), go to nextStep instead
-              const stepToShow =
-                currentStepStatus === "C" ? nextStepNumber : targetStep;
-              setPageProgress(stepToShow);
-            }
+if (isKycComplete) {
+  setShowSuccessModal(true);
+} else if (currentStepStatus === "NVP" || currentStepStatus === "F") {
+  
+  setShowUnsuccessfulModal(true); 
+} else {
+  const stepToShow = currentStepStatus === "C" ? nextStepNumber : targetStep;
+  setPageProgress(stepToShow);
+}
           }
         }
       } catch (error) {
@@ -156,68 +151,44 @@ export default function KycVerification() {
   };
 
   const getStepNumberFromApiStatus = (apiStep: string): number => {
-    switch (apiStep) {
-      case "initiation":
-        return 1;
-
-      case "verify-country":
-        return 2;
-
-      case "verify-bvn":
-      case "verify-nin":
-      case "personal-info":
-        return 3;
-
-      case "contact-info":
-        return 4;
-
-      case "facial-recognition":
-      case "verify-liveness":
-        return 5;
-
-      case "upload-business-details":
-      case "update-business-details":
-      case "business-information":
-      case "business-info":
-        return 6;
-
-      case "upload-business-docs":
-      case "update-business-docs":
-      case "company-documents":
-        return 7;
-
-      case "dashboard":
-        router.push("/dashboard");
-        return 1;
-
-      default:
-        console.warn(`Unknown API step: ${apiStep}, defaulting to step 1`);
-        return 1;
-    }
-  };
+  switch (apiStep) {
+    case "initiation": return 1;
+    case "verify-country": return 2;
+    case "verify-bvn":
+    case "verify-nin":
+    case "personal-info": return 3;
+    case "contact-info": return 4;
+    case "facial-recognition":
+    case "verify-liveness": return 5;
+    case "upload-business-details": return 6;
+    case "upload-business-docs": return 7;
+    case "dashboard": return 1; // Just return 1, don't redirect here
+    default: return 1;
+  }
+};
 
   const getTotalSteps = () => {
     return userType === "individual" ? 5 : 7;
   };
 
-  const nextStep = () => {
-    const totalSteps = getTotalSteps();
+ const nextStep = () => {
+  const totalSteps = getTotalSteps();
 
-    if (
-      pageProgress === 2 &&
-      isPersonalInfoVerified &&
-      userType === "individual"
-    ) {
-      setPageProgress(4);
-      return;
-    }
-
-    if (pageProgress === totalSteps) {
-      setShowSuccessModal(true);
-    } else {
-      setPageProgress((prev) => prev + 1);
-    }
-  };
+  
+  if (pageProgress === totalSteps) {
+    
+    getUserKycStatus().then(result => {
+      if (result.data?.onboardingState?.currentStepStatus === 'C') {
+        setShowSuccessModal(true);
+      } else {
+     
+        setPageProgress(5); 
+      }
+    });
+  } else {
+    setPageProgress((prev) => prev + 1);
+  }
+};
 
   const prevStep = () => {
     if (pageProgress === 1) {
