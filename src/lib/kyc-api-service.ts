@@ -131,76 +131,72 @@ export interface AcceptTermsData {
 
 // NEW: Get User Data
 export const getUserKycStatus = async (): Promise<ApiResponse<UserData>> => {
-  const response = await apiFetch('/user/api/v1/me', { method: 'GET' });
-  return response.json();
+  return await apiFetch('/user/api/v1/me', { method: 'GET' }); 
 };
+
 
 // NEW: Verify NIN
 export const verifyNIN = async (idNumber: string): Promise<VerificationResponse> => {
-  const response = await apiFetch('/user/verification/verify/nin', {
+  return await apiFetch('/user/verification/verify/nin', {
     method: 'POST',
     body: JSON.stringify({ idNumber }),
-  });
-  return response.json();
+  }); 
 };
-
 // NEW: Verify BVN
 export const verifyBVN = async (idNumber: string): Promise<VerificationResponse> => {
-  const response = await apiFetch('/user/verification/verify/bvn', {
+  return await apiFetch('/user/verification/verify/bvn', {
     method: 'POST',
     body: JSON.stringify({ idNumber }),
   });
-  return response.json();
 };
 
 export const submitPersonalInformation = async (
   data: PersonalInformationData
 ): Promise<ApiResponse> => {
-  const response = await apiFetch('/user/api/v1/onboarding/personal/information', {
+  return await apiFetch('/user/api/v1/onboarding/personal/information', {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  return response.json();
+  
 };
 
 export const submitPersonalContactInformation = async (
   data: PersonalContactInformationData
 ): Promise<ApiResponse> => {
-  const response = await apiFetch('/user/api/v1/onboarding/personal/contact/information', {
+ return await apiFetch('/user/api/v1/onboarding/personal/contact/information', {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  return response.json();
+  
 };
 
 export const initiateLivenessCheck = async (
   data: LivenessCheckInitiateRequest
 ): Promise<LivenessCheckInitiateResponse> => {
-  const response = await apiFetch('/user/verification/initiate/liveness', {
+  return await apiFetch('/user/verification/initiate/liveness', {
     method: 'POST',
     body: JSON.stringify(data),
-  });
-  return response.json();
+  }); // Removed .json()
 };
 
 export const submitBusinessInformation = async (
   data: BusinessInformationData
 ): Promise<ApiResponse> => {
-  const response = await apiFetch('/user/api/v1/onboarding/business/information', {
+ return await apiFetch('/user/api/v1/onboarding/business/information', {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  return response.json();
+  
 };
 
 export const submitDirectorInformation = async (
   data: DirectorInformationData
 ): Promise<ApiResponse> => {
-  const response = await apiFetch('/user/api/v1/onboarding/contact/information', {
+ return await apiFetch('/user/api/v1/onboarding/contact/information', {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  return response.json();
+  
 };
 
 export interface CompanyRegistrationData {
@@ -216,12 +212,12 @@ const makeMultipartRequest = async (
   endpoint: string,
   formData: FormData
 ): Promise<ApiResponse> => {
-  const response = await apiFetch(endpoint, {
+ return await apiFetch(endpoint, {
     method: 'POST',
     body: formData,
     headers: {}, // Let browser set Content-Type with boundary for multipart
   });
-  return response.json();
+  
 };
 
 // Submit Company Registration Documents (5 FIELDS ONLY)
@@ -260,46 +256,46 @@ export const submitCompanyRegistration = async (
 export const acceptTerms = async (
   data: AcceptTermsData
 ): Promise<ApiResponse> => {
-  const response = await apiFetch('/user/api/v1/onboarding/accept/terms', {
+ return await apiFetch('/user/api/v1/onboarding/accept/terms', {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  return response.json();
+  
 };
 
 export const getOnboardingPercentage = async (): Promise<ApiResponse> => {
-  const response = await apiFetch('/user/api/v1/onboarding/percentage', {
+ return await apiFetch('/user/api/v1/onboarding/percentage', {
     method: 'GET',
   });
-  return response.json();
+  
 };
 
 export const viewBusinessRegistration = async (): Promise<ApiResponse> => {
-  const response = await apiFetch('/user/api/v1/onboarding/business/registration/view', {
+ return await apiFetch('/user/api/v1/onboarding/business/registration/view', {
     method: 'GET',
   });
-  return response.json();
+  
 };
 
 export const viewBusinessInformation = async (): Promise<ApiResponse> => {
-  const response = await apiFetch('/user/api/v1/onboarding/business/information/view', {
+ return await apiFetch('/user/api/v1/onboarding/business/information/view', {
     method: 'GET',
   });
-  return response.json();
+  
 };
 
 export const viewPersonalInformation = async (): Promise<ApiResponse> => {
-  const response = await apiFetch('/user/api/v1/onboarding/personal/information/view', {
+ return await apiFetch('/user/api/v1/onboarding/personal/information/view', {
     method: 'GET',
   });
-  return response.json();
+  
 };
 
 export const verificationPing = async (): Promise<ApiResponse> => {
-  const response = await apiFetch('/user/verification/ping', {
+ return await apiFetch('/user/verification/ping', {
     method: 'GET',
   });
-  return response.json();
+  
 };
 
 export const formatDateForAPI = (date: Date | string): string => {

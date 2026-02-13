@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Camera, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Logo from '../../Logo';
-import kycApiService from '@/lib/kyc-api-service';
+import kycApiService, { LivenessCheckInitiateRequest } from '@/lib/kyc-api-service';
 
 interface FacialRecognitionProps {
   onNext: () => void;
@@ -14,6 +14,7 @@ interface FacialRecognitionProps {
   dateOfBirth?: string;
   gender?: 'MALE' | 'FEMALE';
   phone?: string;
+  status?: string; // ✅ Added to detect 'F' or 'BVP' from backend
 }
 
 declare global {
@@ -34,7 +35,8 @@ function FacialRecognition({
   bvn,
   dateOfBirth, 
   gender,
-  phone
+  phone,
+  status
 }: FacialRecognitionProps) {
   const router = useRouter();
   const [isVerifying, setIsVerifying] = useState(false);
@@ -48,16 +50,23 @@ function FacialRecognition({
   // Load QoreID SDK
   useEffect(() => {
     if (document.querySelector('script[src*="qoreid.js"]')) return;
-
     const script = document.createElement('script');
     script.src = 'https://dashboard.qoreid.com/qoreid-sdk/qoreid.js';
     script.async = true;
     document.body.appendChild(script);
   }, []);
 
+  // ✅ Added handleRetry to reset state for failures (Status F)
+  const handleRetry = () => {
+    setCustomerReference(''); 
+    hasStartedRef.current = false;
+    setIsVerifying(false);
+    setError(null);
+    setShowManualButton(false);
+  };
+
   const triggerQoreIDSDK = () => {
     if (hasStartedRef.current) return;
-    
     hasStartedRef.current = true;
 
     try {
@@ -66,120 +75,82 @@ function FacialRecognition({
         const newButton = button.cloneNode(true) as HTMLElement;
         button.parentNode?.replaceChild(newButton, button);
 
-        // ✅ Success - proceed to next step
         newButton.addEventListener('qoreid:verificationSubmitted', (() => {
-          console.log('QoreID verification submitted - proceeding to next step');
           setVerificationComplete(true);
-          
-          setTimeout(() => {
-            onNext();
-          }, 1500);
+          setTimeout(() => onNext(), 1500);
         }) as EventListener);
 
-        // ✅ Error - redirect to dashboard
         newButton.addEventListener('qoreid:verificationError', ((event: any) => {
-          console.log('QoreID verification error:', event.detail);
           setIsVerifying(false);
-          setError('Verification process failed. Redirecting...');
+          setError('Verification failed. Please retry.');
           hasStartedRef.current = false;
-          
-          setTimeout(() => {
-            console.log('Redirecting to dashboard with kyc=failed');
-            router.push('/dashboard?kyc=failed');
-          }, 2000);
         }) as EventListener);
 
-        // ✅ FIXED: Closed - user cancelled, redirect to dashboard
         newButton.addEventListener('qoreid:verificationClosed', () => {
-          console.log('QoreID verification closed by user - redirecting to dashboard');
-          setIsVerifying(false);
-          setShowManualButton(false);
-          hasStartedRef.current = false;
-          
-          // User cancelled - redirect to dashboard with pending status
-          setTimeout(() => {
-            router.push('/dashboard?kyc=pending');
-          }, 1000);
+          handleRetry();
         });
       }
 
-      if (window.QoreIdRegenerateSDK) {
-        window.QoreIdRegenerateSDK();
-      }
-
+      if (window.QoreIdRegenerateSDK) window.QoreIdRegenerateSDK();
       if (window.QoreIDWebSdk) {
         window.QoreIDWebSdk.start();
-        
-        setTimeout(() => {
-          if (isVerifying) setShowManualButton(true);
-        }, 5000);
+        setTimeout(() => { if (isVerifying) setShowManualButton(true); }, 5000);
       } else {
         setShowManualButton(true);
         hasStartedRef.current = false;
       }
-
     } catch (err) {
-      console.error('Error triggering QoreID SDK:', err);
       setShowManualButton(true);
       hasStartedRef.current = false;
     }
   };
 
   const handleContinue = async () => {
-    if (!nin) return setError('NIN required');
-    if (!bvn) return setError('BVN required');
-    
+    if (!nin || !bvn) return setError('NIN and BVN required');
     setError(null);
     setShowManualButton(false);
-    hasStartedRef.current = false;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       stream.getTracks().forEach(track => track.stop());
-      
       await initiateVerification();
     } catch (error: any) {
       setError('Camera access is required. Please check permissions.');
     }
   };
 
-  const initiateVerification = async () => {
-    setIsVerifying(true);
-    
-    try {
-      // Format dateOfBirth from dd/mm/yyyy to dd/mm/yyyy (ensure clean format)
-      let formattedDob = dateOfBirth || '';
-      if (formattedDob && formattedDob.includes('/')) {
-        const parts = formattedDob.split('/');
-        if (parts.length === 3) {
-          formattedDob = `${parts[0]}/${parts[1]}/${parts[2]}`;
-        }
-      }
+const initiateVerification = async () => {
+  setIsVerifying(true);
+  try {
+    // 1. Extract parts and ensure we always have a string fallback
+    const dobString = dateOfBirth || ''; 
+    const parts = dobString.split(/[-/]/); 
 
-      const verificationData = {
-        dob: formattedDob,
-        gender: (gender || 'MALE') as 'MALE' | 'FEMALE',
-        idNumber: bvn || '',
-        employmentStatus: 'Employed',
-        pep: 'salary'
-      };
+    // 2. Format the date, ensuring the result is definitely a string
+    const formattedDob: string = parts.length === 3 
+      ? `${parts[0]}/${parts[1]}/${parts[2]}` 
+      : dobString;
 
-      const response = await kycApiService.initiateLivenessCheck(verificationData);
-      const custRef = (response as any)?.data?.reference || (response as any)?.reference;
+    const verificationData: LivenessCheckInitiateRequest = {
+      dob: formattedDob, // ✅ TypeScript is happy because formattedDob is strictly 'string'
+      gender: (gender || 'MALE') as 'MALE' | 'FEMALE',
+      idNumber: bvn || '',
+      employmentStatus: 'Employed',
+      pep: 'salary'
+    };
 
-      if (!custRef) throw new Error('No reference returned from backend');
+    const response = await kycApiService.initiateLivenessCheck(verificationData);
+    const custRef = response.data?.reference || (response as any).reference;
 
-      setCustomerReference(custRef);
+    if (!custRef) throw new Error('No reference returned');
 
-      setTimeout(() => {
-        triggerQoreIDSDK();
-      }, 1000);
-
-    } catch (err: any) {
-      setIsVerifying(false);
-      setError(err.message || 'Failed to initialize session');
-    }
-  };
+    setCustomerReference(custRef);
+    setTimeout(() => triggerQoreIDSDK(), 1000);
+  } catch (err: any) {
+    setIsVerifying(false);
+    setError(err.message);
+  }
+};
 
   const clientId = process.env.NEXT_PUBLIC_QOREID_CLIENT_ID || '';
   const applicantData = JSON.stringify({ 
@@ -216,56 +187,54 @@ function FacialRecognition({
         <div className="w-full max-w-md text-center">
           <h1 className="text-2xl font-semibold mb-4">Facial Recognition</h1>
           
-          {!isVerifying ? (
+          
+          {!isVerifying && status !== 'BVP' ? (
             <div className="space-y-6">
               <p className="text-gray-600">Please complete the video verification.</p>
+              {status === 'F' && (
+                <p className="text-sm text-red-500 bg-red-50 p-2 rounded">
+                  Previous attempt failed. Please ensure good lighting and try again.
+                </p>
+              )}
               <button
                 onClick={handleContinue}
                 className="w-full py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-semibold flex items-center justify-center gap-2"
               >
                 <Camera className="w-5 h-5" />
-                Start Verification
+                {status === 'F' ? 'Retry Verification' : 'Start Verification'}
               </button>
             </div>
-          ) : verificationComplete ? (
+          ) : (status === 'BVP' || isVerifying) && !verificationComplete ? (
             <div className="text-center space-y-6">
+              <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="font-semibold text-gray-800 text-lg">
+                {status === 'BVP' ? 'Reviewing Session...' : 'Verification in progress...'}
+              </p>
+              {showManualButton && (
+                <button onClick={handleRetry} className="flex items-center gap-2 text-orange-600 font-medium mx-auto">
+                  <RefreshCw className="w-4 h-4" /> Try Again
+                </button>
+              )}
+            </div>
+          ) : verificationComplete && (
+             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                 <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <div>
-                <p className="font-semibold text-gray-800 text-lg">Verification Complete!</p>
-                <p className="text-sm text-gray-500 mt-2">Redirecting to dashboard...</p>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center space-y-6">
-              <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <div>
-                <p className="font-semibold text-gray-800 text-lg">Verification in progress...</p>
-                <p className="text-sm text-gray-500 mt-2">Please complete the liveness check...</p>
-              </div>
-
-              {showManualButton && (
-                <div className="bg-orange-50 border border-orange-100 p-4 rounded-lg">
-                  <p className="text-sm text-orange-700 mb-3">Popup didn't open?</p>
-                  <button
-                    onClick={() => {
-                      hasStartedRef.current = false;
-                      triggerQoreIDSDK();
-                    }}
-                    className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded flex items-center justify-center gap-2 mx-auto"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Launch Camera
-                  </button>
-                </div>
-              )}
+              <p className="font-semibold text-gray-800 text-lg">Submitted Successfully</p>
             </div>
           )}
           
-          {error && <p className="text-red-500 mt-4 bg-red-50 p-3 rounded">{error}</p>}
+          {error && (
+            <div className="mt-4">
+              <p className="text-red-500 bg-red-50 p-3 rounded mb-3">{error}</p>
+              <button onClick={handleRetry} className="text-teal-600 text-sm font-medium hover:underline">
+                Reset and try again
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
