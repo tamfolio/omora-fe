@@ -171,9 +171,9 @@ export default function KycVerification() {
     case "contact-info": return 4;
     case "facial-recognition":
     case "verify-liveness": return 5;
-    case "upload-business-details": return 6;
+    case "update-business-details": return 6;
     case "upload-business-docs": return 7;
-    case "dashboard": return 1; // Just return 1, don't redirect here
+    case "dashboard": return 1; 
     default: return 1;
   }
 };
