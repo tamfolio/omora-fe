@@ -96,63 +96,68 @@ export default function PersonalInformation({ onNext, onBack }: PersonalInformat
     if (formData.nin.length === 11 && ninStatus === 'idle') handleVerifyNIN();
   }, [formData.nin]);
 
-  const handleVerifyBVN = async () => {
-    setBvnStatus('verifying');
-    setBvnError(null);
-    try {
-      const response = await fetch('/api/proxy/user/api/v1/onboarding/verification/verify/bvn', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bvn: formData.bvn }),
-      });
-      const result = await response.json();
-      if (response.ok && result.status === 'VERIFIED') {
-        if (!isOldEnough(result.birthdate)) {
-          setBvnStatus('error');
-          setBvnError('Must be at least 18 years old');
-          return;
-        }
-        setBvnStatus('success');
-        setFormData(prev => ({ ...prev, gender: result.gender?.toUpperCase(), dateOfBirth: result.birthdate }));
-        await refreshUserData();
-      } else {
+ const handleVerifyBVN = async () => {
+  setBvnStatus('verifying');
+  setBvnError(null);
+  try {
+    const response = await fetch('/api/proxy/user/api/v1/onboarding/verification/verify/bvn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        idNumber: formData.bvn 
+      }),
+    });
+    const result = await response.json();
+    if (response.ok && result.status === 'VERIFIED') {
+      if (!isOldEnough(result.birthdate)) {
         setBvnStatus('error');
-        setBvnError(result.message || 'BVN verification failed');
+        setBvnError('Must be at least 18 years old');
+        return;
       }
-    } catch (err) {
+      setBvnStatus('success');
+      setFormData(prev => ({ ...prev, gender: result.gender?.toUpperCase(), dateOfBirth: result.birthdate }));
+      await refreshUserData();
+    } else {
       setBvnStatus('error');
-      setBvnError('Verification failed');
+      setBvnError(result.message || 'BVN verification failed');
     }
-  };
+  } catch (err) {
+    setBvnStatus('error');
+    setBvnError('Verification failed');
+  }
+};
 
-  const handleVerifyNIN = async () => {
-    setNinStatus('verifying');
-    setNinError(null);
-    try {
-      const response = await fetch('/api/proxy/user/api/v1/onboarding/verification/verify/nin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nin: formData.nin }),
-      });
-      const result = await response.json();
-      if (response.ok && result.status === 'VERIFIED') {
-        if (!isOldEnough(result.birthdate)) {
-          setNinStatus('error');
-          setNinError('Must be at least 18 years old');
-          return;
-        }
-        setNinStatus('success');
-        setFormData(prev => ({ ...prev, gender: result.gender?.toUpperCase(), dateOfBirth: result.birthdate }));
-        await refreshUserData();
-      } else {
+
+const handleVerifyNIN = async () => {
+  setNinStatus('verifying');
+  setNinError(null);
+  try {
+    const response = await fetch('/api/proxy/user/api/v1/onboarding/verification/verify/nin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        idNumber: formData.nin 
+      }),
+    });
+    const result = await response.json();
+    if (response.ok && result.status === 'VERIFIED') {
+      if (!isOldEnough(result.birthdate)) {
         setNinStatus('error');
-        setNinError(result.message || 'NIN verification failed');
+        setNinError('Must be at least 18 years old');
+        return;
       }
-    } catch (err) {
+      setNinStatus('success');
+      setFormData(prev => ({ ...prev, gender: result.gender?.toUpperCase(), dateOfBirth: result.birthdate }));
+      await refreshUserData();
+    } else {
       setNinStatus('error');
-      setNinError('Verification failed');
+      setNinError(result.message || 'NIN verification failed');
     }
-  };
+  } catch (err) {
+    setNinStatus('error');
+    setNinError('Verification failed');
+  }
+};
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
