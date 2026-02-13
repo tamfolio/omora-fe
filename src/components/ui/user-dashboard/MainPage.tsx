@@ -25,42 +25,25 @@ interface Post {
 
 function MainPage() {
   const router = useRouter();
-const { userData, loading } = useUserData()
+  const { userData, loading } = useUserData();
 
   const [userName, setUserName] = useState("User");
- 
   const [isKycCompleted, setIsKycCompleted] = useState(false);
   const [isRiskProfileCompleted, setIsRiskProfileCompleted] = useState(false);
   const [isAccountFunded, setIsAccountFunded] = useState(false);
 
-  // NEW: KYC modal states
+  // Modal states
   const [showKycSuccessModal, setShowKycSuccessModal] = useState(false);
   const [showKycFailureModal, setShowKycFailureModal] = useState(false);
 
-  // NEW: Check for KYC completion status from URL params
-useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const searchParams = new URLSearchParams(window.location.search);
-      const kycStatus = searchParams.get('kyc');
-      
-      if (kycStatus === 'complete') {
-        setShowKycSuccessModal(true);
-        window.history.replaceState({}, '', '/dashboard');
-      } else if (kycStatus === 'failed') {
-        setShowKycFailureModal(true);
-        window.history.replaceState({}, '', '/dashboard');
-      } else if (kycStatus === 'pending') {
-        window.history.replaceState({}, '', '/dashboard');
-      }
-    }
-  }, []);
+  // ✅ FIX: No top-level destructuring of userData here.
 
-  // ✅ Process userData when it changes
   useEffect(() => {
-  if (userData) {
-    const { user, business, onboardingState, wallets } = userData;
+    if (userData) {
+      // ✅ Properly destructure inside the null check
+      const { user, business, onboardingState, wallets } = userData;
 
-      // Set user name - prioritize business name for corporate
+      // Set user name logic
       if (business?.businessName) {
         setUserName(business.businessName);
       } else if (user?.firstName) {
@@ -69,16 +52,18 @@ useEffect(() => {
         setUserName(formattedName);
       }
 
-      // Check KYC completion
-      const isKycDone = onboardingState?.currentStepStatus === 'C';
+      // ✅ REFINED KYC CHECK: Prevents new users from showing "Completed"
+      const isKycDone = 
+        onboardingState?.currentStepStatus === 'C' && 
+        (onboardingState?.currentStep === 'verify-liveness' || onboardingState?.currentStep === 'upload-business-docs');
     
-    setIsKycCompleted(isKycDone);
-    setIsRiskProfileCompleted(user?.isRiskProfile === true);
-    
-    const ngnWallet = wallets?.find((w: any) => w.currency === 'NGN');
-    setIsAccountFunded(ngnWallet?.availableBalance > 0);
-  }
-}, [userData]);
+      setIsKycCompleted(isKycDone);
+      setIsRiskProfileCompleted(user?.isRiskProfile === true);
+      
+      const ngnWallet = wallets?.find((w: any) => w.currency === 'NGN');
+      setIsAccountFunded(ngnWallet ? ngnWallet.availableBalance > 0 : false);
+    }
+  }, [userData]);
 
   const setupSteps: SetupStep[] = [
     {
