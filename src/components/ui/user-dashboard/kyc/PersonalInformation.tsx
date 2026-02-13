@@ -108,26 +108,45 @@ const handleVerifyBVN = async () => {
       }),
     });
     const result = await response.json();
-    if (response.ok && result.status === 'VERIFIED') {
-      if (!isOldEnough(result.birthdate)) {
+    
+    // ✅ Check if data is nested
+    const verificationData = result.data || result;
+    
+    console.log('BVN Response:', verificationData); // Debug log
+    
+    if (response.ok && verificationData.status === 'VERIFIED') {
+      if (!isOldEnough(verificationData.birthdate)) {
         setBvnStatus('error');
         setBvnError('Must be at least 18 years old');
         return;
       }
       setBvnStatus('success');
-      setFormData(prev => ({ ...prev, gender: result.gender?.toUpperCase(), dateOfBirth: result.birthdate }));
+      
+      // ✅ Use verificationData instead of result
+      setFormData(prev => ({ 
+        ...prev, 
+        gender: verificationData.gender?.toUpperCase(), // "Male" → "MALE"
+        dateOfBirth: verificationData.birthdate         // "09-05-1998"
+      }));
+      
+      console.log('Updated formData:', { 
+        gender: verificationData.gender?.toUpperCase(), 
+        dateOfBirth: verificationData.birthdate 
+      }); // Debug log
+      
       await refreshUserData();
     } else {
       setBvnStatus('error');
-      setBvnError(result.message || 'BVN verification failed');
+      setBvnError(verificationData.message || 'BVN verification failed');
     }
   } catch (err) {
+    console.error('BVN Error:', err); // Debug log
     setBvnStatus('error');
     setBvnError('Verification failed');
   }
 };
 
-
+// ✅ FIXED NIN Verification
 const handleVerifyNIN = async () => {
   setNinStatus('verifying');
   setNinError(null);
@@ -140,25 +159,43 @@ const handleVerifyNIN = async () => {
       }),
     });
     const result = await response.json();
-    if (response.ok && result.status === 'VERIFIED') {
-      if (!isOldEnough(result.birthdate)) {
+    
+    // ✅ Check if data is nested
+    const verificationData = result.data || result;
+    
+    console.log('NIN Response:', verificationData); // Debug log
+    
+    if (response.ok && verificationData.status === 'VERIFIED') {
+      if (!isOldEnough(verificationData.birthdate)) {
         setNinStatus('error');
         setNinError('Must be at least 18 years old');
         return;
       }
       setNinStatus('success');
-      setFormData(prev => ({ ...prev, gender: result.gender?.toUpperCase(), dateOfBirth: result.birthdate }));
+      
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        gender: verificationData.gender?.toUpperCase(),
+        dateOfBirth: verificationData.birthdate
+      }));
+      
+      console.log('Updated formData:', { 
+        gender: verificationData.gender?.toUpperCase(), 
+        dateOfBirth: verificationData.birthdate 
+      }); 
+      
       await refreshUserData();
     } else {
       setNinStatus('error');
-      setNinError(result.message || 'NIN verification failed');
+      setNinError(verificationData.message || 'NIN verification failed');
     }
   } catch (err) {
+    console.error('NIN Error:', err); 
     setNinStatus('error');
     setNinError('Verification failed');
   }
 };
-
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
