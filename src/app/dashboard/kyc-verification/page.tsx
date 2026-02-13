@@ -99,34 +99,45 @@ export default function KycVerification() {
             if (bvnRecord) updateFormData({ bvn: bvnRecord.value });
           }
 
-          // 3. Navigation Logic
           if (onboardingState) {
-            const currentStep = onboardingState.currentStep;
-            const currentStepStatus = onboardingState.currentStepStatus;
-            const nextStep = onboardingState.nextStep;
+  const currentStep = onboardingState.currentStep;
+  const currentStepStatus = onboardingState.currentStepStatus;
+  const nextStep = onboardingState.nextStep;
 
-            setApiNextStep(currentStep);
+  setApiNextStep(currentStep);
 
-            const targetStep = getStepNumberFromApiStatus(currentStep);
-const nextStepNumber = getStepNumberFromApiStatus(nextStep);
-            const isCorporate =
-              business?.businessId || targetStep >= 6 || nextStepNumber >= 6;
+  const targetStep = getStepNumberFromApiStatus(currentStep);
+  // Determine total steps based on user type
+  const totalRequiredSteps = userType === "corporate" ? 7 : 5;
 
-            if (isCorporate) {
-              setUserType("corporate");
-            }
+  const isCorporate =
+    business?.businessId || targetStep >= 6;
 
-           const isKycComplete = currentStepStatus === "C" && nextStep === "dashboard";
+  if (isCorporate) {
+    setUserType("corporate");
+  }
 
-if (isKycComplete) {
-  setShowSuccessModal(true);
-} else if (currentStepStatus === "NVP" || currentStepStatus === "F") {
-  
-  setShowUnsuccessfulModal(true); 
-} else {
-  const stepToShow = currentStepStatus === "C" ? nextStepNumber : targetStep;
-  setPageProgress(stepToShow);
-}
+  // ✅ IMPROVED COMPLETION LOGIC:
+  // 1. Must be on the final step (5 or 7)
+  // 2. Status of that final step must be "C"
+  // 3. Next step must be "dashboard"
+  const isKycComplete = 
+    targetStep === totalRequiredSteps && 
+    currentStepStatus === "C" && 
+    nextStep === "dashboard";
+
+  if (isKycComplete) {
+    setShowSuccessModal(true);
+  } else if (currentStepStatus === "NVP" || currentStepStatus === "F") {
+    setShowUnsuccessfulModal(true); 
+  } else {
+    // If not complete, calculate if we should move to the next step number
+    const nextStepNumber = getStepNumberFromApiStatus(nextStep);
+    const stepToShow = currentStepStatus === "C" ? nextStepNumber : targetStep;
+    
+    setPageProgress(stepToShow);
+  }
+
           }
         }
       } catch (error) {
