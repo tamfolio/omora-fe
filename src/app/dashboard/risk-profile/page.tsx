@@ -1,12 +1,14 @@
 "use client";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUserData } from "@/contexts/UserDataContext"; 
+
 import InitiateQuiz from "@/components/ui/user-dashboard/risk-profile/InitiateQuiz"
 import Questionnaire from "@/components/ui/user-dashboard/risk-profile/Questioniarre"
 import QuizResult from '@/components/ui/user-dashboard/risk-profile/QuizResult'
 import ChangeRiskProfile from '@/components/ui/user-dashboard/risk-profile/ChangeRiskProfile'
 import RiskProfileSuccess from "@/components/ui/user-dashboard/risk-profile/RiskProfileSuccess";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import riskProfileApiService, {
   RiskProfileQuestion,
 } from "@/lib/risk-profile-api-service";
@@ -21,6 +23,7 @@ type FlowStep =
 
 function Page() {
   const router = useRouter();
+  const { refreshUserData } = useUserData(); 
 
   const [currentStep, setCurrentStep] = useState<FlowStep>("initiate");
   const [questions, setQuestions] = useState<RiskProfileQuestion[]>([]);
@@ -34,7 +37,6 @@ function Page() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch questions on mount for later use
   useEffect(() => {
     fetchQuestions();
   }, []);
@@ -60,24 +62,15 @@ function Page() {
     setError(null);
 
     try {
-      // 1. Calculate the score on the frontend
       const averageScore = riskProfileApiService.calculateRiskPointsAverage(
         questions,
         answerIds,
       );
 
-      // Safety check: ensure score is within 3-7 range to prevent API error
-      if (averageScore < 3 || averageScore > 7) {
-        console.warn("Score out of range (3-7), adjusting...");
-        // You might want to clamp it or show an error, but let's just proceed for now
-      }
-
-      // 2. Send the SCORE (number) to the API
       const response =
         await riskProfileApiService.getRiskProfileRecommendation(averageScore);
 
       if (response.data && response.data.recommended) {
-        // Map "Low"/"Balanced"/"High" to your UI state
         const profile = riskProfileApiService.mapProfileToUserFriendly(
           response.data.recommended,
         );
@@ -90,10 +83,6 @@ function Page() {
       }
     } catch (err: any) {
       console.error("❌ Error getting recommendation:", err);
-      // Log the actual server error message if available
-      if (err.response?.data) {
-        console.error("Server Error Details:", err.response.data);
-      }
       setError(err.message || "Failed to get risk profile recommendation");
     } finally {
       setIsLoading(false);
@@ -103,15 +92,11 @@ function Page() {
   const handleAcceptProfile = async () => {
     setIsLoading(true);
     try {
-      // 1. Save to backend
       await riskProfileApiService.saveRiskProfile(selectedProfile);
-
-      // 2. ONLY show success screen if the save worked
       setCurrentStep("success");
     } catch (err: any) {
       console.error("Failed to save profile", err);
       setError(err.message || "Failed to save your profile. Please try again.");
-      // We stay on the Result screen so they can try again
     } finally {
       setIsLoading(false);
     }
@@ -121,17 +106,30 @@ function Page() {
     setCurrentStep("change-profile");
   };
 
-  const handleProfileChange = (newProfile: string) => {
-    setSelectedProfile(newProfile as RiskProfile);
-
-    setCurrentStep("success");
+ 
+  const handleProfileChange = async (newProfile: string) => {
+    setIsLoading(true);
+    try {
+      await riskProfileApiService.saveRiskProfile(newProfile as RiskProfile);
+      setSelectedProfile(newProfile as RiskProfile);
+      setCurrentStep("success");
+    } catch (err: any) {
+      console.error("Failed to save changed profile", err);
+      setError(err.message || "Failed to save your new profile.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoToDashboard = () => {
+ 
+  const handleGoToDashboard = async () => {
+    await refreshUserData(); 
     router.push("/dashboard");
   };
 
-  const handleClose = () => {
+  
+  const handleClose = async () => {
+    await refreshUserData();
     router.push("/dashboard");
   };
 
@@ -147,7 +145,7 @@ function Page() {
           <div className="relative bg-white rounded-2xl p-8">
             <div className="flex flex-col items-center space-y-4">
               <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-gray-600">Calculating your risk profile...</p>
+              <p className="text-gray-600">Updating your profile...</p>
             </div>
           </div>
         </div>
@@ -202,40 +200,16 @@ function Page() {
     <div>
       {renderCurrentStep()}
 
-      {/* Error Toast */}
       {error && (
         <div className="fixed bottom-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg max-w-md">
           <div className="flex items-center space-x-2">
-            <svg
-              className="w-5 h-5 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className="text-sm">{error}</span>
-            <button
-              onClick={() => setError(null)}
-              className="ml-2 hover:bg-red-600 rounded p-1"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+            <button onClick={() => setError(null)} className="ml-2 hover:bg-red-600 rounded p-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>

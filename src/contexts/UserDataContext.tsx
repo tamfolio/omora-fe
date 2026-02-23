@@ -31,7 +31,7 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserData = async () => {
     try {
-      const response = await fetch('/api/proxy/user/api/v1/me');
+      const response = await fetch('/api/user/api/v1/me');
       const result = await response.json();
 
       if (result.status === 'success' && result.data) {

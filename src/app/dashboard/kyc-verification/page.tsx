@@ -59,96 +59,113 @@ export default function KycVerification() {
   // Track if user has verified NIN/BVN
   const [isPersonalInfoVerified, setIsPersonalInfoVerified] = useState(false);
 
-  useEffect(() => {
-    const checkKycStatus = async () => {
-      try {
-        const result = await getUserKycStatus();
+  
+    useEffect(() => {
+  const checkKycStatus = async () => {
+    console.log('🔍 [PAGE] ====== CHECKING KYC STATUS ======');
+    console.log('🔍 [PAGE] Timestamp:', new Date().toISOString());
+    
+    try {
+      const result = await getUserKycStatus();
 
-        if (result.status === "success" && result.data) {
-          const { user, verification, onboardingState, business } = result.data;
+      if (result.status === "success" && result.data) {
+        const { user, verification, onboardingState, business } = result.data;
 
-          // 1. Populate User Data
-          updateFormData({
-            firstName: user.firstName,
-            lastName: user.lastName,
-            middleName: user.middleName || undefined,
-            dateOfBirth: user.dateOfBirth
-              ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
-              : undefined,
-            phone: user.mobileNumber,
-            mobileNumber: user.mobileNumber,
-            address: user.address,
-            city: user.city,
-            state: user.state,
-            country: user.country || undefined,
-            gender: user.gender as "MALE" | "FEMALE" | undefined,
-          });
+        console.log('📦 [PAGE] Onboarding state:', {
+          currentStep: onboardingState?.currentStep,
+          currentStepStatus: onboardingState?.currentStepStatus,
+          nextStep: onboardingState?.nextStep,
+          progress: onboardingState?.progress,
+        });
 
-          // 2. Handle Verification Status
-          if (verification) {
-            const { bothVerified } = checkVerificationStatus(verification);
-            setIsPersonalInfoVerified(bothVerified);
+        console.log('🏢 [PAGE] Business:', {
+          hasBusinessId: !!business?.businessId,
+          businessName: business?.businessName,
+        });
 
-            const ninRecord = verification.find(
-              (v) => v.type === "NIN" && v.status === "C",
-            );
-            const bvnRecord = verification.find(
-              (v) => v.type === "BVN" && v.status === "C",
-            );
-            if (ninRecord) updateFormData({ nin: ninRecord.value });
-            if (bvnRecord) updateFormData({ bvn: bvnRecord.value });
+        // Populate form data
+        updateFormData({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          middleName: user.middleName || undefined,
+          dateOfBirth: user.dateOfBirth
+            ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
+            : undefined,
+          phone: user.mobileNumber,
+          mobileNumber: user.mobileNumber,
+          address: user.address,
+          city: user.city,
+          state: user.state,
+          country: user.country || undefined,
+          gender: user.gender as "MALE" | "FEMALE" | undefined,
+        });
+
+        // Handle verification
+        if (verification) {
+          const { bothVerified } = checkVerificationStatus(verification);
+          setIsPersonalInfoVerified(bothVerified);
+
+          const ninRecord = verification.find(
+            (v) => v.type === "NIN" && v.status === "C",
+          );
+          const bvnRecord = verification.find(
+            (v) => v.type === "BVN" && v.status === "C",
+          );
+          if (ninRecord) updateFormData({ nin: ninRecord.value });
+          if (bvnRecord) updateFormData({ bvn: bvnRecord.value });
+        }
+
+        // Handle onboarding state
+        if (onboardingState) {
+          const currentStep = onboardingState.currentStep;
+          const currentStepStatus = onboardingState.currentStepStatus;
+          const apiNextStep = onboardingState.nextStep;
+
+          const stepToAnalyze = currentStepStatus === 'C' ? apiNextStep : currentStep;
+          const targetStep = getStepNumberFromApiStatus(stepToAnalyze);
+          const apiNextStepNumber = getStepNumberFromApiStatus(apiNextStep);
+          
+          const isCorporate = business?.businessId || targetStep >= 6 || apiNextStepNumber >= 6;
+
+          // ✅ Set userType based on detection
+          if (isCorporate) {
+            console.log('✅ [PAGE] Detected CORPORATE user');
+            setUserType("corporate");
+          } else {
+            console.log('👤 [PAGE] Detected INDIVIDUAL user');
+            setUserType("individual");
           }
 
-          if (onboardingState) {
-  const currentStep = onboardingState.currentStep;
-  const currentStepStatus = onboardingState.currentStepStatus;
-  const nextStep = onboardingState.nextStep;
+          console.log('📈 [PAGE] Setting page to step:', targetStep);
 
-  setApiNextStep(currentStep);
+          // Check completion
+          const isKycComplete = currentStepStatus === "C" && apiNextStep === "dashboard";
 
-  const targetStep = getStepNumberFromApiStatus(currentStep);
-  // Determine total steps based on user type
-  const totalRequiredSteps = userType === "corporate" ? 7 : 5;
-
-  const isCorporate =
-    business?.businessId || targetStep >= 6;
-
-  if (isCorporate) {
-    setUserType("corporate");
-  }
-
-  // ✅ IMPROVED COMPLETION LOGIC:
-  // 1. Must be on the final step (5 or 7)
-  // 2. Status of that final step must be "C"
-  // 3. Next step must be "dashboard"
-  const isKycComplete = 
-    targetStep === totalRequiredSteps && 
-    currentStepStatus === "C" && 
-    nextStep === "dashboard";
-
-  if (isKycComplete) {
-    setShowSuccessModal(true);
-  } else if (currentStepStatus === "NVP" || currentStepStatus === "F") {
-    setShowUnsuccessfulModal(true); 
-  } else {
-    // If not complete, calculate if we should move to the next step number
-    const nextStepNumber = getStepNumberFromApiStatus(nextStep);
-    const stepToShow = currentStepStatus === "C" ? nextStepNumber : targetStep;
-    
-    setPageProgress(stepToShow);
-  }
-
+          if (isKycComplete) {
+            console.log('🎉 [PAGE] KYC Complete');
+            setShowSuccessModal(true);
+          } else if (currentStepStatus === "NVP") {
+            console.log('❌ [PAGE] KYC Failed');
+            setShowUnsuccessfulModal(true);
+          } else {
+            // ✅ Set pageProgress AFTER userType is determined
+            setTimeout(() => {
+              console.log('📈 [PAGE] Setting page progress to:', targetStep);
+              setPageProgress(targetStep);
+            }, 0);
           }
         }
-      } catch (error) {
-        console.error("Failed to check KYC status", error);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("❌ [PAGE] Failed to check KYC status", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    checkKycStatus();
-  }, []);
+  checkKycStatus();
+}, []);
+
 
   const handleRetry = () => {
     setShowUnsuccessfulModal(false);
@@ -162,44 +179,68 @@ export default function KycVerification() {
   };
 
   const getStepNumberFromApiStatus = (apiStep: string): number => {
-  switch (apiStep) {
-    case "initiation": return 1;
-    case "verify-country": return 2;
-    case "verify-bvn":
-    case "verify-nin":
-    case "personal-info": return 3;
-    case "contact-info": return 4;
-    case "facial-recognition":
-    case "verify-liveness": return 5;
-    case "update-business-details": return 6;
-    case "upload-business-docs": return 7;
-    case "dashboard": return 1; 
-    default: return 1;
-  }
-};
+    console.log("🔢 [PAGE] getStepNumberFromApiStatus:", apiStep);
+
+    switch (apiStep) {
+      case "initiation":
+        return 1;
+      case "verify-country":
+        return 2;
+      case "verify-bvn":
+      case "verify-nin":
+      case "personal-info":
+        return 3;
+      case "contact-info":
+        return 4;
+      case "facial-recognition":
+      case "verify-liveness":
+        return 5;
+      case "upload-business-details":
+      case "update-business-details":
+      case "business-information":
+      case "business-info":
+        console.log("✅ [PAGE] Detected BUSINESS step (step 6)");
+        return 6;
+      case "upload-business-docs":
+      case "update-business-docs":
+      case "company-documents":
+        return 7;
+      case "dashboard":
+        console.log("🏁 [PAGE] Detected DASHBOARD step");
+        return 8;
+      default:
+        console.warn(
+          `⚠️ [PAGE] Unknown API step: ${apiStep}, defaulting to step 1`,
+        );
+        return 1;
+    }
+  };
 
   const getTotalSteps = () => {
     return userType === "individual" ? 5 : 7;
   };
 
- const nextStep = () => {
+  const nextStep = () => {
   const totalSteps = getTotalSteps();
 
-  
+  console.log("➡️ [PAGE] ====== NEXT STEP CALLED ======");
+  console.log("➡️ [PAGE] Timestamp:", new Date().toISOString());
+  console.log("➡️ [PAGE] Current state:", {
+    currentStep: pageProgress,
+    totalSteps,
+    userType,
+  });
+
   if (pageProgress === totalSteps) {
-    
-    getUserKycStatus().then(result => {
-      if (result.data?.onboardingState?.currentStepStatus === 'C') {
-        setShowSuccessModal(true);
-      } else {
-     
-        setPageProgress(5); 
-      }
-    });
+    console.log("🎉 [PAGE] Reached final step, showing success modal");
+    setShowSuccessModal(true);
   } else {
-    setPageProgress((prev) => prev + 1);
+    const newStep = pageProgress + 1;
+    console.log(`📈 [PAGE] Moving from step ${pageProgress} to step ${newStep}`);
+    setPageProgress(newStep);
   }
 };
+
 
   const prevStep = () => {
     if (pageProgress === 1) {
@@ -263,6 +304,7 @@ export default function KycVerification() {
   };
 
   const handleBusinessInfoNext = (data?: any) => {
+    console.log("💼 [PAGE] Business info submitted:", data);
     if (data) {
       updateFormData({
         businessName: data.businessName,
@@ -283,54 +325,63 @@ export default function KycVerification() {
   };
 
   const renderCurrentStep = () => {
-    if (pageProgress === 1) {
-      return (
-        <KYCInitiation
-          onContinue={(selectedType: VerificationType) => {
-            setUserType(selectedType);
-            nextStep();
-          }}
-          onBack={handleBackFromInitiation}
-        />
-      );
-    }
+  console.log("🎬 [PAGE] renderCurrentStep() called:", {
+    pageProgress,
+    userType,
+    totalSteps: getTotalSteps(),
+  });
+    // Step 2: Country Select
+  if (pageProgress === 2) {
+    console.log("🌍 [PAGE] Rendering CountrySelect component");
+    return (
+      <CountrySelect
+        onNext={handleCountryNext}
+        onBack={prevStep}
+      />
+    );
+  }
 
-    if (pageProgress === 2) {
-      return <CountrySelect onNext={handleCountryNext} onBack={prevStep} />;
-    }
+  // Step 3: Personal Information
+  if (pageProgress === 3) {
+    console.log("👤 [PAGE] Rendering PersonalInformation component");
+    return (
+      <PersonalInformation
+        onNext={handlePersonalInfoNext}
+        onBack={prevStep}
+      />
+    );
+  }
 
-     if (pageProgress === 3) {
-      return (
-        <PersonalInformation
-          onNext={handlePersonalInfoNext}
-          onBack={prevStep}
-        />
-      );
-    }
+  // Step 4: Contact Information
+  if (pageProgress === 4) {
+    console.log("📞 [PAGE] Rendering ContactInformation component");
+    return (
+      <ContactInformation
+        onNext={handleContactInfoNext}
+        onBack={prevStep}
+      />
+    );
+  }
 
-    if (pageProgress === 4) {
-      return (
-        <ContactInformation onBack={prevStep} onNext={handleContactInfoNext} />
-      );
-    }
-
-    if (pageProgress === 5) {
-      return (
-        <FacialRecognition
-          onBack={prevStep}
-          onNext={nextStep}
-          firstName={formData.firstName}
-          lastName={formData.lastName}
-          nin={formData.nin}
-          bvn={formData.bvn}
-          dateOfBirth={formData.dateOfBirth}
-          gender={formData.gender}
-          phone={formData.phone}
-        />
-      );
-    }
-
+  // Step 5: Facial Recognition
+  if (pageProgress === 5) {
+    console.log("📸 [PAGE] Rendering FacialRecognition component");
+    return (
+      <FacialRecognition
+        onBack={prevStep}
+        onNext={nextStep}
+        firstName={formData.firstName}
+        lastName={formData.lastName}
+        nin={formData.nin}
+        bvn={formData.bvn}
+        dateOfBirth={formData.dateOfBirth}
+        gender={formData.gender}
+        phone={formData.phone}
+      />
+    );
+  }
     if (pageProgress === 6 && userType === "corporate") {
+      console.log("🏢 [PAGE] Rendering BusinessInformation component");
       return (
         <BusinessInformation
           onNext={handleBusinessInfoNext}
@@ -353,6 +404,9 @@ export default function KycVerification() {
       />
     );
   };
+
+
+
 
   if (loading) {
     return (

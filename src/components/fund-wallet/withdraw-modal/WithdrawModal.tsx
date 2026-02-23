@@ -8,11 +8,19 @@ interface WithdrawData {
   amount: number;
   serviceFee: number;
   bankAccount?: string;
+  bankCode?: string;
   accountNumber?: string;
   accountName?: string;
   walletAddress?: string;
   network?: string;
   description: string;
+}
+
+interface Bank {
+  id: number;
+  bankName: string;
+  bankCode: string | null;
+  country: string;
 }
 
 interface WithdrawModalProps {
@@ -23,28 +31,6 @@ interface WithdrawModalProps {
   onGoBackToWallet?: () => void;
   initialCurrency?: "NGN" | "USDT";
 }
-
-// Mock account database - in production this would be an API call
-const MOCK_ACCOUNTS: Record<string, string> = {
-  "0157855500": "Anita Odiete Kikitos",
-  "1234567890": "John Doe",
-  "0987654321": "Jane Smith",
-  "1122334455": "David Johnson",
-  "5566778899": "Sarah Wilson",
-};
-
-const BANKS = [
-  "Fidelity Bank",
-  "Access Bank",
-  "GTBank",
-  "First Bank",
-  "Zenith Bank",
-  "UBA",
-  "Stanbic IBTC",
-  "Union Bank",
-  "Wema Bank",
-  "Sterling Bank",
-];
 
 const WITHDRAWAL_FEES = {
   NGN: 200,
@@ -67,12 +53,19 @@ export default function WithdrawModal({
   const [selectedCurrency, setSelectedCurrency] = useState<"NGN" | "USDT">(
     initialCurrency
   );
-  const [amount, setAmount] = useState("250000");
-  const [bankAccount, setBankAccount] = useState("Fidelity Bank");
-  const [accountNumber, setAccountNumber] = useState("0157855500");
-  const [accountName, setAccountName] = useState("Anita Odiete Kikitos");
+  const [amount, setAmount] = useState("2000");
+  const [bankAccount, setBankAccount] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
   const [description, setDescription] = useState("");
+  
+  // New State for API Data & Processing
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [selectedBankCode, setSelectedBankCode] = useState("");
   const [isValidatingAccount, setIsValidatingAccount] = useState(false);
+  const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
+  const [withdrawalError, setWithdrawalError] = useState<string | null>(null);
+
   const [showVerification, setShowVerification] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [pendingWithdrawData, setPendingWithdrawData] =
@@ -82,30 +75,108 @@ export default function WithdrawModal({
     setSelectedCurrency(initialCurrency);
   }, [initialCurrency]);
 
-  // Function to validate account number and populate account name
-  const validateAccountNumber = async (accountNum: string) => {
-    if (accountNum.length === 10 && selectedCurrency === "NGN") {
-      setIsValidatingAccount(true);
+  // 1. Fetch Banks on Mount
+// 1. Fetch Banks on Mount
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const res = await fetch(`${window.location.origin}/api/lookups/banks`);
+        
+        let validBanks: Bank[] = [];
 
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+        // If the proxy works and returns data, filter it
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data) {
+            validBanks = json.data.filter((b: Bank) => b.bankCode !== null);
+          }
+        } else {
+          console.warn("API or Proxy failed, falling back to mock data for testing.");
+        }
 
-      const foundAccount = MOCK_ACCOUNTS[accountNum];
-      if (foundAccount) {
-        setAccountName(foundAccount);
-      } else {
-        setAccountName("Account not found");
+        // --- BACKEND WIP OVERRIDE ---
+        // Force OPay into the list so we can test the payout flow
+        const opayMock: Bank = {
+          id: 9999, // temporary dummy ID
+          bankName: "OPay",
+          bankCode: "305",
+          country: "NG"
+        };
+
+        // Add OPay to the very beginning of the array
+        validBanks = [opayMock, ...validBanks];
+        // ----------------------------
+
+        setBanks(validBanks);
+        
+        // Auto-select OPay by default
+        setBankAccount(validBanks[0].bankName);
+        setSelectedBankCode(validBanks[0].bankCode as string);
+        
+      } catch (error) {
+        console.error("Failed to fetch banks:", error);
       }
+    };
 
-      setIsValidatingAccount(false);
+    if (selectedCurrency === "NGN" && isOpen) {
+      fetchBanks();
+    }
+  }, [selectedCurrency, isOpen]);
+
+  // 2. Validate Account via API
+  const validateAccountNumber = async (accountNum: string, currentBankCode: string) => {
+    if (accountNum.length === 10 && selectedCurrency === "NGN" && currentBankCode) {
+      setIsValidatingAccount(true);
+      setAccountName(""); 
+
+      try {
+        const res = await fetch(`${window.location.origin}/api/payout/resolve-account`, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+  accountNumber: accountNum, 
+  bankCode: currentBankCode
+})
+        });
+
+        if (!res.ok) throw new Error("Resolution failed");
+        
+        const responseData = await res.json();
+        // Fallback to multiple common key names depending on exact Omora response
+        const resolvedName = responseData.data?.account_name || responseData.data?.accountName || "Account Name Found";
+        setAccountName(resolvedName);
+      } catch (error) {
+        setAccountName("Account not found");
+      } finally {
+        setIsValidatingAccount(false);
+      }
     }
   };
 
   const handleAccountNumberChange = (value: string) => {
-    setAccountNumber(value);
+    const numericValue = value.replace(/\D/g, ''); // Ensure only numbers
+    setAccountNumber(numericValue);
+    
     if (selectedCurrency === "NGN") {
-      setAccountName("");
-      validateAccountNumber(value);
+      if (numericValue.length === 10) {
+        validateAccountNumber(numericValue, selectedBankCode);
+      } else {
+        setAccountName(""); // Clear name if length drops below 10
+      }
+    }
+  };
+
+  const handleBankChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedName = e.target.value;
+    setBankAccount(selectedName);
+    
+    const bank = banks.find(b => b.bankName === selectedName);
+    if (bank && bank.bankCode) {
+      setSelectedBankCode(bank.bankCode);
+      // Re-validate if a full account number is already typed
+      if (accountNumber.length === 10) {
+        validateAccountNumber(accountNumber, bank.bankCode);
+      }
     }
   };
 
@@ -115,19 +186,16 @@ export default function WithdrawModal({
 
   if (!isOpen) return null;
 
-  // If USDT is selected, render the USDT modal
   if (selectedCurrency === "USDT") {
     return (
-      <>
-        <USDTWithdrawModal
-          isOpen={isOpen}
-          onClose={onClose}
-          onWithdraw={onWithdraw}
-          onCurrencyChange={handleCurrencyChange}
-          onGoToDashboard={onGoToDashboard}
-          onGoBackToWallet={onGoBackToWallet}
-        />
-      </>
+      <USDTWithdrawModal
+        isOpen={isOpen}
+        onClose={onClose}
+        onWithdraw={onWithdraw}
+        onCurrencyChange={handleCurrencyChange}
+        onGoToDashboard={onGoToDashboard}
+        onGoBackToWallet={onGoBackToWallet}
+      />
     );
   }
 
@@ -142,22 +210,56 @@ export default function WithdrawModal({
       amount: parseFloat(amount),
       serviceFee,
       bankAccount: selectedCurrency === "NGN" ? bankAccount : undefined,
+      bankCode: selectedCurrency === "NGN" ? selectedBankCode : undefined,
       accountNumber: selectedCurrency === "NGN" ? accountNumber : undefined,
       accountName: selectedCurrency === "NGN" ? accountName : undefined,
       description,
     };
 
-    // Store withdraw data and show verification modal
     setPendingWithdrawData(withdrawData);
+    setWithdrawalError(null);
     setShowVerification(true);
   };
 
-  const handleVerificationSuccess = () => {
-    // Process the withdrawal after successful verification
-    if (pendingWithdrawData) {
-      onWithdraw(pendingWithdrawData);
+  // 3. Process the Actual Payout Submission
+  const handleVerificationSuccess = async () => {
+    if (!pendingWithdrawData) return;
+
+    if (pendingWithdrawData.currency === "NGN") {
+      setIsProcessingWithdrawal(true);
+      setWithdrawalError(null);
+
+      try {
+       const payload = {
+  amount: pendingWithdrawData.amount,
+  bankCode: pendingWithdrawData.bankCode,         // Changed from bank_code
+  accountNumber: pendingWithdrawData.accountNumber, // Changed from account_number
+  accountName: pendingWithdrawData.accountName,     // Changed from account_name
+  narration: pendingWithdrawData.description || "Wallet Withdrawal",
+  reference: `OM-WD-${Date.now()}`
+};
+
+       const res = await fetch(`${window.location.origin}/api/payout/naira`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.message || errData.error || "Withdrawal failed");
+        }
+
+        // Success
+        onWithdraw(pendingWithdrawData); // Pass data up for history logs if needed
+        setShowVerification(false);
+        setShowSuccess(true);
+      } catch (error: any) {
+        setWithdrawalError(error.message || "An error occurred during withdrawal");
+      } finally {
+        setIsProcessingWithdrawal(false);
+      }
     }
-    setShowVerification(false);
   };
 
   const handleShowSuccess = () => {
@@ -165,8 +267,11 @@ export default function WithdrawModal({
   };
 
   const handleCloseVerification = () => {
-    setShowVerification(false);
-    setPendingWithdrawData(null);
+    if (!isProcessingWithdrawal) {
+      setShowVerification(false);
+      setPendingWithdrawData(null);
+      setWithdrawalError(null);
+    }
   };
 
   const handleCloseSuccess = () => {
@@ -185,176 +290,171 @@ export default function WithdrawModal({
     onGoBackToWallet?.();
   };
 
-  return (
+ return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
-        // Close modal when clicking the backdrop
-        if (e.target === e.currentTarget) {
+        if (e.target === e.currentTarget && !isProcessingWithdrawal) {
           onClose();
         }
       }}
     >
-      <div className="bg-white rounded-xl w-full max-w-sm">
-        <div className="p-4">
+      {/* Added shadow-2xl, max-h constraints, and slightly narrower max-w */}
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[420px] max-h-[95vh] flex flex-col">
+        <div className="p-5">
+          
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Withdraw</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+          <div className="relative flex items-center justify-center mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Withdraw from your wallet</h2>
           </div>
 
           {/* Currency Tabs */}
-          <div className="flex border border-gray-200 rounded-lg overflow-hidden mb-4">
-            <button className="flex-1 px-3 py-2 text-sm font-medium bg-gray-100 text-gray-900">
+          <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-100 mb-5">
+            <button className="flex-1 bg-white shadow-sm border border-gray-200 text-gray-900 py-1.5 text-sm font-semibold rounded-md transition-all">
               Naira
             </button>
-            <div className="border-r border-gray-200"></div>
             <button
               onClick={() => handleCurrencyChange("USDT")}
-              className="flex-1 px-3 py-2 text-sm font-medium bg-white text-gray-600 hover:bg-gray-50"
+              className="flex-1 text-gray-500 py-1.5 text-sm font-medium rounded-md hover:text-gray-700 transition-all"
             >
               USDT
             </button>
           </div>
 
           {/* Amount Input */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">
               Amount
             </label>
             <input
               type="text"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
-              placeholder={`Enter amount in ${currencyUnit}`}
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm outline-none transition-all"
+              placeholder="0"
             />
-            <p className="text-xs text-gray-500 mt-0.5">
-              Min: {currencySymbol}
-              {minAmount.toLocaleString()}, Fee: {currencySymbol}
-              {serviceFee} {currencyUnit}
+            <p className="text-xs text-gray-500 mt-1.5">
+              Minimum withdrawal amount is {currencySymbol}{minAmount.toLocaleString()}
             </p>
+            
+            {/* Service Fee Block */}
+            <div className="mt-2.5 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 flex items-center">
+              <span className="text-sm text-gray-500">Service Fee: <span className="text-gray-700 font-medium">{serviceFee} {currencyUnit}</span></span>
+            </div>
           </div>
 
-          {/* Bank Details for NGN */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Bank
+          {/* Bank Selection */}
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">
+              Bank account
             </label>
             <div className="relative">
               <select
                 value={bankAccount}
-                onChange={(e) => setBankAccount(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 appearance-none bg-white text-sm"
+                onChange={handleBankChange}
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 appearance-none bg-white text-sm outline-none transition-all"
               >
-                {BANKS.map((bank) => (
-                  <option key={bank} value={bank}>
-                    {bank}
-                  </option>
-                ))}
+                {banks.length > 0 ? (
+                  banks.map((bank) => (
+                    <option key={bank.id} value={bank.bankName}>
+                      {bank.bankName}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">Loading banks...</option>
+                )}
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Account Number
-              </label>
-              <input
-                type="text"
-                value={accountNumber}
-                onChange={(e) => handleAccountNumberChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
-                placeholder="10 digits"
-                maxLength={10}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Account Name
-              </label>
-              <input
-                type="text"
-                value={accountName}
-                readOnly
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed text-sm"
-                placeholder="Auto-populated"
-              />
-            </div>
+          {/* Account Number & Name (Stacked) */}
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">
+              Account Number
+            </label>
+            <input
+              type="text"
+              value={accountNumber}
+              onChange={(e) => handleAccountNumberChange(e.target.value)}
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm outline-none transition-all mb-1.5"
+              placeholder="10 digits"
+              maxLength={10}
+            />
+            
+            {/* Loading / Error States */}
+            {isValidatingAccount && (
+              <p className="text-xs text-blue-600 mb-1.5 px-1">Resolving account details...</p>
+            )}
+            
+            {accountName === "Account not found" && (
+              <p className="text-xs text-red-600 mb-1.5 px-1">Account not found. Please check the number.</p>
+            )}
+
+            {/* Resolved Name Block */}
+            {accountName && accountName !== "Account not found" && !isValidatingAccount && (
+              <div className="bg-gray-50 px-3 py-2.5 rounded-lg border border-gray-100">
+                <span className="text-sm text-gray-700">{accountName}</span>
+              </div>
+            )}
           </div>
-          {isValidatingAccount && (
-            <p className="text-xs text-blue-600 -mt-2 mb-2">Validating...</p>
-          )}
-          {accountName === "Account not found" && (
-            <p className="text-xs text-red-600 -mt-2 mb-2">Account not found</p>
-          )}
 
           {/* Description */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description (optional)
+          <div className="mb-5">
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">
+              Description
             </label>
-            <textarea
+            <input
+              type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none text-sm"
-              rows={2}
-              placeholder="Optional note"
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm outline-none transition-all"
             />
           </div>
 
           {/* Withdraw Button */}
           <button
             onClick={handleWithdraw}
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white py-2.5 rounded-lg font-medium transition-colors mb-2"
+            disabled={!accountName || accountName === "Account not found" || isValidatingAccount}
+            className="w-full bg-[#008B8B] hover:bg-teal-700 text-white py-2.5 rounded-lg font-medium transition-colors mb-3 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             Withdraw
           </button>
 
           {/* Processing Note */}
           <p className="text-xs text-gray-500 text-center">
-            NGN processed within 1 business day
+            NGN withdrawals are processed within 1 business day.
           </p>
         </div>
       </div>
+      
+  
 
-      {/* Placeholder for Verification Modal */}
+      {/* Verification Modal with API handling */}
       {showVerification && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
-          <div className="bg-white p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white p-6 rounded-lg max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">
               Verification Required
             </h3>
-            <p className="mb-4">Please verify your withdrawal request.</p>
+            <p className="mb-4 text-sm text-gray-600">Please verify your withdrawal request of ₦{parseFloat(amount).toLocaleString()}.</p>
+            
+            {withdrawalError && (
+              <p className="mb-4 text-xs text-red-600 bg-red-50 p-2 rounded">{withdrawalError}</p>
+            )}
+
             <div className="flex gap-2">
               <button
                 onClick={handleVerificationSuccess}
-                className="px-4 py-2 bg-teal-600 text-white rounded"
+                disabled={isProcessingWithdrawal}
+                className="flex-1 px-4 py-2 bg-teal-600 text-white rounded font-medium hover:bg-teal-700 disabled:opacity-70"
               >
-                Verify
+                {isProcessingWithdrawal ? "Processing..." : "Verify & Send"}
               </button>
               <button
                 onClick={handleCloseVerification}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded"
+                disabled={isProcessingWithdrawal}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded font-medium hover:bg-gray-200 disabled:opacity-70"
               >
                 Cancel
               </button>
@@ -363,24 +463,29 @@ export default function WithdrawModal({
         </div>
       )}
 
-      {/* Placeholder for Success Modal */}
+      {/* Success Modal */}
       {showSuccess && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
-          <div className="bg-white p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white p-6 rounded-lg max-w-sm w-full mx-4 text-center">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">
               Withdrawal Successful
             </h3>
-            <p className="mb-4">Your withdrawal has been processed.</p>
-            <div className="flex gap-2">
+            <p className="mb-6 text-sm text-gray-600">Your withdrawal has been processed and is on the way.</p>
+            <div className="flex flex-col gap-2">
               <button
                 onClick={handleGoToDashboard}
-                className="px-4 py-2 bg-teal-600 text-white rounded"
+                className="w-full px-4 py-2 bg-teal-600 text-white rounded font-medium hover:bg-teal-700"
               >
                 Go to Dashboard
               </button>
               <button
                 onClick={handleGoBackToWallet}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded"
+                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded font-medium hover:bg-gray-200"
               >
                 Back to Wallet
               </button>

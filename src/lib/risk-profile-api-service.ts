@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "/api/proxy/risk-profile/api/v1";
+const API_BASE_URL = "/api/risk-profile/api/v1";
 
 // 👇 UPDATED MAPPING based on your API response
 const PROFILE_IDS: Record<string, number> = {
@@ -85,7 +85,7 @@ const riskProfileApiService = {
 
       // Points to your User Service via Proxy
       const response = await axios.post(
-        "/api/proxy/user/api/v1/risk-profile",
+        "/api/user/api/v1/risk-profile",
         payload,
       );
       return response.data;

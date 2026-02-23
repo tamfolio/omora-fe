@@ -79,7 +79,7 @@ function ContactInformation({ onNext, onBack }: ContactInformationProps) {
       };
 
       // Direct fetch through the proxy to avoid any hidden issues in kycApiService
-      const response = await fetch('/api/proxy/user/api/v1/onboarding/personal/contact/information', {
+      const response = await fetch('/api/user/api/v1/onboarding/personal/contact/information', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
