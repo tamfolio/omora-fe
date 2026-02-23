@@ -119,7 +119,7 @@ function BusinessInformation({ onNext, onBack }: BusinessInformationProps) {
       };
 
       // 2. Call the 'Information' Endpoint
-      const response = await fetch('/api/proxy/user/api/v1/onboarding/business/information', {
+      const response = await fetch('/api/user/api/v1/onboarding/business/information', {
         method: 'POST', 
         headers: {
           'Content-Type': 'application/json',

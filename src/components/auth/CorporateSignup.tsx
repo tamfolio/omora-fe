@@ -59,7 +59,7 @@ export default function CorporateSignup({
 
   // Verify RC Number with backend
   const verifyRCNumber = async (rcNumber: string, type: 'RC' | 'BN') => {
-    if (rcNumber.length < 6) {
+    if (rcNumber.length < 4) {
       setRcVerificationStatus('idle');
       setFormData((prev) => ({ ...prev, businessName: '' }));
       return;
@@ -72,7 +72,7 @@ export default function CorporateSignup({
       // Send with prefix (RC or BN)
       const idNumber = `${type}${rcNumber}`;
       
-      const response = await fetch('/api/proxy/user/verification/verify/reg-no', {
+      const response = await fetch('/api/user/verification/verify/reg-no', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

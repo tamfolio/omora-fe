@@ -1,9 +1,7 @@
-// src/app/api/proxy/[...path]/route.ts - FIXED FOR FILE UPLOADS
-
 import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
 
-const TARGET = process.env.OMORA_API_BASE_URL || 'http://localhost:8000';
+const TARGET = process.env.OMORA_API_BASE_URL || 'https://api.omora.africa'; 
 const API_KEY = process.env.OMORA_API_KEY || '';
 
 const PUBLIC_PATHS = [
@@ -38,13 +36,13 @@ async function handleProxy(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. ✅ SMART HEADER HANDLING
+  // 2. SMART HEADER HANDLING
   const headers = new Headers();
   
-  // ✅ Get the original Content-Type from the request
+  // Get the original Content-Type from the request
   const contentType = req.headers.get('content-type');
   
-  // ✅ Only set Content-Type to JSON if it's not already set (and not multipart)
+  // Only set Content-Type to JSON if it's not already set (and not multipart)
   if (contentType) {
     // Keep the original Content-Type (e.g., multipart/form-data with boundary)
     headers.set('Content-Type', contentType);
@@ -65,12 +63,12 @@ async function handleProxy(
     headers.set('Authorization', `Bearer ${token.accessToken}`);
   }
 
-  // 3. ✅ BODY HANDLING - Preserve binary data for file uploads
+  // 3. BODY HANDLING - Preserve binary data for file uploads
   let body: any = undefined;
   
   if (!['GET', 'HEAD'].includes(req.method)) {
     if (contentType?.includes('multipart/form-data')) {
-      // ✅ For multipart, use arrayBuffer to preserve boundaries
+      // For multipart, use arrayBuffer to preserve boundaries
       body = await req.arrayBuffer();
     } else {
       // For JSON and other text formats

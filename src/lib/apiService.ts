@@ -1,10 +1,7 @@
-// src/lib/apiService.ts
 import { getSession, signOut } from "next-auth/react";
 
-// ✅ USE THE PROXY - Not the direct API!
-const PROXY_BASE_URL = '/api/proxy';
+const PROXY_BASE_URL = '/api/';
 
-// ❌ REMOVED: const API_KEY = ... (Never define this in a client file)
 
 interface ApiOptions extends RequestInit {
   requiresAuth?: boolean;

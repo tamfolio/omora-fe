@@ -214,8 +214,7 @@ const makeMultipartRequest = async (
   return await apiFetch(endpoint, {
     method: 'POST',
     body: formData,
-    // ❌ DON'T pass headers: {} - it's not needed!
-    // apiFetch already checks if body instanceof FormData
+   
   });
 };
 
@@ -324,6 +323,27 @@ export const checkVerificationStatus = (verifications: Array<{type: string; stat
   };
 };
 
+
+export interface PollingRequest {
+  type: 'liveness' | 'account-number' | 'wallet';
+}
+
+export interface PollingResponse {
+  status: 'success' | 'failed' | 'pending';
+  message?: string;
+  data?: any; 
+}
+
+// Polling function
+export const pollOnboarding = async (
+  type: 'liveness' | 'account-number' | 'wallet'
+): Promise<PollingResponse> => {
+  return await apiFetch('/user/polling/onboard', {
+    method: 'POST',
+    body: JSON.stringify({ type }),
+  });
+};
+
 export class KYCAPIError extends Error {
   statusCode?: string;
   constructor(message: string, statusCode?: string) {
@@ -349,6 +369,7 @@ const kycApiService = {
   submitDirectorInformation,
   submitCompanyRegistration,
   acceptTerms,
+  pollOnboarding,
   getOnboardingPercentage,
   viewBusinessRegistration,
   viewBusinessInformation,

@@ -2,7 +2,7 @@ import type { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 // 🔒 SECURITY: Use direct backend URL
-const BACKEND_URL = process.env.OMORA_API_BASE_URL || 'api.omora.app'; 
+const BACKEND_URL = process.env.OMORA_API_BASE_URL || 'api.omora.africa'; 
 const API_KEY = process.env.OMORA_API_KEY || '';
 
 // Temporary store for OTP flow
