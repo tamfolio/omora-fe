@@ -20,7 +20,13 @@ async function handleProxy(
 ) {
   const params = await context.params;
   const pathArray = params.path;
-  const pathStr = pathArray.join('/');
+  let pathStr = pathArray.join('/');
+
+  // 🚨 THE FIX: Strip 'proxy/' from the path if Next.js included it
+  if (pathStr.startsWith('proxy/')) {
+    pathStr = pathStr.replace('proxy/', '');
+  }
+
   const url = new URL(req.url);
   const targetUrl = `${TARGET.replace(/\/$/, '')}/${pathStr}${url.search}`;
 

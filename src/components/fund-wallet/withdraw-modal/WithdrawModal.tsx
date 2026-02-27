@@ -75,7 +75,6 @@ export default function WithdrawModal({
     setSelectedCurrency(initialCurrency);
   }, [initialCurrency]);
 
-  // 1. Fetch Banks on Mount
 // 1. Fetch Banks on Mount
   useEffect(() => {
     const fetchBanks = async () => {
