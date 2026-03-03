@@ -10,7 +10,7 @@ function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data: session, status } = useSession();
   
-  // ✅ Get user data from context for additional info (business name, etc.)
+  //  Get user data from context for additional info (business name, etc.)
   const { userData } = useUserData();
   
   const isAuthenticated = status === "authenticated";
@@ -35,7 +35,7 @@ function Navbar() {
 
   const navItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
 
-  // ✅ Display name: use business name for corporate, or user's first name
+  //  Display name: use business name for corporate, or user's first name
   const displayName = userData?.business?.businessName 
     ? userData.business.businessName 
     : session?.user?.name?.split(" ")[0] || "User";

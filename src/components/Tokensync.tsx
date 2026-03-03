@@ -1,6 +1,3 @@
-// TokenSync.tsx
-// Place this component at the root of your app or in the KYC layout
-
 'use client';
 
 import { useEffect } from 'react';
@@ -12,8 +9,6 @@ export function TokenSync() {
   useEffect(() => {
     if (status === 'loading') return;
 
-    // Secure approach: do NOT persist tokens in localStorage.
-    // Proxy reads the token server-side from next-auth cookie.
     if (session?.accessToken) {
       console.log('Token available in session (not persisted).');
     } else {

@@ -14,7 +14,7 @@ interface SelectOption {
   label: string;
 }
 
-// ✅ FIX 2: Added rcType to interface (optional)
+//  FIX 2: Added rcType to interface (optional)
 interface FormData {
   businessName: string;
   rcNumber: string;

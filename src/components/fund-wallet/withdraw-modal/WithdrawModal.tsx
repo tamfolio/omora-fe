@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { ChevronDown, Search } from "lucide-react";
 import USDTWithdrawModal from "./USDTWithdrawal";
 
 interface WithdrawData {
@@ -33,13 +33,13 @@ interface WithdrawModalProps {
 }
 
 const WITHDRAWAL_FEES = {
-  NGN: 200,
-  USDT: 5,
+  NGN: 10,
+  USDT: 0.5
 };
 
 const MIN_WITHDRAWAL = {
   NGN: 50000,
-  USDT: 10,
+  USDT: 0.5
 };
 
 export default function WithdrawModal({
@@ -59,12 +59,17 @@ export default function WithdrawModal({
   const [accountName, setAccountName] = useState("");
   const [description, setDescription] = useState("");
   
-  // New State for API Data & Processing
+  // Bank Data & Processing
   const [banks, setBanks] = useState<Bank[]>([]);
   const [selectedBankCode, setSelectedBankCode] = useState("");
   const [isValidatingAccount, setIsValidatingAccount] = useState(false);
   const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
   const [withdrawalError, setWithdrawalError] = useState<string | null>(null);
+
+  // New Searchable Dropdown State
+  const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
+  const [bankSearchQuery, setBankSearchQuery] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [showVerification, setShowVerification] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -75,43 +80,40 @@ export default function WithdrawModal({
     setSelectedCurrency(initialCurrency);
   }, [initialCurrency]);
 
-// 1. Fetch Banks on Mount
+  // Handle clicking outside the custom dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsBankDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // 1. Fetch Banks on Mount
   useEffect(() => {
     const fetchBanks = async () => {
       try {
-        const res = await fetch(`${window.location.origin}/api/lookups/banks`);
+        const res = await fetch("/api/proxy/lookups/provider-banks"); 
         
-        let validBanks: Bank[] = [];
-
-        // If the proxy works and returns data, filter it
         if (res.ok) {
           const json = await res.json();
           if (json.data) {
-            validBanks = json.data.filter((b: Bank) => b.bankCode !== null);
+            const validBanks = json.data
+              .filter((b: Bank) => b.bankCode !== null)
+              .sort((a: Bank, b: Bank) => a.bankName.localeCompare(b.bankName));
+
+            setBanks(validBanks);
+            
+            if (validBanks.length > 0) {
+              setBankAccount(validBanks[0].bankName);
+              setSelectedBankCode(validBanks[0].bankCode as string);
+            }
           }
         } else {
-          console.warn("API or Proxy failed, falling back to mock data for testing.");
+          console.error("Failed to fetch live banks from API.");
         }
-
-        // --- BACKEND WIP OVERRIDE ---
-        // Force OPay into the list so we can test the payout flow
-        const opayMock: Bank = {
-          id: 9999, // temporary dummy ID
-          bankName: "OPay",
-          bankCode: "305",
-          country: "NG"
-        };
-
-        // Add OPay to the very beginning of the array
-        validBanks = [opayMock, ...validBanks];
-        // ----------------------------
-
-        setBanks(validBanks);
-        
-        // Auto-select OPay by default
-        setBankAccount(validBanks[0].bankName);
-        setSelectedBankCode(validBanks[0].bankCode as string);
-        
       } catch (error) {
         console.error("Failed to fetch banks:", error);
       }
@@ -129,19 +131,18 @@ export default function WithdrawModal({
       setAccountName(""); 
 
       try {
-        const res = await fetch(`${window.location.origin}/api/payout/resolve-account`, { 
+        const res = await fetch(`/api/proxy/payout/resolve-account`, { 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-  accountNumber: accountNum, 
-  bankCode: currentBankCode
-})
+            accountNumber: accountNum, 
+            bankCode: currentBankCode
+          })
         });
 
         if (!res.ok) throw new Error("Resolution failed");
         
         const responseData = await res.json();
-        // Fallback to multiple common key names depending on exact Omora response
         const resolvedName = responseData.data?.account_name || responseData.data?.accountName || "Account Name Found";
         setAccountName(resolvedName);
       } catch (error) {
@@ -153,29 +154,28 @@ export default function WithdrawModal({
   };
 
   const handleAccountNumberChange = (value: string) => {
-    const numericValue = value.replace(/\D/g, ''); // Ensure only numbers
+    const numericValue = value.replace(/\D/g, ''); 
     setAccountNumber(numericValue);
     
     if (selectedCurrency === "NGN") {
       if (numericValue.length === 10) {
         validateAccountNumber(numericValue, selectedBankCode);
       } else {
-        setAccountName(""); // Clear name if length drops below 10
+        setAccountName(""); 
       }
     }
   };
 
-  const handleBankChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedName = e.target.value;
-    setBankAccount(selectedName);
-    
-    const bank = banks.find(b => b.bankName === selectedName);
-    if (bank && bank.bankCode) {
-      setSelectedBankCode(bank.bankCode);
-      // Re-validate if a full account number is already typed
-      if (accountNumber.length === 10) {
-        validateAccountNumber(accountNumber, bank.bankCode);
-      }
+  // Custom handler for selecting a bank from the dropdown list
+  const handleBankSelect = (bank: Bank) => {
+    setBankAccount(bank.bankName);
+    setSelectedBankCode(bank.bankCode as string);
+    setIsBankDropdownOpen(false);
+    setBankSearchQuery(""); // Reset search after selection
+
+    // Re-validate if a full account number is already typed
+    if (accountNumber.length === 10) {
+      validateAccountNumber(accountNumber, bank.bankCode as string);
     }
   };
 
@@ -220,7 +220,6 @@ export default function WithdrawModal({
     setShowVerification(true);
   };
 
-  // 3. Process the Actual Payout Submission
   const handleVerificationSuccess = async () => {
     if (!pendingWithdrawData) return;
 
@@ -230,15 +229,15 @@ export default function WithdrawModal({
 
       try {
        const payload = {
-  amount: pendingWithdrawData.amount,
-  bankCode: pendingWithdrawData.bankCode,         // Changed from bank_code
-  accountNumber: pendingWithdrawData.accountNumber, // Changed from account_number
-  accountName: pendingWithdrawData.accountName,     // Changed from account_name
-  narration: pendingWithdrawData.description || "Wallet Withdrawal",
-  reference: `OM-WD-${Date.now()}`
-};
+          amount: pendingWithdrawData.amount,
+          bankCode: pendingWithdrawData.bankCode,         
+          accountNumber: pendingWithdrawData.accountNumber, 
+          accountName: pendingWithdrawData.accountName,     
+          narration: pendingWithdrawData.description || "Wallet Withdrawal",
+          reference: `OM-WD-${Date.now()}`
+        };
 
-       const res = await fetch(`${window.location.origin}/api/payout/naira`, {
+       const res = await fetch(`/api/proxy/payout/naira`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -249,8 +248,7 @@ export default function WithdrawModal({
           throw new Error(errData.message || errData.error || "Withdrawal failed");
         }
 
-        // Success
-        onWithdraw(pendingWithdrawData); // Pass data up for history logs if needed
+        onWithdraw(pendingWithdrawData); 
         setShowVerification(false);
         setShowSuccess(true);
       } catch (error: any) {
@@ -261,9 +259,7 @@ export default function WithdrawModal({
     }
   };
 
-  const handleShowSuccess = () => {
-    setShowSuccess(true);
-  };
+  const handleShowSuccess = () => setShowSuccess(true);
 
   const handleCloseVerification = () => {
     if (!isProcessingWithdrawal) {
@@ -289,7 +285,12 @@ export default function WithdrawModal({
     onGoBackToWallet?.();
   };
 
- return (
+  // Filter banks based on search query
+  const filteredBanks = banks.filter((bank) =>
+    bank.bankName.toLowerCase().includes(bankSearchQuery.toLowerCase())
+  );
+
+  return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
@@ -298,7 +299,6 @@ export default function WithdrawModal({
         }
       }}
     >
-      {/* Added shadow-2xl, max-h constraints, and slightly narrower max-w */}
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[420px] max-h-[95vh] flex flex-col">
         <div className="p-5">
           
@@ -336,38 +336,68 @@ export default function WithdrawModal({
               Minimum withdrawal amount is {currencySymbol}{minAmount.toLocaleString()}
             </p>
             
-            {/* Service Fee Block */}
             <div className="mt-2.5 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 flex items-center">
               <span className="text-sm text-gray-500">Service Fee: <span className="text-gray-700 font-medium">{serviceFee} {currencyUnit}</span></span>
             </div>
           </div>
 
-          {/* Bank Selection */}
-          <div className="mb-4">
+          {/* CUSTOM SEARCHABLE BANK DROPDOWN */}
+          <div className="mb-4 relative" ref={dropdownRef}>
             <label className="block text-sm font-bold text-gray-700 mb-1.5">
               Bank account
             </label>
-            <div className="relative">
-              <select
-                value={bankAccount}
-                onChange={handleBankChange}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 appearance-none bg-white text-sm outline-none transition-all"
-              >
-                {banks.length > 0 ? (
-                  banks.map((bank) => (
-                    <option key={bank.id} value={bank.bankName}>
-                      {bank.bankName}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">Loading banks...</option>
-                )}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            
+            {/* The Select Box Trigger */}
+            <div 
+              onClick={() => setIsBankDropdownOpen(!isBankDropdownOpen)}
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm cursor-pointer transition-all flex items-center justify-between hover:border-gray-300"
+            >
+              <span className={banks.length === 0 ? "text-gray-400" : "text-gray-900"}>
+                {banks.length === 0 ? "Loading banks..." : bankAccount || "Select a bank"}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isBankDropdownOpen ? 'rotate-180' : ''}`} />
             </div>
+
+            {/* The Dropdown Menu with Search */}
+            {isBankDropdownOpen && banks.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
+                {/* Search Input */}
+                <div className="p-2 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+                  <Search className="w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search banks..."
+                    value={bankSearchQuery}
+                    onChange={(e) => setBankSearchQuery(e.target.value)}
+                    className="w-full bg-transparent focus:outline-none text-sm text-gray-700"
+                    onClick={(e) => e.stopPropagation()} // Prevent input click from closing dropdown
+                    autoFocus
+                  />
+                </div>
+                
+                {/* Scrollable Bank List */}
+                <ul className="max-h-56 overflow-y-auto">
+                  {filteredBanks.length > 0 ? (
+                    filteredBanks.map((bank) => (
+                      <li
+                        key={bank.id}
+                        onClick={() => handleBankSelect(bank)}
+                        className="px-3 py-2.5 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700 cursor-pointer transition-colors border-b border-gray-50 last:border-0"
+                      >
+                        {bank.bankName}
+                      </li>
+                    ))
+                  ) : (
+                    <li className="px-3 py-4 text-sm text-gray-500 text-center">
+                      No banks found
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
           </div>
 
-          {/* Account Number & Name (Stacked) */}
+          {/* Account Number & Name */}
           <div className="mb-4">
             <label className="block text-sm font-bold text-gray-700 mb-1.5">
               Account Number
@@ -381,7 +411,6 @@ export default function WithdrawModal({
               maxLength={10}
             />
             
-            {/* Loading / Error States */}
             {isValidatingAccount && (
               <p className="text-xs text-blue-600 mb-1.5 px-1">Resolving account details...</p>
             )}
@@ -390,7 +419,6 @@ export default function WithdrawModal({
               <p className="text-xs text-red-600 mb-1.5 px-1">Account not found. Please check the number.</p>
             )}
 
-            {/* Resolved Name Block */}
             {accountName && accountName !== "Account not found" && !isValidatingAccount && (
               <div className="bg-gray-50 px-3 py-2.5 rounded-lg border border-gray-100">
                 <span className="text-sm text-gray-700">{accountName}</span>
@@ -420,16 +448,13 @@ export default function WithdrawModal({
             Withdraw
           </button>
 
-          {/* Processing Note */}
           <p className="text-xs text-gray-500 text-center">
             NGN withdrawals are processed within 1 business day.
           </p>
         </div>
       </div>
       
-  
-
-      {/* Verification Modal with API handling */}
+      {/* Verification Modal */}
       {showVerification && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
           <div className="bg-white p-6 rounded-lg max-w-sm w-full mx-4">

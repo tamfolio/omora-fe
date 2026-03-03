@@ -17,7 +17,7 @@ export default function CompleteYourDeposit() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [walletDetails, setWalletDetails] = useState<WalletDetails | null>(null);
   
-  // ✅ Get data from context instead of fetching
+  //  Get data from context instead of fetching
   const { userData, loading } = useUserData();
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function CompleteYourDeposit() {
       const ngnWallet = wallets?.find((w: any) => w.currency === 'NGN');
       
       if (ngnWallet) {
-        // ✅ Use business name for corporate accounts
+        //  Use business name for corporate accounts
         const accountName = business?.businessName || `${user.firstName} ${user.lastName}`;
         
         setWalletDetails({

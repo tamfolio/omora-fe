@@ -1,4 +1,3 @@
-// app/auth/login/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -45,7 +44,7 @@ export default function Login() {
     }
   };
 
-  // ✅ FIXED: Use NextAuth directly
+
   const handleInitialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -61,7 +60,7 @@ export default function Login() {
     }
 
     try {
-      // ✅ Call NextAuth directly with mode='signin'
+      //  Call NextAuth directly with mode='signin'
       const result = await signIn("credentials-with-otp", {
         redirect: false,
         email,
@@ -83,10 +82,6 @@ export default function Login() {
       setLoading(false);
     }
   };
-
-
-
-// Replace handleOtpSubmit function in your login page.tsx
 
 const handleOtpSubmit = async () => {
   if (otp.length !== 6) {
@@ -114,7 +109,7 @@ const handleOtpSubmit = async () => {
         document.cookie = `omora-session-extended=true; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
       }
 
-      // ✅ SIMPLIFIED: Just go to dashboard, no isFirstLogin checks
+    
       router.push("/dashboard");
     } else {
       setError(result?.error || "Invalid verification code");
@@ -125,7 +120,7 @@ const handleOtpSubmit = async () => {
     setLoading(false);
   }
 };
-  // ✅ FIXED: Use NextAuth directly
+  //  Use NextAuth directly
   const handleResendOtp = async () => {
     setLoading(true);
     setError("");

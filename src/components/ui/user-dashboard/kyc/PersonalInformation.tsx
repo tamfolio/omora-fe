@@ -141,7 +141,7 @@ export default function PersonalInformation({
       console.log("🔵 BVN Result:", result);
 
       if (response.ok && result.status === "VERIFIED") {
-        console.log("✅ BVN Verified!");
+        console.log(" BVN Verified!");
         console.log("🔵 Gender from response:", result.gender);
         console.log("🔵 Birthdate from response:", result.birthdate);
 
@@ -171,7 +171,7 @@ export default function PersonalInformation({
         }));
 
         await refreshUserData();
-        console.log("✅ BVN verification complete!");
+        console.log(" BVN verification complete!");
       } else {
         console.log("❌ BVN verification failed:", result.message);
         setBvnStatus("error");
@@ -202,7 +202,7 @@ export default function PersonalInformation({
       console.log("🟢 NIN Result:", result);
 
       if (response.ok && result.status === "VERIFIED") {
-        console.log("✅ NIN Verified!");
+        console.log(" NIN Verified!");
         console.log("🟢 Gender from response:", result.gender);
         console.log("🟢 Birthdate from response:", result.birthdate);
 
@@ -232,7 +232,7 @@ export default function PersonalInformation({
         }));
 
         await refreshUserData();
-        console.log("✅ NIN verification complete!");
+        console.log(" NIN verification complete!");
       } else {
         console.log("❌ NIN verification failed:", result.message);
         setNinStatus("error");
@@ -490,7 +490,7 @@ export default function PersonalInformation({
                   : ""
               }`}
               placeholder="DD-MM-YYYY"
-              disabled={bvnStatus === "success" || ninStatus === "success"} // ✅ Disable only AFTER verification
+              disabled={bvnStatus === "success" || ninStatus === "success"} //  Disable only AFTER verification
               readOnly={bvnStatus === "success" || ninStatus === "success"}
             />
             <p className="text-xs text-gray-500 mt-1">Must be above 18 years</p>
@@ -508,7 +508,7 @@ export default function PersonalInformation({
                   ? "bg-gray-50"
                   : ""
               }`}
-              disabled={bvnStatus === "success" || ninStatus === "success"} // ✅ Disable only AFTER verification
+              disabled={bvnStatus === "success" || ninStatus === "success"} //  Disable only AFTER verification
             >
               {genderOptions.map((option) => (
                 <option key={option.value} value={option.value}>

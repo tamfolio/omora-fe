@@ -4,11 +4,7 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-// Fix 1: Move this data export to a separate file (e.g., ../newsroomRecommendations.ts)
-// Remove this export from the page file:
-// export const newsroomRecommendation: Newsroom = [...]
 
-// For now, define it as a const inside the component or import from another file
 const newsroomRecommendation: Newsroom = [
   {
     id: 1,

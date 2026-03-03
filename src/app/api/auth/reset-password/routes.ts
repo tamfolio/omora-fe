@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
-    // Backend returns "failed" status but with success message - handle both cases
+  
     const isSuccess =
       data.message?.toLowerCase().includes("success") ||
       data.message?.toLowerCase().includes("verified");

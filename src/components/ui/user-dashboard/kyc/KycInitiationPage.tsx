@@ -5,7 +5,7 @@ import Logo from "../../Logo";
 interface KYCInitiationProps {
   onContinue: (userType: 'individual' | 'corporate') => void;
   onBack?: () => void;
-  // ✅ ADDED: Allows parent to set the active tab initially
+  //  ADDED: Allows parent to set the active tab initially
   defaultType?: 'individual' | 'corporate';
 }
 
@@ -99,7 +99,7 @@ function KYCInitiation({ onContinue, onBack, defaultType = 'individual' }: KYCIn
             {/* Dynamic Requirements List based on User Type */}
             <div className="text-left space-y-4">
               {userType === 'individual' ? (
-                // ✅ INDIVIDUAL REQUIREMENTS (from image_8bee64.png)
+                //  INDIVIDUAL REQUIREMENTS (from image_8bee64.png)
                 <ol className="list-decimal list-outside ml-4 space-y-3 text-sm text-gray-600 leading-relaxed">
                   <li className="pl-2">
                     <span className="font-medium text-gray-800">Valid ID</span> (NIN, International Passport, Voter&apos;s Card or Driver&apos;s License)
@@ -115,7 +115,7 @@ function KYCInitiation({ onContinue, onBack, defaultType = 'individual' }: KYCIn
                   </li>
                 </ol>
               ) : (
-                // ✅ CORPORATE REQUIREMENTS (from image_8bdfb9.jpg)
+                //  CORPORATE REQUIREMENTS (from image_8bdfb9.jpg)
                 <ol className="list-decimal list-outside ml-4 space-y-3 text-sm text-gray-600 leading-relaxed">
                   <li className="pl-2">
                     Certificate of Incorporation (CAC)

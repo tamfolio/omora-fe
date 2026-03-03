@@ -36,7 +36,7 @@ function MainPage() {
   const [showKycSuccessModal, setShowKycSuccessModal] = useState(false);
   const [showKycFailureModal, setShowKycFailureModal] = useState(false);
 
-  // ✅ 2. Refresh data on mount to ensure fresh status
+  //  2. Refresh data on mount to ensure fresh status
   useEffect(() => {
     refreshUserData();
   }, []);
@@ -185,7 +185,7 @@ function MainPage() {
             <button
               onClick={() => {
                 setShowKycSuccessModal(false);
-                // ✅ 3. Call refresh instead of reload
+                //  3. Call refresh instead of reload
                 refreshUserData(); 
               }}
               className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 px-6 rounded-lg font-medium"
