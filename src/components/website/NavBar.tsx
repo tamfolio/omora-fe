@@ -43,7 +43,7 @@ function Navbar() {
 
   const user = session?.user as ExtendedUser | undefined;
 
-  // ✅ SINGLE getDisplayName function with business name support
+  //  SINGLE getDisplayName function with business name support
   const getDisplayName = () => {
     // First priority: business name for corporate accounts
     if (userData?.business?.businessName) {

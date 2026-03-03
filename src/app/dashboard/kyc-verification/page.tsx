@@ -127,9 +127,9 @@ export default function KycVerification() {
           
           const isCorporate = business?.businessId || targetStep >= 6 || apiNextStepNumber >= 6;
 
-          // ✅ Set userType based on detection
+          //  Set userType based on detection
           if (isCorporate) {
-            console.log('✅ [PAGE] Detected CORPORATE user');
+            console.log(' [PAGE] Detected CORPORATE user');
             setUserType("corporate");
           } else {
             console.log('👤 [PAGE] Detected INDIVIDUAL user');
@@ -148,7 +148,7 @@ export default function KycVerification() {
             console.log('❌ [PAGE] KYC Failed');
             setShowUnsuccessfulModal(true);
           } else {
-            // ✅ Set pageProgress AFTER userType is determined
+            //  Set pageProgress AFTER userType is determined
             setTimeout(() => {
               console.log('📈 [PAGE] Setting page progress to:', targetStep);
               setPageProgress(targetStep);
@@ -199,7 +199,7 @@ export default function KycVerification() {
       case "update-business-details":
       case "business-information":
       case "business-info":
-        console.log("✅ [PAGE] Detected BUSINESS step (step 6)");
+        console.log(" [PAGE] Detected BUSINESS step (step 6)");
         return 6;
       case "upload-business-docs":
       case "update-business-docs":

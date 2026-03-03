@@ -10,7 +10,7 @@ declare module "next-auth" {
       name: string
       role: string
       isFirstLogin?: boolean
-      image?: string  // ✅ Add this
+      image?: string  //  Add this
     }
     accessToken?: string
     refreshToken?: string
@@ -26,7 +26,7 @@ declare module "next-auth" {
     refreshToken: string
     isFirstLogin?: boolean
     rememberMe?: boolean
-    image?: string  // ✅ Add this
+    image?: string  //  Add this
   }
 }
 
@@ -42,7 +42,7 @@ declare module "next-auth/jwt" {
       name: string
       role: string
       isFirstLogin?: boolean
-      image?: string  // ✅ Add this
+      image?: string  //  Add this
     }
     error?: string
   }

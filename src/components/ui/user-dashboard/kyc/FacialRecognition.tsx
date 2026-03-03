@@ -55,7 +55,7 @@ function FacialRecognition({
     document.body.appendChild(script);
   }, []);
 
-  // ✅ Corrected startPolling logic
+  //  Corrected startPolling logic
   const startPolling = async () => {
     setIsPolling(true);
     setError(null);

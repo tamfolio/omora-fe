@@ -93,7 +93,6 @@ export default function WithdrawModal({
           console.warn("API or Proxy failed, falling back to mock data for testing.");
         }
 
-        // --- BACKEND WIP OVERRIDE ---
         // Force OPay into the list so we can test the payout flow
         const opayMock: Bank = {
           id: 9999, // temporary dummy ID

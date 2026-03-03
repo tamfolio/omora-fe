@@ -35,25 +35,11 @@ export default function ReviewTransaction() {
   const handleNext = async () => {
     setIsProcessing(true);
     try {
-      let result;
-
-      if (
-        fromCurrency.toLowerCase() === "usdt" &&
-        toCurrency.toLowerCase() === "ngn"
-      ) {
-        result = await makePostRequest("/payout/stables", {
-          amount: parseFloat(amount),
-          currency: fromCurrency.toLowerCase(),
-          narration: narration || `Payout from ${fromCurrency}`,
-        });
-      } else {
-        // Strict payload mapping for make-conversion
-        result = await makePostRequest("/conversion/make-conversion", {
-          amount: parseFloat(amount),
-          fromId: fromId,
-          toId: toId,
-        });
-      }
+      const result = await makePostRequest('/conversion/make-conversion', {
+        amount: parseFloat(amount),
+        fromId: fromId,
+        toId: toId
+      });
 
       if (result.status === "success" || result.statusCode === "00") {
         setIsSuccessModalOpen(true);

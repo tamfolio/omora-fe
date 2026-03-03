@@ -22,7 +22,7 @@ async function handleProxy(
   const pathArray = params.path;
   let pathStr = pathArray.join('/');
 
-  // 🚨 THE FIX: Strip 'proxy/' from the path if Next.js included it
+  
   if (pathStr.startsWith('proxy/')) {
     pathStr = pathStr.replace('proxy/', '');
   }
@@ -42,7 +42,7 @@ async function handleProxy(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. SMART HEADER HANDLING
+ 
   const headers = new Headers();
   
   // Get the original Content-Type from the request

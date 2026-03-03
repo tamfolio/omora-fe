@@ -48,7 +48,7 @@ export default function FundWalletComponent() {
   // Check Crypto Status
   const hasCryptoWallet = !!usdtWallet?.walletAddress;
   
-  // ✅ Check Funding Status (Only poll for crypto wallet if they have money)
+  //  Check Funding Status (Only poll for crypto wallet if they have money)
   const hasFunded = (ngnWallet?.availableBalance || 0) > 0;
   
   const verificationType = userData?.business?.businessId ? 'corporate' : 'individual';
@@ -59,7 +59,7 @@ export default function FundWalletComponent() {
     usdt: userData?.wallets?.find((w: any) => w.currency === 'USDT')?.availableBalance || 0,
   };
 
-  // ✅ POLLING LOGIC
+  //  POLLING LOGIC
   useEffect(() => {
     // 1. Account Number Polling
     // Runs if: User exists, Not Verified (No NGN Account), and Not already polling
@@ -89,7 +89,7 @@ export default function FundWalletComponent() {
         const response = await kycApiService.pollOnboarding('account-number');
         
         if (response.status === 'success') {
-          console.log("✅ Account Number Created!");
+          console.log(" Account Number Created!");
           setIsPollingAccount(false);
           window.location.reload(); // Refresh to update context
           return;
@@ -126,7 +126,7 @@ export default function FundWalletComponent() {
         const response = await kycApiService.pollOnboarding('wallet');
         
         if (response.status === 'success') {
-          console.log("✅ Crypto Wallets Created!");
+          console.log(" Crypto Wallets Created!");
           setIsPollingWallet(false);
           window.location.reload(); 
           return;

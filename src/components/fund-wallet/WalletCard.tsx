@@ -96,7 +96,7 @@ useEffect(() => {
     }
     
     if (wallet) {
-      // ✅ Use business name for corporate accounts
+      //  Use business name for corporate accounts
       const accountName = business?.businessName || `${user.firstName} ${user.lastName}`;
       
       setWalletDetails({
