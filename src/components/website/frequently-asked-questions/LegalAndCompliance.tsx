@@ -29,7 +29,7 @@ export default function LegalAndCompliance() {
     <Accordion
       onValueChange={(value) => setOpenItem(value)}
       type="single"
-      className="w-[768px] mx-auto"
+      className="w-full max-w-[768px] mx-auto"
       collapsible
       defaultValue="item-1"
     >
@@ -39,9 +39,10 @@ export default function LegalAndCompliance() {
           key={index}
           value={`item-${index + 1}`}
         >
-          <AccordionTrigger className="[&>svg]:hidden text-[#181D27] font-semibold text-base">
+          <AccordionTrigger className="[&>svg]:hidden text-[#181D27] font-semibold text-base text-left gap-4">
             {faq.question}
-            <span>
+            <span className="shrink-0 ml-4 flex items-center justify-center">
+              
               {openItem === `item-${index + 1}` ? (
                 <Image
                   src="/assets/images/website/minus-circle.svg"

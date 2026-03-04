@@ -16,8 +16,7 @@ const reportingAndInsightsFaqs = [
       "Yes. We publish simplified insights weekly and during key market events.",
   },
   {
-    question:
-      "Yes. We publish simplified insights weekly and during key market events.",
+    question: "How do I subscribe to Omora insights and updates?",
     answer:
       "All users are auto-subscribed. You can manage this in Notification Preferences.",
   },
@@ -35,7 +34,7 @@ export default function ReportingAndInsights() {
     <Accordion
       onValueChange={(value) => setOpenItem(value)}
       type="single"
-      className="w-[768px] mx-auto"
+      className="w-full max-w-[768px] mx-auto"
       collapsible
       defaultValue="item-1"
     >
@@ -45,12 +44,12 @@ export default function ReportingAndInsights() {
           key={index}
           value={`item-${index + 1}`}
         >
-          <AccordionTrigger className="[&>svg]:hidden text-[#181D27] font-semibold text-base">
+          <AccordionTrigger className="[&>svg]:hidden text-[#181D27] font-semibold text-base text-left gap-4">
             {faq.question}
-            <span>
+            <span className="shrink-0 ml-4 flex items-center justify-center">
               {openItem === `item-${index + 1}` ? (
                 <Image
-                  src="/assets\images\website\minus-circle.svg"
+                  src="/assets/images/website/minus-circle.svg"
                   alt={faq.question}
                   width={24}
                   height={24}

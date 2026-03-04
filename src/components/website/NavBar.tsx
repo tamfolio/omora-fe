@@ -79,13 +79,14 @@ function Navbar() {
     { name: "Wallet", href: "/dashboard/fund-wallet" },
     { name: "News", href: "/newsroom" },
     { name: "Community", href: "/community" },
+    { name: "Home", href: "/" },
   ];
 
   const publicNavItems = [
-    { name: "About", href: "/about" },
-    { name: "Features", href: "/features" },
-    { name: "News", href: "/news" },
-    { name: "Community", href: "/community" },
+    { name: "About", href: "/about-us" },
+    { name: "Insights", href: "/insights" },
+    { name: "News", href: "/newsroom" },
+    { name: "FAQs", href: "/frequently-asked-questions" },
   ];
 
   const navItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
@@ -96,7 +97,12 @@ function Navbar() {
         <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex gap-5 items-center">
+              {/* Logo */}
+          <div className="flex gap-5">
+            <Link href="/">
               <Logo width={150} height={40} />
+            </Link>
+          </div>
 
               <div className="hidden lg:block">
                 <div className="flex items-baseline">

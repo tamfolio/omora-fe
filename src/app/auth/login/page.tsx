@@ -160,9 +160,12 @@ const handleOtpSubmit = async () => {
           </div>
 
           <div className="min-h-full flex flex-col">
-            <div className="p-6">
+            {/* Logo */}
+          <div className="flex gap-5">
+            <Link href="/">
               <Logo width={150} height={40} />
-            </div>
+            </Link>
+          </div>
 
             <div className="flex-1 flex items-start justify-center pt-8 pb-16 px-8">
               <div className="w-full max-w-md space-y-8">

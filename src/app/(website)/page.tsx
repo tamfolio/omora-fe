@@ -7,6 +7,7 @@ import Image from "next/image";
 import Performance from "@/components/website/homepage/Performance";
 import Testimonials from "@/components/website/homepage/Testimonials";
 import Insights from "@/components/website/homepage/Insights";
+import Link from "next/link"; // Added Link import
 
 const whyOmora = [
   {
@@ -55,12 +56,17 @@ const page = () => {
             rest — daily, automatically.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8 sm:mt-10 md:mt-12">
-            <Button className="px-[18px] py-3 w-full sm:w-fit text-sm text-[#414651] font-semibold rounded-[8px] border border-[#D5D7DA] bg-transparent hover:bg-[#008B99] hover:text-white">
-              Learn More
-            </Button>
-            <Button className="px-[18px] py-3 w-full sm:w-fit text-sm font-semibold rounded-[8px] bg-[#008B99] hover:bg-[#008B99]">
-              Start Investing
-            </Button>
+            {/* LINK WRAPPERS ADDED HERE */}
+            <Link href="/about-us" className="w-full sm:w-fit">
+              <Button className="px-[18px] py-3 w-full text-sm text-[#414651] font-semibold rounded-[8px] border border-[#D5D7DA] bg-transparent hover:bg-[#008B99] hover:text-white">
+                Learn More
+              </Button>
+            </Link>
+            <Link href="/auth/signup" className="w-full sm:w-fit">
+              <Button className="px-[18px] py-3 w-full text-sm text-white font-semibold rounded-[8px] bg-[#008B99] hover:bg-[#00717D]">
+                Start Investing
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -156,12 +162,17 @@ const page = () => {
           Omora.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 px-4">
-          <Button className="px-[18px] py-3 w-full sm:w-fit text-sm text-[#414651] font-semibold rounded-[8px] border border-[#D5D7DA] bg-transparent hover:bg-[#008B99] hover:text-white">
-            Learn More
-          </Button>
-          <Button className="px-[18px] py-3 w-full sm:w-fit text-sm font-semibold rounded-[8px] bg-[#008B99] hover:bg-[#008B99]">
-            Start Investing
-          </Button>
+         
+          <Link href="/about-us" className="w-full sm:w-fit">
+            <Button className="px-[18px] py-3 w-full text-sm text-[#414651] font-semibold rounded-[8px] border border-[#D5D7DA] bg-transparent hover:bg-[#008B99] hover:text-white">
+              Learn More
+            </Button>
+          </Link>
+          <Link href="/auth/signup" className="w-full sm:w-fit">
+            <Button className="px-[18px] py-3 w-full text-sm text-white font-semibold rounded-[8px] bg-[#008B99] hover:bg-[#00717D]">
+              Start Investing
+            </Button>
+          </Link>
         </div>
       </section>
       <Insights />

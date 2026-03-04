@@ -60,111 +60,88 @@ export default function KycVerification() {
   const [isPersonalInfoVerified, setIsPersonalInfoVerified] = useState(false);
 
   
-    useEffect(() => {
-  const checkKycStatus = async () => {
-    console.log('🔍 [PAGE] ====== CHECKING KYC STATUS ======');
-    console.log('🔍 [PAGE] Timestamp:', new Date().toISOString());
-    
-    try {
-      const result = await getUserKycStatus();
+   useEffect(() => {
+    const checkKycStatus = async () => {
+      console.log('🔍 [PAGE] ====== CHECKING KYC STATUS ======');
+      
+      try {
+        const result = await getUserKycStatus();
 
-      if (result.status === "success" && result.data) {
-        const { user, verification, onboardingState, business } = result.data;
+        if (result.status === "success" && result.data) {
+          const { user, verification, onboardingState, business } = result.data;
 
-        console.log('📦 [PAGE] Onboarding state:', {
-          currentStep: onboardingState?.currentStep,
-          currentStepStatus: onboardingState?.currentStepStatus,
-          nextStep: onboardingState?.nextStep,
-          progress: onboardingState?.progress,
-        });
+          // Populate form data...
+          updateFormData({
+            firstName: user.firstName,
+            lastName: user.lastName,
+            middleName: user.middleName || undefined,
+            dateOfBirth: user.dateOfBirth
+              ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
+              : undefined,
+            phone: user.mobileNumber,
+            mobileNumber: user.mobileNumber,
+            address: user.address,
+            city: user.city,
+            state: user.state,
+            country: user.country || undefined,
+            gender: user.gender as "MALE" | "FEMALE" | undefined,
+          });
 
-        console.log('🏢 [PAGE] Business:', {
-          hasBusinessId: !!business?.businessId,
-          businessName: business?.businessName,
-        });
+          // Handle verification...
+          if (verification) {
+            const { bothVerified } = checkVerificationStatus(verification);
+            setIsPersonalInfoVerified(bothVerified);
 
-        // Populate form data
-        updateFormData({
-          firstName: user.firstName,
-          lastName: user.lastName,
-          middleName: user.middleName || undefined,
-          dateOfBirth: user.dateOfBirth
-            ? new Date(user.dateOfBirth).toLocaleDateString("en-GB")
-            : undefined,
-          phone: user.mobileNumber,
-          mobileNumber: user.mobileNumber,
-          address: user.address,
-          city: user.city,
-          state: user.state,
-          country: user.country || undefined,
-          gender: user.gender as "MALE" | "FEMALE" | undefined,
-        });
-
-        // Handle verification
-        if (verification) {
-          const { bothVerified } = checkVerificationStatus(verification);
-          setIsPersonalInfoVerified(bothVerified);
-
-          const ninRecord = verification.find(
-            (v) => v.type === "NIN" && v.status === "C",
-          );
-          const bvnRecord = verification.find(
-            (v) => v.type === "BVN" && v.status === "C",
-          );
-          if (ninRecord) updateFormData({ nin: ninRecord.value });
-          if (bvnRecord) updateFormData({ bvn: bvnRecord.value });
-        }
-
-        // Handle onboarding state
-        if (onboardingState) {
-          const currentStep = onboardingState.currentStep;
-          const currentStepStatus = onboardingState.currentStepStatus;
-          const apiNextStep = onboardingState.nextStep;
-
-          const stepToAnalyze = currentStepStatus === 'C' ? apiNextStep : currentStep;
-          const targetStep = getStepNumberFromApiStatus(stepToAnalyze);
-          const apiNextStepNumber = getStepNumberFromApiStatus(apiNextStep);
-          
-          const isCorporate = business?.businessId || targetStep >= 6 || apiNextStepNumber >= 6;
-
-          //  Set userType based on detection
-          if (isCorporate) {
-            console.log(' [PAGE] Detected CORPORATE user');
-            setUserType("corporate");
-          } else {
-            console.log('👤 [PAGE] Detected INDIVIDUAL user');
-            setUserType("individual");
+            const ninRecord = verification.find((v) => v.type === "NIN" && v.status === "C");
+            const bvnRecord = verification.find((v) => v.type === "BVN" && v.status === "C");
+            if (ninRecord) updateFormData({ nin: ninRecord.value });
+            if (bvnRecord) updateFormData({ bvn: bvnRecord.value });
           }
 
-          console.log('📈 [PAGE] Setting page to step:', targetStep);
+          // Handle onboarding state
+          if (onboardingState) {
+            const currentStep = onboardingState.currentStep;
+            const currentStepStatus = onboardingState.currentStepStatus;
+            const fetchedNextStep = onboardingState.nextStep;
 
-          // Check completion
-          const isKycComplete = currentStepStatus === "C" && apiNextStep === "dashboard";
+            // FIX 1: Actually save the next step to React state for the Retry button!
+            setApiNextStep(fetchedNextStep);
 
-          if (isKycComplete) {
-            console.log('🎉 [PAGE] KYC Complete');
-            setShowSuccessModal(true);
-          } else if (currentStepStatus === "NVP") {
-            console.log('❌ [PAGE] KYC Failed');
-            setShowUnsuccessfulModal(true);
-          } else {
-            //  Set pageProgress AFTER userType is determined
-            setTimeout(() => {
-              console.log('📈 [PAGE] Setting page progress to:', targetStep);
+            const stepToAnalyze = currentStepStatus === 'C' ? fetchedNextStep : currentStep;
+            const targetStep = getStepNumberFromApiStatus(stepToAnalyze);
+            const apiNextStepNumber = getStepNumberFromApiStatus(fetchedNextStep);
+            
+            const isCorporate = business?.businessId || targetStep >= 6 || apiNextStepNumber >= 6;
+
+            if (isCorporate) {
+              setUserType("corporate");
+            } else {
+              setUserType("individual");
+            }
+
+            // Check completion
+            const isKycComplete = currentStepStatus === "C" && fetchedNextStep === "dashboard";
+
+            // FIX 3: Catch targetStep === 8 as well so it never defaults to showing Step 1
+            if (isKycComplete || targetStep === 8) {
+              setShowSuccessModal(true);
+            } else if (currentStepStatus === "NVP") {
+              setShowUnsuccessfulModal(true);
+            } else {
+              // FIX 2: Removed setTimeout. React 18 batches this perfectly with setUserType.
               setPageProgress(targetStep);
-            }, 0);
+            }
           }
         }
+      } catch (error) {
+        console.error("❌ [PAGE] Failed to check KYC status", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("❌ [PAGE] Failed to check KYC status", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  checkKycStatus();
-}, []);
+    checkKycStatus();
+  }, []);
 
 
   const handleRetry = () => {
@@ -389,24 +366,28 @@ export default function KycVerification() {
         />
       );
     }
-
     if (pageProgress === 7 && userType === "corporate") {
       return <CompanyRegDetails onNext={nextStep} onBack={prevStep} />;
     }
 
-    return (
-      <KYCInitiation
-        onContinue={(selectedType: VerificationType) => {
-          setUserType(selectedType);
-          nextStep();
-        }}
-        onBack={handleBackFromInitiation}
-      />
-    );
-  };
+    // Wrap the initiation component in an explicit if block
+    if (pageProgress === 1) {
+      return (
+        <KYCInitiation
+          onContinue={(selectedType: VerificationType) => {
+            setUserType(selectedType);
+            nextStep();
+          }}
+          onBack={handleBackFromInitiation}
+        />
+      );
+    }
+    
+    // Safety fallback
+    return null;
+  }; // 🚨 THIS WAS MISSING! It closes the renderCurrentStep() function.
 
-
-
+  // --- NOW BACK IN THE MAIN COMPONENT BODY ---
 
   if (loading) {
     return (
