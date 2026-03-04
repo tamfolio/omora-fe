@@ -152,9 +152,15 @@ useEffect(() => {
             <div className="text-sm text-gray-500">Loading wallet details...</div>
           ) : walletDetails.walletAddress ? (
             <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex items-center justify-between">
-                <span>Network: <span className="font-medium">{walletDetails.network?.toUpperCase()}</span> - <span className="font-mono text-xs">{walletDetails.walletAddress}</span></span>
-                <CopyButton text={walletDetails.walletAddress} />
+              {/* FIXED: Added gap-2, min-w-0 to the text block, and flex-shrink-0 to the button block */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0 truncate">
+                  <span>Network: <span className="font-medium">{walletDetails.network?.toUpperCase()}</span> - </span>
+                  <span className="font-mono text-xs text-gray-500">{walletDetails.walletAddress}</span>
+                </div>
+                <div className="flex-shrink-0">
+                  <CopyButton text={walletDetails.walletAddress} />
+                </div>
               </div>
             </div>
           ) : (
@@ -177,9 +183,15 @@ useEffect(() => {
             <div className="text-sm text-gray-500">Loading wallet details...</div>
           ) : walletDetails.walletAddress ? (
             <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex items-center justify-between">
-                <span>Network: <span className="font-medium">{walletDetails.network?.toUpperCase()}</span> - <span className="font-mono text-xs">{walletDetails.walletAddress}</span></span>
-                <CopyButton text={walletDetails.walletAddress} />
+              {/* FIXED: Added gap-2, min-w-0 to the text block, and flex-shrink-0 to the button block */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0 truncate">
+                  <span>Network: <span className="font-medium">{walletDetails.network?.toUpperCase()}</span> - </span>
+                  <span className="font-mono text-xs text-gray-500">{walletDetails.walletAddress}</span>
+                </div>
+                <div className="flex-shrink-0">
+                  <CopyButton text={walletDetails.walletAddress} />
+                </div>
               </div>
             </div>
           ) : (
@@ -192,7 +204,7 @@ useEffect(() => {
   const cardContent = getCardContent();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6">
+    <div className="bg-white border border-gray-200 rounded-xl p-6 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-600">

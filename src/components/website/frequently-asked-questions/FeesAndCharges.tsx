@@ -16,17 +16,18 @@ export default function FeesAndCharges() {
     <Accordion
       onValueChange={(value) => setOpenItem(value)}
       type="single"
-      className="w-[768px] mx-auto"
+      className="w-full max-w-[768px] mx-auto"
       collapsible
       defaultValue="item-1"
     >
       <AccordionItem className="border-none" value="item-1">
-        <AccordionTrigger className="[&>svg]:hidden text-[#181D27] font-semibold text-base">
+        <AccordionTrigger className="[&>svg]:hidden text-[#181D27] font-semibold text-base text-left gap-4">
           What fees does Omora charge?
-          <span>
+          <span className="shrink-0 ml-4 flex items-center justify-center">
+            
             {openItem === `item-1` ? (
               <Image
-                src="/assets\images\website\minus-circle.svg"
+                src="/assets/images/website/minus-circle.svg"
                 alt="minus"
                 width={24}
                 height={24}

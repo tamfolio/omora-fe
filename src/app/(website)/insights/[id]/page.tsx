@@ -1,239 +1,235 @@
-import Image from "next/image";
-import { insightsData } from "../data";
-import { redirect } from "next/navigation";
+"use client";
+
+import React, { useMemo, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import Link from "next/link";
+import { insightsData, InsightType } from "@/app/(website)/insights/data";
 
-// Fix: Update the params type to be a Promise
-export default async function InsightDetail({ params }: { params: Promise<{ id: string }> }) {
-  // Fix: Await the params Promise
-  const { id } = await params;
-  const insight = insightsData.find((item) => item.id === Number(id));
+export default function InsightsGrid() {
+  const [filter, setFilter] = useState<InsightType | "All">("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
-  if (!insight) {
-    redirect("/notfound");
+  const filteredInsights = useMemo(() => {
+    if (filter === "All") return insightsData;
+    return insightsData.filter((item) => item.type === filter);
+  }, [filter]);
+
+  const totalPages = Math.ceil(filteredInsights.length / itemsPerPage);
+  const currentItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredInsights.slice(start, start + itemsPerPage);
+  }, [filteredInsights, currentPage]);
+
+  function getPaginationButtons() {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 6;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const left = Math.max(2, currentPage - 1);
+      const right = Math.min(totalPages - 1, currentPage + 1);
+
+      pages.push(1);
+
+      if (left > 2) {
+        pages.push("...");
+      }
+
+      for (let i = left; i <= right; i++) {
+        pages.push(i);
+      }
+
+      if (right < totalPages - 1) {
+        pages.push("...");
+      }
+
+      pages.push(totalPages);
+    }
+
+    return pages;
   }
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
   return (
-    <main className="px-[112px] bg-[linear-gradient(180deg,rgba(121,183,188,0.08)_0%,rgba(174,220,224,0.08)_15.35%,rgba(255,255,255,0.08)_34.1%)] bg-blend-overlay">
-      <section className="py-24">
-        <div
-          className={`${insight.type === "Bullish" ? "bg-[#F3FEE7] border-[#D0F8AB]" : insight.type === "Bearish" ? "bg-[#FEF3F2] border-[#FECDCA]" : "bg-[#FAFAFA] border-[#E9EAEB]"} p-1 pr-3 min-w-[144px] w-fit rounded-full border mb-4 text-xs font-medium flex gap-2 justify-between items-center`}
+    // 1. FIXED: Removed the bad px-[112px] padding
+    <section className="mt-8 md:mt-16 w-full">
+      
+      {/* 2. FIXED: Stacked the filter bar and dropdown on mobile */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-8 md:mb-16 w-full overflow-hidden">
+        
+        {/* 3. FIXED: Made the gray button box swipeable so "Neutral" isn't cut off */}
+        <div className="w-full overflow-x-auto no-scrollbar pb-2 sm:pb-0">
+          <div className="inline-flex gap-2 items-center bg-[#f9f9f9] border border-[#E9EAEB] rounded-[8px] p-1 min-w-max">
+            {["All", "Bullish", "Bearish", "Neutral"].map((type) => (
+              <Button
+                key={type}
+                onClick={() => {
+                  setFilter(type as InsightType | "All");
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-2 bg-transparent text-[#717680] hover:bg-white whitespace-nowrap transition-all ${
+                  filter === type
+                    ? "bg-white text-[#414651] border rounded-[6px] shadow-sm border-[#D5D7DA]"
+                    : "bg-transparent border-none"
+                }`}
+              >
+                {type}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. FIXED: Prevent dropdown from shrinking */}
+        <div className="w-full sm:w-auto shrink-0">
+          <Select>
+            <SelectTrigger className="w-full sm:w-[168px] rounded-[8px] border border-[#D5D7DA]">
+              <SelectValue placeholder="Filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="light">Light</SelectItem>
+              <SelectItem value="dark">Dark</SelectItem>
+              <SelectItem value="system">System</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* 5. FIXED: Allowed the grid to map properly on mobile without squishing */}
+      <div className="flex justify-center mb-12 md:mb-[138px] w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
+          {currentItems.map((insights, index) => (
+            <Link href={`/insights/${index + 1}`} key={index} className="block group">
+              <div className="w-full h-full flex flex-col">
+                <div className="relative mb-4 overflow-hidden rounded-[10px]">
+                  <Image
+                    className="w-full object-cover transition-transform duration-500 group-hover:scale-105 aspect-[3/2]"
+                    src={insights.image}
+                    alt={insights.title}
+                    height={256}
+                    width={384}
+                  />
+                  <div className="absolute size-10 rounded-full flex items-center justify-center bg-white/30 backdrop-blur-sm right-4 top-4 hover:bg-white/50 transition-colors">
+                    <Image
+                      src="/assets/images/website/bookmark.svg"
+                      alt="bookmark"
+                      height={20}
+                      width={20}
+                    />
+                  </div>
+                </div>
+
+                <div
+                  className={`${insights.type === "Bullish" ? "bg-[#F3FEE7] border-[#D0F8AB]" : insights.type === "Bearish" ? "bg-[#FEF3F2] border-[#FECDCA]" : "bg-[#FAFAFA] border-[#E9EAEB]"} p-1 pr-3 min-w-[144px] w-fit rounded-full border text-xs font-medium mb-3 flex gap-2 justify-between items-center`}
+                >
+                  <span
+                    className={`py-[2px] px-2 bg-white rounded-full ${insights.type === "Bullish" ? "text-[#326212] border-[#66C61C]" : insights.type === "Bearish" ? "text-[#B42318] border-[#FECDCA]" : "text-[#414651] border-[#E9EAEB]"} border`}
+                  >
+                    {insights.type}
+                  </span>
+                  <span className="text-[#535862] text-xs">
+                    {insights.readingTime}
+                  </span>
+                </div>
+
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <h2 className="font-semibold text-[#181D27] text-lg md:text-[18px] leading-tight group-hover:text-[#00717D] transition-colors">
+                    {insights.title}
+                  </h2>
+                  <Image
+                    src="/assets/images/website/arrow-up-right.svg"
+                    className="flex-shrink-0 mt-1 transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"
+                    width={24}
+                    height={24}
+                    alt="arrow-up-right"
+                  />
+                </div>
+                <p className="text-[#535862] text-sm md:text-base mb-5 line-clamp-2">
+                  {insights.description}
+                </p>
+                
+                {/* 6. FIXED: Typo iteems-center -> items-center */}
+                <div className="text-[#535862] text-xs md:text-sm flex items-center justify-between mt-auto">
+                  <span>{insights.date}</span>
+                  <span>{insights.source}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* 7. FIXED: Wrapped pagination so buttons don't push off-screen */}
+      <div className="flex justify-center sm:justify-between items-center flex-wrap gap-4 mb-16 md:mb-[194px] border-t border-[#E9EAEB] pt-[22px]">
+        <Button
+          variant="outline"
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+          className="border border-[#D5D7DA] rounded-[8px] px-3 py-2 text-[#414651]"
         >
-          <span
-            className={`py-[2px] px-2 bg-white rounded-full ${insight.type === "Bullish" ? "text-[#326212] border-[#66C61C]" : insight.type === "Bearish" ? "text-[#B42318] border-[#FECDCA]" : "text-[#414651] border-[#E9EAEB]"} border`}
-          >
-            {insight.type}
-          </span>
-          <span className="text-[#535862] text-xs">{insight.readingTime}</span>
+          <Image
+            src="/assets/images/website/arrow-left.svg"
+            alt="arrow-left"
+            width={20}
+            height={20}
+            className="mr-2"
+          />
+          <span className="hidden sm:inline">Previous</span>
+        </Button>
+        
+        <div className="flex gap-1 flex-wrap justify-center">
+          {getPaginationButtons().map((page, idx) =>
+            page === "..." ? (
+              <span key={idx} className="px-2 py-2 text-gray-500">
+                ...
+              </span>
+            ) : (
+              <Button
+                key={`page-${page}-${idx}`}
+                onClick={() => setCurrentPage(page as number)}
+                variant={page === currentPage ? "default" : "outline"}
+                className={`size-8 sm:size-10 rounded-[8px] ${
+                  currentPage === page
+                    ? "bg-[#00717D] hover:bg-[#00717D] text-white"
+                    : "bg-transparent text-[#717680] border-none"
+                }`}
+              >
+                {page}
+              </Button>
+            ),
+          )}
         </div>
 
-        <h1 className="text-[#181D27] text-[48px] font-semibold">
-          {insight.title}
-        </h1>
-        <p className="text-[#535862] max-w-[720px] text-wrap text-base mt-6">
-          {insight.description}Mi tincidunt elit, id quisque ligula ac diam,
-          amet. Vel etiam suspendisse morbi.
-        </p>
-      </section>
-      <section className="mb-24 flex gap-24">
-        <div className="text-[#535862] max-w-[720px] text-[18px]">
-          <h2 className="text-[#181D27] text-[30px] font-semibold mb-5">
-            introduction
-          </h2>
-          <p className="mb-7">
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
-          <p>
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
-          <div className="my-12">
-            <Image
-              src="/assets/images/website/default-single-insight.jpg"
-              className="h-[480px] object-cover"
-              alt="default-single-insight"
-              width={720}
-              height={480}
-            />
-            <span className="flex items-center gap-1 mt-4 text-sm">
-              <Image
-                src="/assets/images/website/image-clip.svg"
-                alt="default-single-insight"
-                width={12}
-                height={12}
-              />{" "}
-              Image courtesy of Moose Photos via Pexels
-            </span>
-          </div>
-          <p className="mb-7">
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
-          <p className="mb-7">
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
-          <h3 className="text-[#181D27] text-[24px] font-semibold mb-4">
-            Software and tools
-          </h3>
-          <p className="mb-7">
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
-          <p className="mb-7">
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
-          <h3 className="text-[#181D27] text-[24px] font-semibold mb-4">
-            Other resources
-          </h3>
-          <p className="mb-7">
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
-          <p>
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
-          <div className="my-12">
-            <Image
-              src="/assets/images/website/default-single-insight.jpg"
-              className="h-[480px] object-cover"
-              alt="default-single-insight"
-              width={720}
-              height={480}
-            />
-            <span className="flex items-center gap-1 mt-4 text-sm">
-              <Image
-                src="/assets/images/website/image-clip.svg"
-                alt="default-single-insight"
-                width={12}
-                height={12}
-              />{" "}
-              Image courtesy of Moose Photos via Pexels
-            </span>
-          </div>
-          <p className="mb-7">
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
-          <p>
-            Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam
-            suspendisse morbi eleifend faucibus eget vestibulum felis. Dictum
-            quis montes, sit sit. Tellus aliquam enim urna, etiam. Mauris
-            posuere vulputate arcu amet, vitae nisi, tellus tincidunt. At
-            feugiat sapien varius id.
-          </p>
-        </div>
-        <div className="max-w-[384px]">
-          <div className="bg-[#FAFAFA] p-8 rounded-[16px] border border-[#E9EAEB]">
-            <h2 className="text-[#008B99] mb-1 text-base">
-              Grab up to 5,000 USDT in rewards
-            </h2>
-            <p className="text-[#535862] text-sm">
-              Grab additional 50 USDT welcome gift instantly when you sign up
-              today!
-            </p>
-            <Button className="mt-8 rounded-[8px] w-full bg-[#008B99] hover:bg-[#008B99] px-[18px] py-3 text-white text-base font-semibold">
-              Join the bull run
-            </Button>
-          </div>
-
-          <div className="bg-[#FAFAFA] mt-10 p-8 rounded-[16px] border border-[#E9EAEB]">
-            <h2 className="text-[#008B99] text-base">Related articles</h2>
-            <div className="mt-4">
-              <Link
-                href="#"
-                className="text-[#181D27] block font-medium text-sm"
-              >
-                Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam.
-              </Link>
-              <span className="text-[#535862] text-base">Jul 23, 2025</span>
-            </div>
-            <div className="mt-4">
-              <Link
-                href="#"
-                className="text-[#181D27] block font-medium text-sm"
-              >
-                Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam.
-              </Link>
-              <span className="text-[#535862] text-base">Jul 23, 2025</span>
-            </div>
-            <div className="mt-4">
-              <Link
-                href="#"
-                className="text-[#181D27] block font-medium text-sm"
-              >
-                Mi tincidunt elit, id quisque ligula ac diam, amet. Vel etiam.
-              </Link>
-              <span className="text-[#535862] text-base">Jul 23, 2025</span>
-            </div>
-          </div>
-          <div className="flex gap-3 items-center mt-10">
-            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]">
-              <Image
-                src="/assets/images/website/image-clip.svg"
-                alt="image-clip"
-                width={20}
-                height={20}
-              />
-            </span>
-            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]">
-              <Image
-                src="/assets/images/website/x-grey.png"
-                alt="image-clip"
-                width={20}
-                height={20}
-              />
-            </span>
-            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]">
-              <Image
-                src="/assets/images/website/facebook.png"
-                alt="image-clip"
-                width={20}
-                height={20}
-              />
-            </span>
-            <span className="size-10 border border-[#D5D7DA] flex items-center justify-center rounded-[8px]">
-              <Image
-                src="/assets/images/website/linkedin.png"
-                alt="image-clip"
-                width={20}
-                height={20}
-              />
-            </span>
-          </div>
-        </div>
-      </section>
-    </main>
+        <Button
+          variant="outline"
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+          className="border border-[#D5D7DA] rounded-[8px] px-3 py-2 text-[#414651]"
+        >
+          <span className="hidden sm:inline">Next</span>
+          <Image
+            src="/assets/images/website/arrow-right.svg"
+            alt="arrow-right"
+            width={20}
+            height={20}
+            className="ml-2"
+          />
+        </Button>
+      </div>
+    </section>
   );
 }

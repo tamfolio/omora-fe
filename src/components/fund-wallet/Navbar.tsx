@@ -12,9 +12,11 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo and Navigation */}
           <div className="flex items-center gap-10">
+            <Link href="/">
             <div className="flex items-center">
               <Logo width={150} height={40} />
             </div>
+             </Link>
             <nav className="hidden md:flex items-center gap-8">
               <Link
                 href="/dashboard"
@@ -29,7 +31,7 @@ export default function Navbar() {
                 Investment
               </Link>
               <Link
-                href="/news"
+                href="/newsroom"
                 className="text-gray-700 hover:text-teal-600 font-medium transition-colors duration-200"
               >
                 News

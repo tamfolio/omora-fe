@@ -51,27 +51,33 @@ function SetupDashboard({ setupSteps, recentPosts, onStepAction, onReadPost, use
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="w-full mx-auto px-20">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+      {/* FIXED: Changed px-20 to be responsive (only applied on larger screens) */}
+      <div className="w-full max-w-7xl mx-auto md:px-8 lg:px-12">
+        
         {/* Header */}
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
           Welcome back, {userName}
         </h1>
 
         {/* Setup Progress Card */}
-        <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-200 rounded-2xl p-8 mb-8">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        {/* FIXED: Reduced mobile padding from p-8 to p-5 */}
+        <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-200 rounded-2xl p-5 md:p-8 mb-8">
+          
+          {/* FIXED: Added gap-4 and flex-shrink-0 to prevent circle from squishing */}
+          <div className="flex justify-between items-start gap-4 mb-6 md:mb-8">
+            <div className="flex-1">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-1 md:mb-2">
                 Complete Your Setup
               </h2>
-              <p className="text-gray-600">
+              <p className="text-sm md:text-base text-gray-600">
                 You&apos;re almost ready to invest
               </p>
             </div>
-            <div className="flex flex-col items-center">
-              <div className="relative w-16 h-16 mb-2">
-                <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+            
+            <div className="flex flex-col items-center flex-shrink-0">
+              <div className="relative w-14 h-14 md:w-16 md:h-16 mb-1 md:mb-2">
+                <svg className="w-14 h-14 md:w-16 md:h-16 transform -rotate-90" viewBox="0 0 36 36">
                   <path
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     fill="none"
@@ -87,17 +93,17 @@ function SetupDashboard({ setupSteps, recentPosts, onStepAction, onReadPost, use
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-bold text-cyan-600">
+                  <span className="text-xs md:text-sm font-bold text-cyan-600">
                     {progressPercentage}%
                   </span>
                 </div>
               </div>
-              <span className="text-xs text-gray-500">Complete</span>
+              <span className="text-[10px] md:text-xs text-gray-500 font-medium">Complete</span>
             </div>
           </div>
 
           {/* Setup Steps */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-4 lg:gap-6">
             {setupSteps.map((step, index) => (
               <div key={step.id} className="relative">
                 <div className="flex flex-col space-y-3">
@@ -155,4 +161,4 @@ function SetupDashboard({ setupSteps, recentPosts, onStepAction, onReadPost, use
   );
 }
 
-export default SetupDashboard
+export default SetupDashboard;

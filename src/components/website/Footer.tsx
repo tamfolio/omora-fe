@@ -18,113 +18,94 @@ export default function Footer() {
   return (
     <footer>
       <NewsLetter />
-      <div className="pt-16 pb-12 px-[112px]">
-        <div className="flex gap-16 items-start justify-between mb-16">
-          <div>
-            <Image
-              src="/assets/images/logo/omora-logo.png"
-              alt="Omora Logo"
-              width={138}
-              height={30}
-              className="mb-4"
-            />
-            <p className="text-[#535862] text-base w-[320px]">
+      
+      <div className="pt-12 md:pt-16 pb-8 md:pb-12 px-4 md:px-8 lg:px-[112px]">
+        
+        <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start justify-between mb-12 md:mb-16">
+          
+          {/* Logo Section */}
+          <div className="w-full lg:w-auto">
+            {/* FIXED: Moved mb-4 to the Link and added inline-block for perfect spacing */}
+            <Link href="/" className="inline-block mb-4">
+              <Image
+                src="/assets/images/logo/omora-logo.png"
+                alt="Omora Logo"
+                width={138}
+                height={30}
+              />
+            </Link>
+            <p className="text-[#535862] text-sm md:text-base max-w-[320px]">
               Curated investing experiences for forward-thinkers.
             </p>
           </div>
-          <div className="flex gap-8">
+          
+          {/* Links Section */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex gap-8 w-full lg:w-auto">
             {/* Company */}
             <div>
-              <h4 className="font-semibold text-[#717680] text-sm mb-2">
+              <h4 className="font-semibold text-[#717680] text-sm mb-3">
                 Company
               </h4>
-              <ul className="space-y-3 text-base text-[#535862] min-w-[138px] font-semibold">
-                <li>
-                  <Link href="#">About Us</Link>
-                </li>
-                <li>
-                  <Link href="#">Our Team</Link>
-                </li>
+              <ul className="space-y-3 text-sm md:text-base text-[#535862] lg:min-w-[138px] font-semibold">
+                <li><Link href="/about-us" className="hover:text-[#008B99] transition-colors">About Us</Link></li>
+                <li><Link href="/our-team" className="hover:text-[#008B99] transition-colors">Our Team</Link></li>
               </ul>
             </div>
 
             {/* Resources */}
             <div>
-              <h4 className="font-semibold text-[#717680] text-sm mb-2">
+              <h4 className="font-semibold text-[#717680] text-sm mb-3">
                 Resources
               </h4>
-              <ul className="space-y-3 text-base text-[#535862] min-w-[138px] font-semibold">
-                <li>
-                  <Link href="#">Insights</Link>
-                </li>
-                <li>
-                  <Link href="#">Newsroom</Link>
-                </li>
-                <li>
-                  <Link href="#">FAQs</Link>
-                </li>
+              <ul className="space-y-3 text-sm md:text-base text-[#535862] lg:min-w-[138px] font-semibold">
+                <li><Link href="/insights" className="hover:text-[#008B99] transition-colors">Insights</Link></li>
+                <li><Link href="/newsroom" className="hover:text-[#008B99] transition-colors">Newsroom</Link></li>
+                <li><Link href="/frequently-asked-questions" className="hover:text-[#008B99] transition-colors">FAQs</Link></li>
               </ul>
             </div>
 
             {/* Social */}
             <div>
-              <h4 className="font-semibold text-[#717680] text-sm mb-2">
+              <h4 className="font-semibold text-[#717680] text-sm mb-3">
                 Social
               </h4>
-              <ul className="space-y-3 text-base text-[#535862] min-w-[138px] font-semibold">
-                <li>
-                  <Link href="#">Twitter</Link>
-                </li>
-                <li>
-                  <Link href="#">LinkedIn</Link>
-                </li>
-                <li>
-                  <Link href="#">Instagram</Link>
-                </li>
+              <ul className="space-y-3 text-sm md:text-base text-[#535862] lg:min-w-[138px] font-semibold">
+                <li><Link href="#" className="hover:text-[#008B99] transition-colors">Twitter</Link></li>
+                <li><Link href="#" className="hover:text-[#008B99] transition-colors">LinkedIn</Link></li>
+                <li><Link href="#" className="hover:text-[#008B99] transition-colors">Instagram</Link></li>
               </ul>
             </div>
 
             {/* Legal */}
             <div>
-              <h4 className="font-semibold text-[#717680] text-sm mb-2">
+              <h4 className="font-semibold text-[#717680] text-sm mb-3">
                 Legal
               </h4>
-              <ul className="space-y-3 text-base text-[#535862] min-w-[138px] font-semibold">
-                <li>
-                  <Link href="#">Terms of Use</Link>
-                </li>
-                <li>
-                  <Link href="#">Privacy Policy</Link>
-                </li>
-                <li>
-                  <Link href="#">Cookies Policy</Link>
-                </li>
-                <li>
-                  <Link href="#">Risk Disclosure</Link>
-                </li>
+              <ul className="space-y-3 text-sm md:text-base text-[#535862] lg:min-w-[138px] font-semibold">
+                <li><Link href="/terms-of-use" className="hover:text-[#008B99] transition-colors">Terms of Use</Link></li>
+                <li><Link href="/privacy-policy" className="hover:text-[#008B99] transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/cookies-policy" className="hover:text-[#008B99] transition-colors">Cookies Policy</Link></li>
+                <li><Link href="/risk-disclosure" className="hover:text-[#008B99] transition-colors">Risk Disclosure</Link></li>
               </ul>
             </div>
 
             {/* Contact */}
-            <div>
-              <h4 className="font-semibold text-[#717680] text-sm mb-2">
+            <div className="col-span-2 sm:col-span-1">
+              <h4 className="font-semibold text-[#717680] text-sm mb-3">
                 Contact
               </h4>
-              <ul className="space-y-3 text-base text-[#535862] max-w-[152px] font-semibold">
-                <li>
-                  <a href="mailto:hello@omora.africa">hello@omora.africa</a>
-                </li>
-                <li>
-                  <a href="tel:+2348183448765">+2348183448765</a>
-                </li>
-                <li>3, Godson Ilodianya Close, Lekki, Lagos</li>
+              
+              <ul className="space-y-3 text-sm md:text-base text-[#535862] font-semibold">
+                <li><a href="mailto:hello@omora.africa" className="hover:text-[#008B99] transition-colors break-all">hello@omora.africa</a></li>
+                <li><a href="tel:+2348183448765" className="hover:text-[#008B99] transition-colors">+2348183448765</a></li>
+                <li className="leading-snug">3, Godson Ilodianya Close, Lekki, Lagos</li>
               </ul>
             </div>
           </div>
         </div>
 
         {/* Disclaimer */}
-        <div className="text-base text-[#535862] font-medium space-y-4 mb-6">
+        <div className="text-xs md:text-sm text-[#535862] font-medium space-y-4 mb-6 leading-relaxed">
           <p>
             This platform is operated by Omora Markets Lab, through its
             SEC-regulated entities, Treegar Integrated Services Limited and
@@ -145,11 +126,11 @@ export default function Footer() {
           </p>
           <p>
             By using this platform, you agree to our{" "}
-            <Link href="#" className="underline">
+            <Link href="#" className="underline hover:text-[#008B99] transition-colors">
               Terms and Conditions
             </Link>
             ,{" "}
-            <Link href="#" className="underline">
+            <Link href="#" className="underline hover:text-[#008B99] transition-colors">
               Privacy Policy
             </Link>
             , and all applicable regulatory requirements.
@@ -157,10 +138,10 @@ export default function Footer() {
         </div>
 
         {/* Divider */}
-        <hr className="border-[#E9EAEB] mb-8" />
+        <hr className="border-[#E9EAEB] mb-6 md:mb-8" />
 
         {/* Copyright */}
-        <p className="text-center text-base text-[rgb(113,118,128)]">
+        <p className="text-center text-xs md:text-sm text-[rgb(113,118,128)]">
           © 2025 OMORA. All rights reserved.
         </p>
       </div>
