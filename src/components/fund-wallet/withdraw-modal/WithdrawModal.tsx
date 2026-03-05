@@ -299,8 +299,11 @@ export default function WithdrawModal({
         }
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[420px] max-h-[95vh] flex flex-col">
-        <div className="p-5">
+      {/* 1. FIXED: overflow-hidden added to the main wrapper */}
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[420px] max-h-[95vh] flex flex-col overflow-hidden">
+        
+        {/* 2. FIXED: scrollable inner container wraps the inputs */}
+        <div className="p-5 overflow-y-auto no-scrollbar flex-1 pb-2">
           
           {/* Header */}
           <div className="relative flex items-center justify-center mb-4">
@@ -406,28 +409,26 @@ export default function WithdrawModal({
               type="text"
               value={accountNumber}
               onChange={(e) => handleAccountNumberChange(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm outline-none transition-all mb-1.5"
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm outline-none transition-all"
               placeholder="10 digits"
               maxLength={10}
             />
             
-            {isValidatingAccount && (
-              <p className="text-xs text-blue-600 mb-1.5 px-1">Resolving account details...</p>
-            )}
-            
-            {accountName === "Account not found" && (
-              <p className="text-xs text-red-600 mb-1.5 px-1">Account not found. Please check the number.</p>
-            )}
-
-            {accountName && accountName !== "Account not found" && !isValidatingAccount && (
-              <div className="bg-gray-50 px-3 py-2.5 rounded-lg border border-gray-100">
-                <span className="text-sm text-gray-700">{accountName}</span>
-              </div>
-            )}
+            <div className="h-[44px] mt-1.5">
+              {isValidatingAccount ? (
+                <p className="text-xs text-blue-600 px-1 pt-1.5">Resolving account details...</p>
+              ) : accountName === "Account not found" ? (
+                <p className="text-xs text-red-600 px-1 pt-1.5">Account not found. Please check the number.</p>
+              ) : accountName && !isValidatingAccount ? (
+                <div className="bg-gray-50 px-3 py-2.5 rounded-lg border border-gray-100 flex items-center h-full">
+                  <span className="text-sm text-gray-700 font-medium truncate">{accountName}</span>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           {/* Description */}
-          <div className="mb-5">
+          <div className="mb-2">
             <label className="block text-sm font-bold text-gray-700 mb-1.5">
               Description
             </label>
@@ -438,20 +439,22 @@ export default function WithdrawModal({
               className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm outline-none transition-all"
             />
           </div>
+        </div>
 
-          {/* Withdraw Button */}
+        {/* 3. FIXED: Sticky Footer! Button is safely outside the scrolling area */}
+        <div className="px-5 pb-5 pt-3 bg-white shrink-0 border-t border-gray-50 mt-auto">
           <button
             onClick={handleWithdraw}
             disabled={!accountName || accountName === "Account not found" || isValidatingAccount}
-            className="w-full bg-[#008B8B] hover:bg-teal-700 text-white py-2.5 rounded-lg font-medium transition-colors mb-3 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="w-full bg-[#008B8B] hover:bg-teal-700 text-white py-3 rounded-lg font-semibold transition-colors mb-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             Withdraw
           </button>
-
           <p className="text-xs text-gray-500 text-center">
             NGN withdrawals are processed within 1 business day.
           </p>
         </div>
+
       </div>
       
       {/* Verification Modal */}
