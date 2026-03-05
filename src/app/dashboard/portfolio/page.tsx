@@ -1,5 +1,5 @@
 import Portfolio from "@/components/portfolio/page";
-import Navbar from "@/components/fund-wallet/Navbar";
+import Navbar from "@/components/Navbar";
 
 export default function PortfolioPage() {
   return (

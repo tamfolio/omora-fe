@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import Navbar from "@/components/website/NavBar";
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/ui/Footer";
 import { UserDataProvider } from "@/contexts/UserDataContext";
 
