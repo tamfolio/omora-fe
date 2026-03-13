@@ -1,4 +1,3 @@
-// components/CompletedDashboard.tsx
 import React, { useState } from 'react';
 import PostsGrid from './PostGrid';
 
